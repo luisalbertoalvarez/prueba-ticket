@@ -7,12 +7,12 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, creat
 
 // ⚠️ REEMPLAZA ESTO CON TU CONFIGURACIÓN DE FIREBASE CONSOLE
 const firebaseConfig = {
-  apiKey: "AIzaSyDt717AtP7eLMJgpjH7xBnLuOoJmZyPopk",
-  authDomain: "sistema-tickets-664b2.firebaseapp.com",
-  projectId: "sistema-tickets-664b2",
-  storageBucket: "sistema-tickets-64ab2.appspot.com", 
+ apiKey: "AIzaSyDr7lAtP7eLHJgDjTRv0HbTR...",
+  authDomain: "sistema-tickets-64ab2.firebaseapp.com",
+  projectId: "sistema-tickets-64ab2",
+  storageBucket: "sistema-tickets-64ab2.appspot.com",  
   messagingSenderId: "622723819251",
-  appId: "1:622723819251:web:edd61ab16fa9397863b986"
+  appId: "1:622723819251:web:edd61ab16fa939f78b3b986"
 };
 
 // Inicializar Firebase
@@ -2109,5 +2109,6 @@ async function reasignarTicket() {
         mostrarToast(`❌ Error: ${error.message}`, 'error');
     }
 }
+
 
 

@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDt717AtP7eLMJgpjH7xBnLuOoJmZyPopk",
   authDomain: "sistema-tickets-664b2.firebaseapp.com",
   projectId: "sistema-tickets-664b2",
-  storageBucket: "sistema-tickets-664b2.firebasestorage.app",
+  storageBucket: "sistema-tickets-64ab2.appspot.com", 
   messagingSenderId: "622723819251",
   appId: "1:622723819251:web:edd61ab16fa9397863b986"
 };
@@ -2109,4 +2109,5 @@ async function reasignarTicket() {
         mostrarToast(`❌ Error: ${error.message}`, 'error');
     }
 }
+
 

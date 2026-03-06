@@ -1,1703 +1,730 @@
-:root {
-    --bg-primary: linear-gradient(to bottom, #e9ecef, #f8f9fa);
-    --bg-card: white;
-    --text-primary: #212529;
-    --text-secondary: #6c757d;
-    --border-color: #e9ecef;
-    --card-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    --input-bg: white;
-    --input-border: #ced4da;
-    --input-placeholder: #6c757d;
-    --avance-bg: white;
-    --avance-border: #e9ecef;
-    --avance-suspension-bg: #fff0f0;
-    --avance-suspension-border: #f8d7da;
-    --avance-reanudacion-bg: #f0fff0;
-    --avance-reanudacion-border: #d4edda;
-    --avance-sistema-bg: #e7f3ff;
-    --avance-sistema-border: #b8daff;
-    --time-container-bg: linear-gradient(120deg, #1e3c72, #2a5298);
-    --alert-gmt5-bg: linear-gradient(135deg, #1d4350, #2b6974);
-    --acciones-bg: #e3f2fd;
-    --new-fields-bg: #f0f7ff;
-    --toast-success-bg: linear-gradient(135deg, #10b981, #0ea5e9);
-    --toast-error-bg: linear-gradient(135deg, #ef4444, #f97316);
-    --suspension-manual-bg: #fff8f8;
-    --suspension-manual-border: #f5c6cb;
-    --progreso-manual-bg: #f8fff8;
-    --progreso-manual-border: #c3e6cb;
-    --cronologia-btn-bg: linear-gradient(135deg, #0ea5e9, #0d9488);
-    --sla-report-bg: linear-gradient(135deg, #7e3af2, #4f46e5);
-    --resuelto-badge-bg: #4ade80;
-    --resuelto-indicator-bg: #4ade80;
-    --reason-textarea-bg: #f8fdff;
-    --reason-textarea-border: #bae6fd;
-}
-
-[data-bs-theme="dark"] {
-    --bg-primary: linear-gradient(to bottom, #0f172a, #0a0f1d);
-    --bg-card: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --border-color: #334155;
-    --card-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    --input-bg: #1e293b;
-    --input-border: #334155;
-    --input-placeholder: #64748b;
-    --avance-bg: #1e293b;
-    --avance-border: #334155;
-    --avance-suspension-bg: #2a1a1a;
-    --avance-suspension-border: #4a2a2a;
-    --avance-reanudacion-bg: #1a2a1a;
-    --avance-reanudacion-border: #2a4a2a;
-    --avance-sistema-bg: #1a253a;
-    --avance-sistema-border: #2a3a5a;
-    --time-container-bg: linear-gradient(120deg, #0f172a, #1e293b);
-    --alert-gmt5-bg: linear-gradient(135deg, #0a1a25, #0f2535);
-    --acciones-bg: #1a253a;
-    --new-fields-bg: #1a2233;
-    --toast-success-bg: linear-gradient(135deg, #0ea5e9, #10b981);
-    --toast-error-bg: linear-gradient(135deg, #f97316, #ef4444);
-    --suspension-manual-bg: #2a1a1a;
-    --suspension-manual-border: #4a2a2a;
-    --progreso-manual-bg: #1a2a1a;
-    --progreso-manual-border: #2a4a2a;
-    --cronologia-btn-bg: linear-gradient(135deg, #0ea5e9, #0f766e);
-    --sla-report-bg: linear-gradient(135deg, #6d28d9, #4f46e5);
-    --resuelto-badge-bg: #4ade80;
-    --resuelto-indicator-bg: #4ade80;
-    --reason-textarea-bg: #0c1a33;
-    --reason-textarea-border: #334155;
-}
-
-body {
-    background: var(--bg-primary);
-    padding: 25px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--text-primary);
-    transition: background-color 0.3s, color 0.3s;
-    min-height: 100vh;
-}
-
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-primary);
-    z-index: -2;
-    transition: background 0.3s ease;
-}
-
-body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background:
-        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 25%),
-        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 30%);
-    z-index: -1;
-    transition: opacity 0.3s ease;
-    opacity: 0.7;
-}
-
-h1 {
-    color: #0d6efd;
-    font-weight: 600;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
-}
-
-[data-bs-theme="dark"] h1 {
-    color: #60a5fa;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    margin-bottom: 30px;
-}
-
-.dashboard-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-    animation: slideDown 0.5s ease;
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.stat-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: var(--card-shadow);
-    transition: all 0.3s ease;
-    border: 1px solid var(--border-color);
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    color: white;
-}
-
-.stat-icon.bg-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.stat-icon.bg-success { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.stat-icon.bg-warning { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-.stat-icon.bg-info { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
-
-.stat-content h3 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--text-primary);
-}
-
-.stat-content p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-/* ============================================ */
-/* TICKET EN CURSO - NUEVO ESTILO */
-/* ============================================ */
-.ticket-en-curso-container {
-    animation: slideDown 0.5s ease;
-}
-
-.ticket-en-curso-container .card {
-    border-left: 4px solid #0d6efd;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-}
-
-[data-bs-theme="dark"] .ticket-en-curso-container .card {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-left-color: #3b82f6;
-}
-
-.ticket-en-curso-container h5 {
-    color: #0d6efd;
-    font-weight: 600;
-}
-
-[data-bs-theme="dark"] .ticket-en-curso-container h5 {
-    color: #60a5fa;
-}
-/* ============================================ */
-/* FIN TICKET EN CURSO */
-/* ============================================ */
-
-.container-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 24px;
-    max-width: 1400px;
-    margin: auto;
-}
-
-.card {
-    border: none;
-    border-radius: 16px;
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s;
-    background-color: var(--bg-card);
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
-}
-
-.ticket-dropdown-container {
-    width: 100%;
-    padding: 10px;
-}
-
-.ticket-dropdown {
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 2px solid var(--input-border);
-    background-color: var(--input-bg);
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230d6efd' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    padding-right: 40px;
-}
-
-.ticket-dropdown:hover {
-    border-color: #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.ticket-dropdown:focus {
-    outline: none;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
-}
-
-.ticket-activo-option { color: #198754; }
-.ticket-suspendido-option { color: #dc3545; }
-.ticket-resuelto-option { color: #6c757d; }
-.ticket-escalonado-option { color: #fd7e14; }
-.ticket-restablecido-option { color: #0d6efd; }
-
-[data-bs-theme="dark"] .ticket-dropdown {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2360a5fa' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-#ticketSecundarios {
-    min-height: 76px;
-    resize: vertical;
-    font-family: 'Courier New', monospace;
-    font-size: 0.95rem;
-}
-
-.form-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.form-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.ticket-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.suspension-indicator {
-    background: #e74c3c;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    animation: pulse 2s infinite;
-}
-
-.resuelto-indicator {
-    background: var(--resuelto-indicator-bg);
-    color: #0f172a;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-@keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
-    50% { opacity: 0.92; box-shadow: 0 0 0 8px rgba(255,255,255,0); }
-}
-
-pre {
-    background: var(--input-bg);
-    border-radius: 12px;
-    padding: 16px;
-    font-size: 0.95rem;
-    border-left: 4px solid #0d6efd;
-    line-height: 1.5;
-    max-height: 300px;
-    overflow: auto;
-    margin-top: 10px;
-    white-space: pre-wrap;
-    color: var(--text-primary);
-    border-color: #3b82f6;
-}
-
-[data-bs-theme="dark"] pre {
-    border-color: #60a5fa;
-}
-
-.add-avance-btn {
-    border-radius: 50px !important;
-    padding: 14px !important;
-    font-size: 1.1rem !important;
-    box-shadow: 0 4px 10px rgba(0,123,255,0.3);
-    transition: all 0.2s;
-    margin-top: 10px;
-    background: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
-}
-
-.add-avance-btn:hover {
-    box-shadow: 0 6px 15px rgba(0,123,255,0.4);
-    transform: translateY(-1px);
-    background: #0b5ed7;
-    border-color: #0b5ed7;
-}
-
-.form-label {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-}
-
-.form-control, .form-select {
-    border-radius: 10px;
-    padding: 10px 15px;
-    border: 1px solid var(--input-border);
-    transition: border-color 0.3s, box-shadow 0.3s;
-    background-color: var(--input-bg);
-    color: var(--text-primary);
-}
-
-.form-control::placeholder, .form-select option {
-    color: var(--input-placeholder);
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    background-color: var(--input-bg);
-}
-
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 30px;
-    color: var(--text-secondary);
-    text-align: center;
-}
-
-.empty-state i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    opacity: 0.7;
-}
-
-.empty-state p {
-    font-size: 1.1rem;
-    max-width: 500px;
-}
-
-.action-buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 25px 0;
-}
-
-.btn {
-    border-radius: 50px;
-    padding: 10px 25px;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-}
-
-.time-container {
-    background: var(--time-container-bg);
-    color: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin: 15px 0;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-}
-
-.time-label {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 8px;
-    display: block;
-    text-align: left;
-    padding-left: 10px;
-}
-
-.time-value {
-    font-size: 2.8rem;
-    font-weight: 700;
-    letter-spacing: -1.5px;
-    font-family: 'Courier New', monospace;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    margin: 8px 0;
-    text-align: center;
-}
-
-.time-detail {
-    font-size: 0.95rem;
-    opacity: 0.85;
-    margin-top: 5px;
-    text-align: center;
-}
-
-.time-section {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-.time-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.time-progreso { color: #4ade80; }
-.time-suspendido { color: #f87171; }
-.time-total { color: #fbbf24; font-size: 3.2rem; }
-
-.alert-gmt5 {
-    background: var(--alert-gmt5-bg);
-    color: white;
-    border-radius: 12px;
-    padding: 12px 15px;
-    margin: 15px 0;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.acciones-container {
-    background: var(--acciones-bg);
-    border-left: 4px solid #0d6efd;
-    padding: 15px;
-    border-radius: 0 8px 8px 0;
-    margin: 15px 0;
-}
-
-.acciones-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    color: #0a4a82;
-    margin-bottom: 8px;
-}
-
-[data-bs-theme="dark"] .acciones-title {
-    color: #60a5fa;
-}
-
-.avance-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: 240px;
-    overflow-y: auto;
-    padding: 10px 5px;
-    background-color: var(--input-bg);
-    border-radius: 10px;
-}
-
-.avance-entry {
-    background: var(--avance-bg);
-    border-radius: 12px 12px 12px 0;
-    padding: 12px 15px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    max-width: 85%;
-    align-self: flex-end;
-    position: relative;
-    border: 1px solid var(--avance-border);
-}
-
-.avance-entry::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    right: 15px;
-    width: 12px;
-    height: 12px;
-    background: var(--avance-bg);
-    border-right: 1px solid var(--avance-border);
-    border-bottom: 1px solid var(--avance-border);
-    transform: rotate(45deg);
-}
-
-.avance-entry.suspension {
-    background-color: var(--avance-suspension-bg);
-    border-color: var(--avance-suspension-border);
-    align-self: center;
-    max-width: 95%;
-    border-radius: 12px;
-}
-
-.avance-entry.suspension::after { display: none; }
-.avance-entry.reanudacion::after { display: none; }
-
-.avance-entry.reanudacion {
-    background-color: var(--avance-reanudacion-bg);
-    border-color: var(--avance-reanudacion-border);
-    align-self: center;
-    max-width: 95%;
-    border-radius: 12px;
-}
-
-.avance-entry.sistema {
-    background-color: var(--avance-sistema-bg);
-    border-color: var(--avance-sistema-border);
-    align-self: flex-start;
-    border-radius: 12px 12px 0 12px;
-}
-
-.avance-entry.sistema::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 15px;
-    right: auto;
-    width: 12px;
-    height: 12px;
-    background: var(--avance-sistema-bg);
-    border-left: 1px solid var(--avance-sistema-border);
-    border-bottom: 1px solid var(--avance-sistema-border);
-    transform: rotate(45deg);
-}
-
-.avance-time {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-    font-weight: 500;
-    display: flex;
-    justify-content: space-between;
-}
-
-.avance-texto {
-    line-height: 1.5;
-    word-wrap: break-word;
-    color: var(--text-primary);
-}
-
-.avance-entry.suspension .avance-texto,
-.avance-entry.reanudacion .avance-texto {
-    font-weight: 600;
-    color: #f87171;
-}
-
-.avance-entry.reanudacion .avance-texto { color: #4ade80; }
-.avance-entry.sistema .avance-texto { color: #60a5fa; font-style: italic; }
-.avance-entry.resuelto .avance-texto { color: #4ade80; font-weight: bold; }
-
-.export-import-container {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    color: white;
-}
-
-[data-bs-theme="dark"] .export-import-container {
-    background: linear-gradient(135deg, #4f46e5 0%, #7e22ce 100%);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-}
-
-.export-import-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-weight: 600;
-    font-size: 1.2rem;
-}
-
-.export-import-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.export-import-buttons .btn {
-    border-radius: 50px;
-    padding: 10px 25px;
-    font-weight: 500;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    transition: all 0.3s;
-}
-
-.export-import-buttons .btn-export {
-    background: #4361ee;
-    border-color: #4361ee;
-    color: white;
-}
-
-.export-import-buttons .btn-import {
-    background: #f72585;
-    border-color: #f72585;
-    color: white;
-}
-
-.avances-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 10px;
-}
-
-.nuevo-avance-badge {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: white;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    animation: pulse 2s infinite;
-}
-
-#themeToggle {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    z-index: 1000;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    font-size: 1.5rem;
-    background: white;
-    color: #6c757d;
-    border: 2px solid #e9ecef;
-    cursor: pointer;
-}
-
-#themeToggle:hover {
-    transform: scale(1.1) rotate(20deg);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.45);
-    background: #f8f9fa;
-}
-
-[data-bs-theme="dark"] #themeToggle {
-    background-color: #1e293b;
-    color: #facc15;
-    border: 2px solid #334155;
-}
-
-.toast-container {
-    position: fixed;
-    bottom: 100px;
-    right: 30px;
-    z-index: 1100;
-    max-width: 350px;
-}
-
-.toast {
-    border-radius: 12px;
-    box-shadow: 0 4px 25px rgba(0,0,0,0.35);
-    margin-bottom: 15px;
-    border: none;
-    opacity: 0;
-    transform: translateX(300px) scale(0.8);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    max-width: 350px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    color: white;
-    font-weight: 500;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-}
-
-.toast-hide {
-    animation: slideOutRight 0.4s ease forwards;
-}
-
-@keyframes slideOutRight {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-}
-
-.toast-icon { font-size: 1.5rem; }
-.toast-content { flex: 1; }
-.toast-title { font-weight: 700; margin-bottom: 2px; }
-.toast-message { font-size: 0.9rem; opacity: 0.95; }
-
-.toast-close {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.toast-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
-}
-
-.toast-success { background: var(--toast-success-bg); }
-.toast-error { background: var(--toast-error-bg); }
-
-footer.text-center {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-}
-
-[data-bs-theme="dark"] footer.text-center {
-    border-top-color: #334155;
-}
-
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--input-bg); border-radius: 10px; }
-::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #5a6268; }
-
-.theme-transition {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-primary);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease;
-}
-
-.theme-transition.active {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.theme-transition .spinner {
-    width: 60px;
-    height: 60px;
-    border: 5px solid rgba(255,255,255,0.3);
-    border-top: 5px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.manual-state-section {
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 15px;
-}
-
-.suspension-manual-section {
-    background: var(--suspension-manual-bg);
-    border: 1px solid var(--suspension-manual-border);
-}
-
-.progreso-manual-section {
-    background: var(--progreso-manual-bg);
-    border: 1px solid var(--progreso-manual-border);
-    margin-top: 15px;
-}
-
-.manual-state-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    font-size: 1.1rem;
-}
-
-.suspension-manual-title { color: #c0392b; }
-[data-bs-theme="dark"] .suspension-manual-title { color: #f87171; }
-.progreso-manual-title { color: #27ae60; }
-[data-bs-theme="dark"] .progreso-manual-title { color: #4ade80; }
-
-.manual-state-btn {
-    font-weight: 500;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-}
-
-.suspension-manual-btn {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    border: none;
-    color: white;
-}
-
-.progreso-manual-btn {
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
-    border: none;
-    color: white;
-}
-
-.cronologia-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.cronologia-btn {
-    background: var(--cronologia-btn-bg) !important;
-    border: none !important;
-    color: white !important;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
-    transition: all 0.3s;
-}
-
-.copiar-cronologia-btn {
-    background: linear-gradient(135deg, #4f46e5, #7e3af2) !important;
-    border: none !important;
-    color: white !important;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
-    transition: all 0.3s;
-}
-
-/* Botón Resumen 1 */
-.btn-resumen-1 {
-    background: linear-gradient(135deg, #0ea5e9, #0d9488) !important;
-    border: none !important;
-    color: white !important;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
-    transition: all 0.3s;
-}
-
-.btn-resumen-1:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
-}
-
-[data-bs-theme="dark"] .btn-resumen-1 {
-    background: linear-gradient(135deg, #0ea5e9, #0f766e) !important;
-}
-
-/* Botón Resumen 2 */
-.btn-resumen-2 {
-    background: linear-gradient(135deg, #8b5cf6, #ec4899) !important;
-    border: none !important;
-    color: white !important;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
-    transition: all 0.3s;
-}
-
-.btn-resumen-2:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.45);
-}
-
-[data-bs-theme="dark"] .btn-resumen-2 {
-    background: linear-gradient(135deg, #7c3aed, #db2777) !important;
-}
-
-.manual-avance-section {
-    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 15px;
-    border: 1px solid #bae6fd;
-}
-
-[data-bs-theme="dark"] .manual-avance-section {
-    background: linear-gradient(135deg, #0c1a33, #1e293b);
-    border: 1px solid #334155;
-}
-
-.manual-avance-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: #0c4a6e;
-}
-
-[data-bs-theme="dark"] .manual-avance-title {
-    color: #93c5fd;
-}
-
-.sla-report-container {
-    background: var(--sla-report-bg);
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    color: white;
-}
-
-.sla-report-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-weight: 600;
-    font-size: 1.3rem;
-}
-
-.sla-report-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-.sla-report-item:last-child {
-    border-bottom: none;
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.sla-progreso { color: #4ade80; }
-.sla-suspendido { color: #f87171; }
-.sla-total { color: #fbbf24; }
-
-.input-group-datetime {
-    display: flex;
-    gap: 8px;
-    align-items: stretch;
-    margin-bottom: 12px;
-}
-
-.input-group-datetime input {
-    border-radius: 8px 0 0 8px !important;
-    flex: 1;
-    font-family: 'Courier New', monospace;
-    font-size: 1.05rem;
-}
-
-.input-group-datetime .btn-calendar {
-    border-radius: 0 8px 8px 0 !important;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border: 1px solid #2563eb;
-    color: white;
-    padding: 0 15px;
-    transition: all 0.2s;
-    min-width: 42px;
-}
-
-.input-datetime-text::placeholder {
-    color: #64748b;
-    font-style: italic;
-    font-family: 'Courier New', monospace;
-    opacity: 0.85;
-}
-
-[data-bs-theme="dark"] .input-datetime-text::placeholder {
-    color: #94a3b8;
-}
-
-.input-format-error {
-    border-color: #ef4444 !important;
-    box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25) !important;
-    background-color: #fff1f1 !important;
-}
-
-[data-bs-theme="dark"] .input-format-error {
-    background-color: #2a1a1a !important;
-}
-
-.format-label {
-    font-size: 0.82rem;
-    color: #64748b;
-    margin-top: 4px;
-    display: block;
-    text-align: right;
-    font-family: monospace;
-}
-
-[data-bs-theme="dark"] .format-label {
-    color: #94a3b8;
-}
-
-/* ETR - MEJORADO */
-.etr-section {
-    margin-top: 15px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border: 1px solid #dee2e6 !important;
-}
-
-[data-bs-theme="dark"] .etr-section {
-    background: linear-gradient(135deg, #1e293b, #0f172a) !important;
-    border-color: #334155 !important;
-}
-
-.etr-inputs-container {
-    display: flex;
-    gap: 15px;
-    align-items: stretch;
-    flex-wrap: nowrap;
-}
-
-.etr-input-group {
-    flex: 1;
-    min-width: 0;
-}
-
-.etr-input-group .input-group {
-    width: 100%;
-}
-
-.etr-input-group .input-group-text {
-    background: linear-gradient(135deg, #0d6efd, #0dcaf0);
-    font-weight: 600;
-    white-space: nowrap;
-    min-width: 80px;
-    color: white;
-    border: none;
-}
-
-[data-bs-theme="dark"] .etr-input-group .input-group-text {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-
-.etr-input-group input[type="number"] {
-    text-align: center;
-    font-weight: 600;
-    font-size: 1.1rem;
-    border-left: none;
-}
-
-.etr-input-group input[type="number"]:focus {
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-.etr-input-group input[type="number"]::-webkit-inner-spin-button,
-.etr-input-group input[type="number"]::-webkit-outer-spin-button {
-    opacity: 1;
-}
-
-.no-etr-check {
-    margin-top: 8px;
-    margin-bottom: 12px;
-    padding: 12px;
-    background: linear-gradient(135deg, #fff8e1, #ffe0b2);
-    border-radius: 8px;
-    border-left: 4px solid #ffc107;
-}
-
-[data-bs-theme="dark"] .no-etr-check {
-    background: linear-gradient(135deg, #3a2d0f, #4a3a1f);
-    border-left-color: #d4a017;
-}
-
-/* MODALES */
-.modal-resolution {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.modal-resolution-content {
-    background: var(--bg-card);
-    border-radius: 20px;
-    width: 95%;
-    max-width: 550px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
-    transform: translateY(20px);
-    animation: slideUp 0.4s forwards;
-}
-
-@keyframes slideUp { to { transform: translateY(0); } }
-
-.modal-header-resolution {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    padding: 20px;
-    text-align: center;
-}
-
-.modal-header-resolution h3 {
-    margin: 0;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.modal-body-resolution { padding: 25px; }
-
-.resolution-instruction {
-    background: var(--new-fields-bg);
-    border-left: 4px solid #4361ee;
-    padding: 15px;
-    border-radius: 0 8px 8px 0;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-}
-
-.input-resolution-container { margin: 20px 0; }
-
-.modal-footer-resolution {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    padding: 20px;
-    border-top: 1px solid var(--border-color);
-}
-
-.btn-resolution {
-    border-radius: 50px;
-    padding: 10px 30px;
-    font-weight: 500;
-    transition: all 0.3s;
-    min-width: 140px;
-}
-
-.btn-resolution-confirm {
-    background: linear-gradient(135deg, #10b981, #0ea5e9);
-    border: none;
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-}
-
-.btn-resolution-cancel {
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--text-primary);
-}
-
-.resolution-error {
-    color: #ef4444;
-    font-size: 0.85rem;
-    margin-top: 8px;
-    display: none;
-    animation: shake 0.5s;
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
-#fechaAfectacionMostrada {
-    color: white !important;
-    opacity: 1 !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.avance-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 6px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.avance-entry:hover .avance-actions { opacity: 1; }
-
-.btn-edit-avance, .btn-delete-avance, .btn-save-edit, .btn-cancel-edit {
-    padding: 2px 6px;
-    font-size: 0.8rem;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 28px;
-}
-
-.btn-edit-avance {
-    background: #e9ecef;
-    color: #495055;
-    border: 1px solid #ced4da;
-}
-
-.btn-edit-avance:hover {
-    background: #0d6efd;
-    color: white;
-    border-color: #0d6efd;
-    transform: scale(1.05);
-}
-
-.btn-delete-avance {
-    background: #f8f9fa;
-    color: #dc3545;
-    border: 1px solid #dee2e6;
-}
-
-.btn-delete-avance:hover {
-    background: #dc3545;
-    color: white;
-    border-color: #dc3545;
-    transform: scale(1.05);
-}
-
-.btn-save-edit {
-    background: #198754;
-    color: white;
-    border: none;
-    font-weight: 500;
-}
-
-.btn-cancel-edit {
-    background: #6c757d;
-    color: white;
-    border: none;
-    font-weight: 500;
-}
-
-.avance-edit-mode {
-    background: #e3f2fd !important;
-    border-color: #0d6efd !important;
-    padding: 12px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
-}
-
-.avance-edited-indicator {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding-left: 2px;
-}
-
-[data-bs-theme="dark"] .avance-edit-mode {
-    background: #1a253a !important;
-    border-color: #3b82f6 !important;
-}
-
-[data-bs-theme="dark"] .avance-edit-mode textarea {
-    background: var(--input-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--input-border);
-}
-
-[data-bs-theme="dark"] .btn-edit-avance {
-    background: #334155;
-    border-color: #475569;
-    color: #cbd5e1;
-}
-
-[data-bs-theme="dark"] .btn-edit-avance:hover {
-    background: #3b82f6;
-    border-color: #3b82f6;
-}
-
-[data-bs-theme="dark"] .btn-delete-avance {
-    background: #334155;
-    border-color: #475569;
-    color: #f87171;
-}
-
-[data-bs-theme="dark"] .btn-delete-avance:hover {
-    background: #ef4444;
-    border-color: #ef4444;
-    color: white;
-}
-
-/* MODAL CONFIRM */
-.modal-confirm {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    z-index: 3000;
-    justify-content: center;
-    align-items: center;
-    animation: fadeIn 0.3s;
-}
-
-.modal-confirm-content {
-    background: var(--bg-card);
-    border-radius: 20px;
-    padding: 30px;
-    max-width: 450px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.4s;
-}
-
-.modal-confirm-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 2.5rem;
-    color: white;
-    animation: pulse 2s infinite;
-}
-
-.modal-confirm-content h3 {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-    color: var(--text-primary);
-}
-
-.modal-confirm-content p {
-    color: var(--text-secondary);
-    margin-bottom: 25px;
-    line-height: 1.6;
-}
-
-.modal-confirm-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-}
-
-.btn-confirm-cancel, .btn-confirm-ok {
-    padding: 12px 30px;
-    border-radius: 50px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-confirm-cancel {
-    background: var(--input-bg);
-    color: var(--text-primary);
-    border: 2px solid var(--border-color);
-}
-
-.btn-confirm-ok {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-/* MODAL INFO */
-.modal-info {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    z-index: 3000;
-    justify-content: center;
-    align-items: center;
-    animation: fadeIn 0.3s;
-}
-
-.modal-info-content {
-    background: var(--bg-card);
-    border-radius: 20px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.4s;
-}
-
-.modal-info-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-info-header h3 {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.btn-close-modal {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-close-modal:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
-}
-
-.modal-info-body {
-    padding: 25px;
-    overflow-y: auto;
-    max-height: calc(80vh - 80px);
-}
-
-/* Campos dinámicos Hostname/Puertos */
-.hostname-puerto-pair {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 12px;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-[data-bs-theme="dark"] .hostname-puerto-pair {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-color: #334155;
-}
-
-.hostname-puerto-pair:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-
-.hostname-puerto-pair .btn-remove {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    background: #ef4444;
-    color: white;
-    border: none;
-    opacity: 0;
-    transition: all 0.3s ease;
-}
-
-.hostname-puerto-pair:hover .btn-remove { opacity: 1; }
-.hostname-puerto-pair .btn-remove:hover { background: #dc2626; transform: scale(1.1); }
-
-.hostname-puerto-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #6c757d;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-[data-bs-theme="dark"] .hostname-puerto-label { color: #94a3b8; }
-
-.pair-number-badge {
-    background: linear-gradient(135deg, #0d6efd, #0dcaf0);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-/* Información adicional */
-.info-adicional-box {
-    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-    border: 1px solid #bae6fd;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-[data-bs-theme="dark"] .info-adicional-box {
-    background: linear-gradient(135deg, #0c1a33, #1e293b);
-    border: 1px solid #334155;
-}
-
-.info-adicional-box .form-label {
-    font-weight: 600;
-    color: #1e40af;
-    margin-bottom: 8px;
-}
-
-[data-bs-theme="dark"] .info-adicional-box .form-label {
-    color: #93c5fd;
-}
-
-.info-adicional-box textarea,
-.info-adicional-box input {
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    padding: 10px 12px;
-}
-
-[data-bs-theme="dark"] .info-adicional-box textarea,
-[data-bs-theme="dark"] .info-adicional-box input {
-    border-color: #475569;
-    background-color: #0f172a;
-}
-
-.info-adicional-box small {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin-top: 4px;
-    display: block;
-}
-
-[data-bs-theme="dark"] .info-adicional-box small {
-    color: #94a3b8;
-}
-
-/* ============================================ */
-/* ANIMACIÓN PULSE PARA BOTONES - NUEVO */
-/* ============================================ */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-.btn-resumen-1:active,
-.btn-resumen-2:active,
-.cronologia-btn:active,
-.copiar-cronologia-btn:active {
-    animation: pulse 0.3s ease;
-}
-
-/* ============================================ */
-/* EFECTO DE COPIADO EXITOSO - NUEVO */
-/* ============================================ */
-.btn-copiado-exito {
-    animation: copiedSuccess 0.5s ease forwards;
-}
-
-@keyframes copiedSuccess {
-    0% { 
-        transform: scale(1); 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    50% { 
-        transform: scale(1.08); 
-        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
-    }
-    100% { 
-        transform: scale(1); 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-}
-
-/* ============================================ */
-/* TOAST MEJORADO - ACTUALIZADO */
-/* ============================================ */
-.toast-success {
-    background: linear-gradient(135deg, #10b981, #0ea5e9);
-    border-left: 4px solid #059669;
-}
-
-.toast-error {
-    background: linear-gradient(135deg, #ef4444, #f97316);
-    border-left: 4px solid #dc2626;
-}
-
-.toast-warning {
-    background: linear-gradient(135deg, #f59e0b, #f97316);
-    border-left: 4px solid #d97706;
-}
-
-.toast-info {
-    background: linear-gradient(135deg, #3b82f6, #0ea5e9);
-    border-left: 4px solid #2563eb;
-}
-
-@media (max-width: 992px) {
-    .container-grid { grid-template-columns: 1fr; }
-    .card { margin-bottom: 20px; }
-    .dashboard-stats { grid-template-columns: 1fr; }
-    .etr-inputs-container { flex-direction: column; }
-}
-
-@media (max-width: 768px) {
-    .toast { min-width: auto; max-width: calc(100vw - 40px); }
-    .modal-confirm-content, .modal-info-content { width: 95%; }
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket de Incidencia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="theme-transition" id="themeTransition">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="bi bi-ticket-perforated"></i> Ticket de Incidencia</h1>
+                <p class="subtitle">Sistema de gestión y seguimiento de incidencias de red con monitoreo SLA</p>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalTickets">0</h3>
+                    <p>Total Tickets</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="bi bi-play-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeTickets">0</h3>
+                    <p>En Progreso</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-warning">
+                    <i class="bi bi-pause-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="suspendedTickets">0</h3>
+                    <p>Suspendidos</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-info">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="resolvedTickets">0</h3>
+                    <p>Resueltos</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket en Curso - MOVIDO ARRIBA -->
+        <div class="ticket-en-curso-container mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="bi bi-folder2-open"></i> Ticket en Curso
+                            </h5>
+                            <p class="text-muted mb-0 small">
+                                Seleccione un ticket existente o cree uno nuevo para comenzar
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="listaTickets">
+                                <div class="ticket-dropdown-container">
+                                    <select class="ticket-dropdown" disabled>
+                                        <option value="">N/A - N/A</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="guardarTicket()">
+                <i class="bi bi-save"></i> Guardar Ticket
+            </button>
+            <button class="btn btn-success" onclick="nuevoTicket()">
+                <i class="bi bi-plus-circle"></i> Nuevo Ticket
+            </button>
+            <button class="btn btn-outline-warning" id="suspendBtn" onclick="toggleEstado()">
+                <i class="bi bi-pause-circle"></i> Suspender Ticket
+            </button>
+            <button class="btn btn-outline-danger" onclick="eliminarTicket()">
+                <i class="bi bi-trash"></i> Eliminar Ticket
+            </button>
+            <button class="btn btn-outline-success" id="resolveBtn" onclick="resolverTicket()">
+                <i class="bi bi-check-circle"></i> Marcar como resuelto
+            </button>
+            <button class="btn btn-outline-primary" id="reopenBtn" onclick="reabrirTicket()" style="display: none;">
+                <i class="bi bi-arrow-counterclockwise"></i> Reabrir ticket
+            </button>
+        </div>
+
+        <div class="container-grid">
+            <!-- Left Column - Ticket Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Detalles del Ticket</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Ticket ID -->
+                    <div class="mb-3">
+                        <label for="ticketId" class="form-label">ID Ticket</label>
+                        <input type="text" class="form-control" id="ticketId" placeholder="Ej: TIK-2026-001">
+                    </div>
+
+                    <!-- Fecha de Afectación -->
+                    <div class="mb-3">
+                        <label for="fechaAfectacion" class="form-label">
+                            <i class="bi bi-calendar-event"></i> Fecha y hora afectación (GMT-5)
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="fechaAfectacion" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                                onchange="validarFormatoFecha('fechaAfectacion'); actualizarCronometro();"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('fechaAfectacion')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Formato: 2026-02-03 14:30</small>
+                        <div id="fechaAfectacionMostrada" class="time-detail mt-2"></div>
+                    </div>
+
+                    <!-- Suspensión Manual -->
+                    <div class="manual-state-section suspension-manual-section">
+                        <div class="manual-state-title suspension-manual-title">
+                            <i class="bi bi-pause-circle"></i>
+                            <span>Marcar suspensión manual</span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="suspensionManual" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('suspensionManual')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
+                            </button>
+                        </div>
+                        <textarea 
+                            class="form-control mb-3" 
+                            id="motivoSuspension" 
+                            rows="2" 
+                            placeholder="Motivo de la suspensión"
+                        ></textarea>
+                        <button 
+                            class="btn manual-state-btn suspension-manual-btn w-100" 
+                            onclick="agregarSuspensionManual()"
+                        >
+                            <i class="bi bi-pause-circle"></i> Registrar Suspensión
+                        </button>
+                    </div>
+
+                    <!-- Reanudación Manual -->
+                    <div class="manual-state-section progreso-manual-section">
+                        <div class="manual-state-title progreso-manual-title">
+                            <i class="bi bi-play-circle"></i>
+                            <span>Marcar progreso manual</span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="reanudacionManual" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('reanudacionManual')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
+                            </button>
+                        </div>
+                        <textarea 
+                            class="form-control mb-3" 
+                            id="motivoReanudacion" 
+                            rows="2" 
+                            placeholder="Motivo de la reanudación"
+                        ></textarea>
+                        <button 
+                            class="btn manual-state-btn progreso-manual-btn w-100" 
+                            onclick="agregarReanudacionManual()"
+                        >
+                            <i class="bi bi-play-circle"></i> Registrar Reanudación
+                        </button>
+                    </div>
+
+                    <!-- Información Técnica -->
+                    <div class="form-section">
+                        <h6><i class="bi bi-pc-display"></i> Información técnica del equipo afectado</h6>
+                        
+                        <!-- Tramo -->
+                        <div class="mb-3">
+                            <label for="tramo" class="form-label">Tramo afectado</label>
+                            <input type="text" class="form-control" id="tramo" placeholder="Ej: QUITO-GUAYAQUIL">
+                        </div>
+
+                        <!-- Hostname/Puertos Dinámicos -->
+                        <div class="mb-3">
+                            <label class="form-label">Equipos afectados (Hostname/Puertos)</label>
+                            <div id="hostnamePuertosContainer"></div>
+                            <button 
+                                class="btn btn-outline-primary btn-sm mt-2" 
+                                onclick="agregarCampoHostnamePuerto()"
+                            >
+                                <i class="bi bi-plus-circle"></i> Agregar otro equipo/corte
+                            </button>
+                        </div>
+
+                        <!-- Red Afectada -->
+                        <div class="mb-3">
+                            <label for="redAfectada" class="form-label">Red afectada</label>
+                            <select class="form-select" id="redAfectada">
+                                <option value="">Seleccionar red</option>
+                                <option value="Nokia">Nokia</option>
+                                <option value="Padtec">Padtec</option>
+                                <option value="Huawei">Huawei</option>
+                                <option value="OTN">OTN</option>
+                                <option value="Fibra Oscura">Fibra Oscura</option>
+                                <option value="FO">FO</option>
+                                <option value="Infinera">Infinera</option>
+                                <option value="Packet Light">Packet Light</option>
+                                <option value='Huawei "OTN" y IP'>Huawei "OTN" y IP</option>
+                                <option value="IP">IP</option>
+                            </select>
+                        </div>
+
+                        <!-- Onnet -->
+                        <div class="mb-3">
+                            <label for="onnet" class="form-label">Red Onnet</label>
+                            <select class="form-select" id="onnet">
+                                <option value="">Seleccionar</option>
+                                <option value="Si">Si</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="info-adicional-box">
+                        <h6><i class="bi bi-info-circle"></i> Información adicional de la incidencia</h6>
+                        
+                        <div class="mb-3">
+                            <label for="offnet" class="form-label">Proveedor Offnet</label>
+                            <input type="text" class="form-control" id="offnet" placeholder="Nombre del proveedor">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pais" class="form-label">País de falla</label>
+                            <input type="text" class="form-control" id="pais" placeholder="Ej: Ecuador, Perú">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ticketSecundarios" class="form-label">Ticket secundarios</label>
+                            <textarea 
+                                class="form-control" 
+                                id="ticketSecundarios" 
+                                rows="3" 
+                                placeholder="Ingrese tickets relacionados (uno por línea o separados por coma)"
+                            ></textarea>
+                            <small class="text-muted">Tickets relacionados con esta incidencia</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="impacto" class="form-label">Impacto</label>
+                            <input type="text" class="form-control" id="impacto" placeholder="Describa el impacto">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="capacidadAfectada" class="form-label">Capacidad afectada</label>
+                            <input type="text" class="form-control" id="capacidadAfectada" placeholder="Ej: 10G, 100G">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="diagnostico" class="form-label">Diagnóstico inicial</label>
+                            <textarea 
+                                class="form-control" 
+                                id="diagnostico" 
+                                rows="3" 
+                                placeholder="Describa el diagnóstico inicial"
+                            ></textarea>
+                        </div>
+
+                        <!-- ETR -->
+                        <div class="etr-section">
+                            <div class="p-3">
+                                <label class="form-label">
+                                    <i class="bi bi-clock-history"></i> ETR Estimado (Tiempo estimado de resolución)
+                                </label>
+                                
+                                <div class="no-etr-check">
+                                    <div class="form-check">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            id="noEtrCheck" 
+                                            onchange="toggleNoEtr()"
+                                        >
+                                        <label class="form-check-label" for="noEtrCheck">
+                                            No hay ETR definido (sin tiempo estimado de resolución)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="etrInputs">
+                                    <div class="etr-inputs-container">
+                                        <div class="etr-input-group">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Horas</span>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control" 
+                                                    id="etrHoras" 
+                                                    min="0" 
+                                                    value="0"
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="etr-input-group">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Minutos</span>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control" 
+                                                    id="etrMinutos" 
+                                                    min="0" 
+                                                    max="59" 
+                                                    value="0"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Ejemplo: Para 1h 30m, ingrese 1 en horas y 30 en minutos
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones Adicionales -->
+                        <div class="mb-3">
+                            <label for="accionesAdicionales" class="form-label">Acciones adicionales</label>
+                            <textarea 
+                                class="form-control" 
+                                id="accionesAdicionales" 
+                                rows="3" 
+                                placeholder="Describa acciones adicionales realizadas"
+                            ></textarea>
+                        </div>
+
+                        <!-- SECCIÓN DE AVANCES -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">📝 Avance / Comentario</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Campo de texto para avances -->
+                                <div class="mb-3">
+                                    <label for="avanceInput" class="form-label">
+                                        <i class="bi bi-chat-left-text"></i> Agregar nuevo avance
+                                    </label>
+                                    <textarea 
+                                        id="avanceInput" 
+                                        class="form-control" 
+                                        rows="3" 
+                                        placeholder="Escribe aquí el avance, comentario o acción realizada..."
+                                    ></textarea>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Este campo es obligatorio para agregar un avance al ticket
+                                    </small>
+                                </div>
+
+                                <!-- Opción de fecha manual -->
+                                <div class="manual-avance-section">
+                                    <div class="manual-avance-title">
+                                        <i class="bi bi-calendar-event"></i>
+                                        <span>Fecha y hora del avance</span>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            id="usarFechaManual" 
+                                            onchange="toggleFechaManualAvance()"
+                                        >
+                                        <label class="form-check-label" for="usarFechaManual">
+                                            Usar fecha/hora personalizada
+                                        </label>
+                                    </div>
+                                    <div class="input-group-datetime" id="fechaManualContainer">
+                                        <input 
+                                            type="text" 
+                                            class="form-control input-datetime-text" 
+                                            id="fechaAvanceManual" 
+                                            placeholder="AAAA-MM-DD HH:mm"
+                                            disabled
+                                        >
+                                        <button 
+                                            class="btn btn-calendar" 
+                                            type="button" 
+                                            onclick="insertarFechaActual('fechaAvanceManual')"
+                                            disabled
+                                            title="Insertar fecha/hora actual (GMT-5)"
+                                        >
+                                            <i class="bi bi-calendar-plus"></i>
+                                        </button>
+                                    </div>
+                                    <small class="format-label">
+                                        Formato: 2026-02-03 14:30 (GMT-5)
+                                    </small>
+                                </div>
+
+                                <!-- Botón para agregar avance -->
+                                <div class="d-grid gap-2 mt-3">
+                                    <button 
+                                        class="btn add-avance-btn" 
+                                        type="button" 
+                                        onclick="agregarAvance()"
+                                    >
+                                        <i class="bi bi-plus-circle"></i> Agregar Avance
+                                    </button>
+                                </div>
+
+                                <!-- Historial de avances -->
+                                <div class="mt-4">
+                                    <div class="avances-header">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-clock-history"></i> Historial de Avances
+                                        </h6>
+                                        <span 
+                                            id="nuevosAvancesBadge" 
+                                            class="nuevo-avance-badge" 
+                                            style="display: none;"
+                                        >
+                                            0 avances
+                                        </span>
+                                    </div>
+                                    <div 
+                                        id="historialAvances" 
+                                        class="avance-container"
+                                    >
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <p>No hay avances registrados aún</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FIN SECCIÓN DE AVANCES -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - SLA & Template -->
+            <div>
+                <!-- SLA Monitoring -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">⏱️ Monitoreo de tiempos SLA</h5>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted d-block mb-3">
+                            <i class="bi bi-info-circle"></i> 
+                            Tiempos calculados desde la fecha y hora de afectación (GMT-5)
+                        </small>
+
+                        <div class="time-container">
+                            <div class="time-section">
+                                <span class="time-label">Tiempo en progreso</span>
+                                <div class="time-value time-progreso" id="tiempoProgreso">00:00:00</div>
+                            </div>
+                            <div class="time-section">
+                                <span class="time-label">Tiempo suspendido</span>
+                                <div class="time-value time-suspendido" id="tiempoSuspendido">00:00:00</div>
+                            </div>
+                            <div class="time-section">
+                                <span class="time-label">Tiempo total transcurrido</span>
+                                <div class="time-value time-total" id="tiempoTotal">00:00:00</div>
+                            </div>
+                        </div>
+
+                        <div class="alert-gmt5">
+                            <i class="bi bi-clock"></i>
+                            <div>
+                                <div id="fechaAfectacionMostrada">Sin fecha de afectación definida</div>
+                                <small>Desde último avance</small>
+                            </div>
+                        </div>
+
+                        <div class="time-container">
+                            <div class="time-section">
+                                <span class="time-label">Último avance</span>
+                                <div class="time-value" id="tiempoUltimoAvance">--:--:--</div>
+                                <div class="time-detail" id="fechaUltimoAvance">Sin avances registrados</div>
+                            </div>
+                        </div>
+
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Importante: Todos los tiempos se calculan en zona horaria GMT-5 (Ecuador).
+                            El tiempo transcurrido se calcula exclusivamente a partir de la "Fecha y hora afectación (GMT-5)"
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Template -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">📄 Plantilla de seguimiento</h5>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted d-block mb-3">
+                            Complete los campos del ticket para generar la plantilla de seguimiento...
+                        </small>
+                        <pre id="plantillaSeguimiento">Complete los campos del ticket para generar la plantilla de seguimiento...</pre>
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-primary" onclick="copiarPlantilla(this)">
+                                <i class="bi bi-clipboard"></i> Copiar plantilla al portapapeles
+                            </button>
+                        </div>
+
+                        <div class="cronologia-container mt-3">
+                            <button class="btn cronologia-btn" onclick="generarCronologiaTXT()">
+                                <i class="bi bi-download"></i> Descargar cronología detallada (TXT)
+                            </button>
+                            <button class="btn copiar-cronologia-btn" onclick="copiarCronologia()">
+                                <i class="bi bi-clipboard"></i> Copiar cronología con tiempos SLA
+                            </button>
+                            <button class="btn btn-resumen-1" onclick="copiarResumen1()">
+                                <i class="bi bi-file-text"></i> Resumen 1
+                            </button>
+                            <button class="btn btn-resumen-2" onclick="copiarResumen2()">
+                                <i class="bi bi-file-text"></i> Resumen 2
+                            </button>
+                        </div>
+
+                        <small class="text-muted d-block mt-3">
+                            <i class="bi bi-info-circle"></i> 
+                            La plantilla se actualiza automáticamente al modificar cualquier campo
+                        </small>
+                    </div>
+                </div>
+
+                <!-- SLA Summary -->
+                <div class="sla-report-container">
+                    <div class="sla-report-title">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Resumen SLA del ticket</span>
+                    </div>
+                    <div class="sla-report-item">
+                        <span>Tiempo en progreso:</span>
+                        <span class="sla-progreso" id="slaProgreso">00:00:00</span>
+                    </div>
+                    <div class="sla-report-item">
+                        <span>Tiempo suspendido:</span>
+                        <span class="sla-suspendido" id="slaSuspendido">00:00:00</span>
+                    </div>
+                    <div class="sla-report-item">
+                        <span>Tiempo total:</span>
+                        <span class="sla-total" id="slaTotal">00:00:00</span>
+                    </div>
+                </div>
+
+                <!-- Export/Import -->
+                <div class="export-import-container">
+                    <div class="export-import-title">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Respaldo y recuperación de tickets</span>
+                    </div>
+                    <p class="mb-3">Exporta todos tus tickets para respaldarlos o impórtalos para restaurar tu trabajo.</p>
+                    <div class="export-import-buttons">
+                        <button class="btn btn-export" onclick="exportarTickets()">
+                            <i class="bi bi-download"></i> Exportar todos los tickets
+                        </button>
+                        <button class="btn btn-import" onclick="importarTickets()">
+                            <i class="bi bi-upload"></i> Importar tickets
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ticket List - ELIMINADO DE AQUÍ (ahora está arriba) -->
+
+                <!-- Footer -->
+                <footer class="text-center mt-4">
+                    <p class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Sistema de gestión de incidencias v2.9 © 2026 | Todos los tiempos en zona horaria GMT-5 (Ecuador) | 
+                        Monitoreo SLA integrado | Ing: Luis Alvarez
+                    </p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolution Modal -->
+    <div class="modal-resolution" id="resolutionModal">
+        <div class="modal-resolution-content">
+            <div class="modal-header-resolution">
+                <h3><i class="bi bi-check-circle"></i> Marcar ticket como resuelto</h3>
+            </div>
+            <div class="modal-body-resolution">
+                <div class="resolution-instruction">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Importante: Ingrese la fecha y hora exacta en que se resolvió la incidencia (GMT-5).
+                    Esta fecha se usará para calcular los tiempos SLA finales y aparecerá al final del historial cronológico.
+                </div>
+                <div class="input-resolution-container">
+                    <label for="resolutionDateTime" class="form-label">
+                        Fecha y hora de resolución (GMT-5)
+                    </label>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="resolutionDateTime" 
+                            placeholder="AAAA-MM-DD HH:mm"
+                        >
+                        <button 
+                            class="btn btn-outline-primary" 
+                            type="button" 
+                            onclick="insertarFechaActual('resolutionDateTime')"
+                        >
+                            <i class="bi bi-calendar-plus"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        Formato requerido: 2026-02-03 14:30
+                    </small>
+                    <div id="resolutionError" class="resolution-error">
+                        <i class="bi bi-exclamation-octagon"></i> 
+                        <span id="resolutionErrorMessage"></span>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> 
+                        Nota SLA: El tiempo en progreso se calculará hasta esta fecha/hora.
+                        El tiempo suspendido NO contará para el cumplimiento del SLA.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer-resolution">
+                <button class="btn btn-resolution btn-resolution-cancel" onclick="cerrarModalResolucion()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+                <button class="btn btn-resolution btn-resolution-confirm" onclick="confirmarResolucion()">
+                    <i class="bi bi-check-lg"></i> Confirmar resolución
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-confirm" id="modalConfirm">
+        <div class="modal-confirm-content">
+            <div class="modal-confirm-icon">
+                <i class="bi bi-question"></i>
+            </div>
+            <h3 id="modalConfirmTitle">Confirmar Acción</h3>
+            <p id="modalConfirmMessage">¿Está seguro de realizar esta acción?</p>
+            <div class="modal-confirm-buttons">
+                <button class="btn-confirm-cancel" onclick="closeModalConfirm()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+                <button class="btn-confirm-ok" id="btnConfirmOk">
+                    <i class="bi bi-check-lg"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-info" id="modalInfo">
+        <div class="modal-info-content">
+            <div class="modal-info-header">
+                <h3><i class="bi bi-info-circle"></i> Información</h3>
+                <button class="btn-close-modal" onclick="closeModalInfo()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-info-body" id="modalInfoBody"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Theme Toggle -->
+    <button id="themeToggle" title="Cambiar tema">
+        <i class="bi bi-moon-stars"></i>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+</html>

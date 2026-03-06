@@ -1,29 +1,31 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket de Incidencia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="theme-transition" id="themeTransition">
         <div class="spinner"></div>
     </div>
-    
+
     <div class="container-fluid">
-        <div class="text-center mb-4">
-            <h1><i class="bi bi-ticket-perforated-fill"></i> Ticket de Incidencia</h1>
-            <p class="subtitle">Sistema de gestión y seguimiento de incidencias de red con monitoreo SLA</p>
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="bi bi-ticket-perforated"></i> Ticket de Incidencia</h1>
+                <p class="subtitle">Sistema de gestión y seguimiento de incidencias de red con monitoreo SLA</p>
+            </div>
         </div>
-        
+
         <!-- Dashboard Stats -->
-        <div class="dashboard-stats" id="dashboardStats">
+        <div class="dashboard-stats">
             <div class="stat-card">
                 <div class="stat-icon bg-primary">
-                    <i class="bi bi-ticket-perforated"></i>
+                    <i class="bi bi-inbox"></i>
                 </div>
                 <div class="stat-content">
                     <h3 id="totalTickets">0</h3>
@@ -58,13 +60,40 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Botones de Acción -->
+
+        <!-- Ticket en Curso - MOVIDO ARRIBA -->
+        <div class="ticket-en-curso-container mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="bi bi-folder2-open"></i> Ticket en Curso
+                            </h5>
+                            <p class="text-muted mb-0 small">
+                                Seleccione un ticket existente o cree uno nuevo para comenzar
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="listaTickets">
+                                <div class="ticket-dropdown-container">
+                                    <select class="ticket-dropdown" disabled>
+                                        <option value="">N/A - N/A</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="action-buttons">
             <button class="btn btn-primary" onclick="guardarTicket()">
                 <i class="bi bi-save"></i> Guardar Ticket
             </button>
-            <button class="btn btn-secondary" onclick="nuevoTicket()">
+            <button class="btn btn-success" onclick="nuevoTicket()">
                 <i class="bi bi-plus-circle"></i> Nuevo Ticket
             </button>
             <button class="btn btn-outline-warning" id="suspendBtn" onclick="toggleEstado()">
@@ -76,354 +105,506 @@
             <button class="btn btn-outline-success" id="resolveBtn" onclick="resolverTicket()">
                 <i class="bi bi-check-circle"></i> Marcar como resuelto
             </button>
-            <button class="btn btn-outline-info" id="reopenBtn" onclick="reabrirTicket()" style="display: none;">
+            <button class="btn btn-outline-primary" id="reopenBtn" onclick="reabrirTicket()" style="display: none;">
                 <i class="bi bi-arrow-counterclockwise"></i> Reabrir ticket
             </button>
         </div>
-        
+
         <div class="container-grid">
-            <!-- Columna Izquierda -->
-            <div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="ticket-header">
-                            <h4><i class="bi bi-list-task"></i> Tickets en curso</h4>
-                        </div>
-                        <div id="listaTickets" class="ticket-list"></div>
-                    </div>
+            <!-- Left Column - Ticket Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Detalles del Ticket</h5>
                 </div>
-                
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <div class="ticket-header">
-                            <h4><i class="bi bi-card-text"></i> Detalles del Ticket</h4>
-                            <div>
-                                <span class="suspension-indicator" id="suspensionIndicator" style="display: none;">
-                                    <i class="bi bi-pause-circle"></i> Suspendido
-                                </span>
-                                <span class="resuelto-indicator" id="resueltoIndicator" style="display: none;">
-                                    <i class="bi bi-check-circle"></i> Resuelto
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="alert-gmt5">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <span>Importante: Todos los tiempos se calculan en zona horaria GMT-5 (Ecuador). El tiempo transcurrido se calcula exclusivamente a partir de la "Fecha y hora afectación (GMT-5)"</span>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="ticketId" class="form-label">ID Ticket</label>
-                                <input type="text" class="form-control" id="ticketId" placeholder="Ej: INC-2026-001">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="fechaAfectacion" class="form-label">Fecha y hora afectación (GMT-5)</label>
-                                <div class="input-group-datetime">
-                                    <input type="text" class="form-control input-datetime-text" id="fechaAfectacion" placeholder="AAAA-MM-DD HH:mm">
-                                    <button class="btn btn-calendar" onclick="insertarFechaActual('fechaAfectacion')" title="Insertar fecha actual">
-                                        <i class="bi bi-calendar-event"></i>
-                                    </button>
-                                </div>
-                                <small class="format-label">Formato: 2026-02-03 14:30</small>
-                            </div>
-                        </div>
-                        
-                        <!-- Suspensión Manual -->
-                        <div class="manual-state-section suspension-manual-section">
-                            <div class="manual-state-title suspension-manual-title">
-                                <i class="bi bi-pause-circle"></i> Marcar suspensión manual
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="suspensionManual" class="form-label">Fecha/hora de suspensión (GMT-5)</label>
-                                    <div class="input-group-datetime">
-                                        <input type="text" class="form-control input-datetime-text" id="suspensionManual" placeholder="AAAA-MM-DD HH:mm">
-                                        <button class="btn btn-calendar" onclick="insertarFechaActual('suspensionManual')">
-                                            <i class="bi bi-calendar-event"></i>
-                                        </button>
-                                    </div>
-                                    <small class="format-label">Formato: 2026-02-03 15:45</small>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="motivoSuspension" class="form-label">Motivo de la suspensión</label>
-                                    <textarea class="form-control reason-textarea" id="motivoSuspension" rows="2" placeholder="Ingrese el motivo..."></textarea>
-                                </div>
-                            </div>
-                            <button class="btn suspension-manual-btn manual-state-btn w-100" onclick="agregarSuspensionManual()">
-                                <i class="bi bi-pause-circle"></i> Registrar suspensión
+                <div class="card-body">
+                    <!-- Ticket ID -->
+                    <div class="mb-3">
+                        <label for="ticketId" class="form-label">ID Ticket</label>
+                        <input type="text" class="form-control" id="ticketId" placeholder="Ej: TIK-2026-001">
+                    </div>
+
+                    <!-- Fecha de Afectación -->
+                    <div class="mb-3">
+                        <label for="fechaAfectacion" class="form-label">
+                            <i class="bi bi-calendar-event"></i> Fecha y hora afectación (GMT-5)
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="fechaAfectacion" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                                onchange="validarFormatoFecha('fechaAfectacion'); actualizarCronometro();"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('fechaAfectacion')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
                             </button>
                         </div>
-                        
-                        <!-- Progreso Manual -->
-                        <div class="manual-state-section progreso-manual-section">
-                            <div class="manual-state-title progreso-manual-title">
-                                <i class="bi bi-play-circle"></i> Marcar progreso manual
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="reanudacionManual" class="form-label">Fecha/hora de reanudación (GMT-5)</label>
-                                    <div class="input-group-datetime">
-                                        <input type="text" class="form-control input-datetime-text" id="reanudacionManual" placeholder="AAAA-MM-DD HH:mm">
-                                        <button class="btn btn-calendar" onclick="insertarFechaActual('reanudacionManual')">
-                                            <i class="bi bi-calendar-event"></i>
-                                        </button>
-                                    </div>
-                                    <small class="format-label">Formato: 2026-02-03 16:20</small>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="motivoReanudacion" class="form-label">Motivo de la reanudación</label>
-                                    <textarea class="form-control reason-textarea" id="motivoReanudacion" rows="2" placeholder="Ingrese el motivo..."></textarea>
-                                </div>
-                            </div>
-                            <button class="btn progreso-manual-btn manual-state-btn w-100" onclick="agregarReanudacionManual()">
-                                <i class="bi bi-play-circle"></i> Registrar progreso
+                        <small class="text-muted">Formato: 2026-02-03 14:30</small>
+                        <div id="fechaAfectacionMostrada" class="time-detail mt-2"></div>
+                    </div>
+
+                    <!-- Suspensión Manual -->
+                    <div class="manual-state-section suspension-manual-section">
+                        <div class="manual-state-title suspension-manual-title">
+                            <i class="bi bi-pause-circle"></i>
+                            <span>Marcar suspensión manual</span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="suspensionManual" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('suspensionManual')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
                             </button>
                         </div>
-                        
-                        <div class="hostname-puertos-section">
-                            <div class="hostname-puertos-title">
-                                <i class="bi bi-hdd-network"></i> Información técnica del equipo afectado
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label for="tramo" class="form-label">Tramo afectado</label>
-                                    <input type="text" class="form-control" id="tramo" placeholder="Ej: Quito-Guayaquil">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="hostname" class="form-label">Hostname</label>
-                                    <input type="text" class="form-control" id="hostname" placeholder="Nombre del equipo">
-                                    <small class="text-muted" style="font-size: 0.75rem;">Nombre del equipo o dispositivo afectado</small>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="puertos" class="form-label">Puertos</label>
-                                    <input type="text" class="form-control" id="puertos" placeholder="Ej: 1/1, 1/2">
-                                    <small class="text-muted" style="font-size: 0.75rem;">Separe múltiples puertos con comas</small>
-                                </div>
-                            </div>
+                        <textarea 
+                            class="form-control mb-3" 
+                            id="motivoSuspension" 
+                            rows="2" 
+                            placeholder="Motivo de la suspensión"
+                        ></textarea>
+                        <button 
+                            class="btn manual-state-btn suspension-manual-btn w-100" 
+                            onclick="agregarSuspensionManual()"
+                        >
+                            <i class="bi bi-pause-circle"></i> Registrar Suspensión
+                        </button>
+                    </div>
+
+                    <!-- Reanudación Manual -->
+                    <div class="manual-state-section progreso-manual-section">
+                        <div class="manual-state-title progreso-manual-title">
+                            <i class="bi bi-play-circle"></i>
+                            <span>Marcar progreso manual</span>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="redAfectada" class="form-label">Red afectada</label>
-                                <select class="form-select" id="redAfectada">
-                                    <option value="">Seleccionar red</option>
-                                    <option value="Nokia">Nokia</option>
-                                    <option value="Padtec">Padtec</option>
-                                    <option value="Huawei OTN">Huawei "OTN"</option>
-                                    <option value="Fibra Oscura">Fibra Oscura "FO"</option>
-                                    <option value="Infinera">Infinera</option>
-                                    <option value="OTN Packet Light">OTN Packet Light</option>
-                                    <option value="Huawei OTN y IP">Huawei "OTN" y IP</option>
-                                    <option value="IP">IP</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="onnet" class="form-label">Red Onnet</label>
-                                <select class="form-select" id="onnet">
-                                    <option value="">Seleccionar</option>
-                                    <option value="Si">Si</option>
-                                    <option value="No">No</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="offnet" class="form-label">Proveedor Offnet</label>
-                                <input type="text" class="form-control" id="offnet" placeholder="Proveedor externo">
-                            </div>
+                        <div class="input-group mb-3">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="reanudacionManual" 
+                                placeholder="AAAA-MM-DD HH:mm"
+                            >
+                            <button 
+                                class="btn btn-outline-primary" 
+                                type="button" 
+                                onclick="insertarFechaActual('reanudacionManual')"
+                            >
+                                <i class="bi bi-calendar-plus"></i>
+                            </button>
                         </div>
+                        <textarea 
+                            class="form-control mb-3" 
+                            id="motivoReanudacion" 
+                            rows="2" 
+                            placeholder="Motivo de la reanudación"
+                        ></textarea>
+                        <button 
+                            class="btn manual-state-btn progreso-manual-btn w-100" 
+                            onclick="agregarReanudacionManual()"
+                        >
+                            <i class="bi bi-play-circle"></i> Registrar Reanudación
+                        </button>
+                    </div>
+
+                    <!-- Información Técnica -->
+                    <div class="form-section">
+                        <h6><i class="bi bi-pc-display"></i> Información técnica del equipo afectado</h6>
                         
+                        <!-- Tramo -->
+                        <div class="mb-3">
+                            <label for="tramo" class="form-label">Tramo afectado</label>
+                            <input type="text" class="form-control" id="tramo" placeholder="Ej: QUITO-GUAYAQUIL">
+                        </div>
+
+                        <!-- Hostname/Puertos Dinámicos -->
+                        <div class="mb-3">
+                            <label class="form-label">Equipos afectados (Hostname/Puertos)</label>
+                            <div id="hostnamePuertosContainer"></div>
+                            <button 
+                                class="btn btn-outline-primary btn-sm mt-2" 
+                                onclick="agregarCampoHostnamePuerto()"
+                            >
+                                <i class="bi bi-plus-circle"></i> Agregar otro equipo/corte
+                            </button>
+                        </div>
+
+                        <!-- Red Afectada -->
+                        <div class="mb-3">
+                            <label for="redAfectada" class="form-label">Red afectada</label>
+                            <select class="form-select" id="redAfectada">
+                                <option value="">Seleccionar red</option>
+                                <option value="Nokia">Nokia</option>
+                                <option value="Padtec">Padtec</option>
+                                <option value="Huawei">Huawei</option>
+                                <option value="OTN">OTN</option>
+                                <option value="Fibra Oscura">Fibra Oscura</option>
+                                <option value="FO">FO</option>
+                                <option value="Infinera">Infinera</option>
+                                <option value="Packet Light">Packet Light</option>
+                                <option value='Huawei "OTN" y IP'>Huawei "OTN" y IP</option>
+                                <option value="IP">IP</option>
+                            </select>
+                        </div>
+
+                        <!-- Onnet -->
+                        <div class="mb-3">
+                            <label for="onnet" class="form-label">Red Onnet</label>
+                            <select class="form-select" id="onnet">
+                                <option value="">Seleccionar</option>
+                                <option value="Si">Si</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="info-adicional-box">
+                        <h6><i class="bi bi-info-circle"></i> Información adicional de la incidencia</h6>
+                        
+                        <div class="mb-3">
+                            <label for="offnet" class="form-label">Proveedor Offnet</label>
+                            <input type="text" class="form-control" id="offnet" placeholder="Nombre del proveedor">
+                        </div>
+
                         <div class="mb-3">
                             <label for="pais" class="form-label">País de falla</label>
-                            <input type="text" class="form-control" id="pais" placeholder="Ej: Ecuador">
+                            <input type="text" class="form-control" id="pais" placeholder="Ej: Ecuador, Perú">
                         </div>
-                        
-                        <div class="new-fields-section">
-                            <div class="new-fields-title">
-                                <i class="bi bi-info-square"></i> Información adicional de la incidencia
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="ticketSecundarios" class="form-label">Ticket secundarios</label>
-                                <textarea class="form-control" id="ticketSecundarios" rows="3" placeholder="Ingrese los IDs de tickets secundarios (separe con comas o presione Enter)"></textarea>
-                                <small class="text-muted">Ingrese los IDs separados por comas o presione Enter para cada ticket</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="impacto" class="form-label">Impacto</label>
-                                <textarea class="form-control" id="impacto" rows="2" placeholder="Describa el impacto de esta incidencia"></textarea>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="capacidadAfectada" class="form-label">Capacidad afectada</label>
-                                <input type="text" class="form-control" id="capacidadAfectada" placeholder="Ej: 10 Gbps">
-                                <small class="text-muted">Especifique la capacidad total afectada por esta incidencia</small>
-                            </div>
+
+                        <div class="mb-3">
+                            <label for="ticketSecundarios" class="form-label">Ticket secundarios</label>
+                            <textarea 
+                                class="form-control" 
+                                id="ticketSecundarios" 
+                                rows="3" 
+                                placeholder="Ingrese tickets relacionados (uno por línea o separados por coma)"
+                            ></textarea>
+                            <small class="text-muted">Tickets relacionados con esta incidencia</small>
                         </div>
-                        
+
+                        <div class="mb-3">
+                            <label for="impacto" class="form-label">Impacto</label>
+                            <input type="text" class="form-control" id="impacto" placeholder="Describa el impacto">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="capacidadAfectada" class="form-label">Capacidad afectada</label>
+                            <input type="text" class="form-control" id="capacidadAfectada" placeholder="Ej: 10G, 100G">
+                        </div>
+
                         <div class="mb-3">
                             <label for="diagnostico" class="form-label">Diagnóstico inicial</label>
-                            <textarea class="form-control" id="diagnostico" rows="3" placeholder="Describa el diagnóstico inicial de la incidencia"></textarea>
+                            <textarea 
+                                class="form-control" 
+                                id="diagnostico" 
+                                rows="3" 
+                                placeholder="Describa el diagnóstico inicial"
+                            ></textarea>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">ETR estimado (Tiempo estimado de resolución)</label>
-                            <div class="no-etr-check">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="noEtrCheck" onchange="toggleNoEtr()">
-                                    <label class="form-check-label" for="noEtrCheck">
-                                        No hay ETR definido (sin tiempo estimado de resolución)
-                                    </label>
+
+                        <!-- ETR -->
+                        <div class="etr-section">
+                            <div class="p-3">
+                                <label class="form-label">
+                                    <i class="bi bi-clock-history"></i> ETR Estimado (Tiempo estimado de resolución)
+                                </label>
+                                
+                                <div class="no-etr-check">
+                                    <div class="form-check">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            id="noEtrCheck" 
+                                            onchange="toggleNoEtr()"
+                                        >
+                                        <label class="form-check-label" for="noEtrCheck">
+                                            No hay ETR definido (sin tiempo estimado de resolución)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="etrInputs">
+                                    <div class="etr-inputs-container">
+                                        <div class="etr-input-group">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Horas</span>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control" 
+                                                    id="etrHoras" 
+                                                    min="0" 
+                                                    value="0"
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="etr-input-group">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Minutos</span>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control" 
+                                                    id="etrMinutos" 
+                                                    min="0" 
+                                                    max="59" 
+                                                    value="0"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Ejemplo: Para 1h 30m, ingrese 1 en horas y 30 en minutos
+                                    </small>
                                 </div>
                             </div>
-                            <div id="etrInputs" class="etr-section">
-                                <div class="etr-inputs-container">
-                                    <div class="etr-input-group">
-                                        <label for="etrHoras" class="form-label">Horas</label>
-                                        <input type="number" class="form-control" id="etrHoras" value="0" min="0">
-                                    </div>
-                                    <div class="etr-input-group">
-                                        <label for="etrMinutos" class="form-label">Minutos</label>
-                                        <input type="number" class="form-control" id="etrMinutos" value="0" min="0" max="59">
-                                    </div>
-                                </div>
-                                <small class="text-muted">Ejemplo: Para 1h 30m, ingrese 1 en horas y 30 en minutos</small>
-                            </div>
                         </div>
-                        
+
+                        <!-- Acciones Adicionales -->
                         <div class="mb-3">
                             <label for="accionesAdicionales" class="form-label">Acciones adicionales</label>
-                            <textarea class="form-control" id="accionesAdicionales" rows="3" placeholder="Liste aquí las acciones específicas que se deben realizar para resolver esta incidencia. Una por línea con guiones."></textarea>
+                            <textarea 
+                                class="form-control" 
+                                id="accionesAdicionales" 
+                                rows="3" 
+                                placeholder="Describa acciones adicionales realizadas"
+                            ></textarea>
                         </div>
-                        
-                        <div class="manual-avance-section">
-                            <div class="manual-avance-title">
-                                <i class="bi bi-clock-history"></i> Avance / Comentario
+
+                        <!-- SECCIÓN DE AVANCES -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">📝 Avance / Comentario</h5>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label for="avanceInput" class="form-label">Comentario del avance</label>
-                                <textarea class="form-control" id="avanceInput" rows="2" placeholder="Ingrese el avance o comentario..."></textarea>
-                            </div>
-                            
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="usarFechaManual" onchange="toggleFechaManualAvance()">
-                                <label class="form-check-label" for="usarFechaManual">
-                                    Establecer fecha y hora manual para este avance
-                                </label>
-                            </div>
-                            
-                            <div id="fechaManualContainer" style="display: none;">
-                                <label for="fechaAvanceManual" class="form-label">Fecha/hora personalizada (GMT-5)</label>
-                                <div class="input-group-datetime">
-                                    <input type="text" class="form-control input-datetime-text" id="fechaAvanceManual" placeholder="AAAA-MM-DD HH:mm" disabled>
-                                    <button class="btn btn-calendar" onclick="insertarFechaActual('fechaAvanceManual')" disabled>
+                            <div class="card-body">
+                                <!-- Campo de texto para avances -->
+                                <div class="mb-3">
+                                    <label for="avanceInput" class="form-label">
+                                        <i class="bi bi-chat-left-text"></i> Agregar nuevo avance
+                                    </label>
+                                    <textarea 
+                                        id="avanceInput" 
+                                        class="form-control" 
+                                        rows="3" 
+                                        placeholder="Escribe aquí el avance, comentario o acción realizada..."
+                                    ></textarea>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Este campo es obligatorio para agregar un avance al ticket
+                                    </small>
+                                </div>
+
+                                <!-- Opción de fecha manual -->
+                                <div class="manual-avance-section">
+                                    <div class="manual-avance-title">
                                         <i class="bi bi-calendar-event"></i>
+                                        <span>Fecha y hora del avance</span>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            id="usarFechaManual" 
+                                            onchange="toggleFechaManualAvance()"
+                                        >
+                                        <label class="form-check-label" for="usarFechaManual">
+                                            Usar fecha/hora personalizada
+                                        </label>
+                                    </div>
+                                    <div class="input-group-datetime" id="fechaManualContainer">
+                                        <input 
+                                            type="text" 
+                                            class="form-control input-datetime-text" 
+                                            id="fechaAvanceManual" 
+                                            placeholder="AAAA-MM-DD HH:mm"
+                                            disabled
+                                        >
+                                        <button 
+                                            class="btn btn-calendar" 
+                                            type="button" 
+                                            onclick="insertarFechaActual('fechaAvanceManual')"
+                                            disabled
+                                            title="Insertar fecha/hora actual (GMT-5)"
+                                        >
+                                            <i class="bi bi-calendar-plus"></i>
+                                        </button>
+                                    </div>
+                                    <small class="format-label">
+                                        Formato: 2026-02-03 14:30 (GMT-5)
+                                    </small>
+                                </div>
+
+                                <!-- Botón para agregar avance -->
+                                <div class="d-grid gap-2 mt-3">
+                                    <button 
+                                        class="btn add-avance-btn" 
+                                        type="button" 
+                                        onclick="agregarAvance()"
+                                    >
+                                        <i class="bi bi-plus-circle"></i> Agregar Avance
                                     </button>
                                 </div>
-                                <small class="text-muted">Ingrese cualquier fecha/hora en formato AAAA-MM-DD HH:mm (GMT-5)</small>
+
+                                <!-- Historial de avances -->
+                                <div class="mt-4">
+                                    <div class="avances-header">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-clock-history"></i> Historial de Avances
+                                        </h6>
+                                        <span 
+                                            id="nuevosAvancesBadge" 
+                                            class="nuevo-avance-badge" 
+                                            style="display: none;"
+                                        >
+                                            0 avances
+                                        </span>
+                                    </div>
+                                    <div 
+                                        id="historialAvances" 
+                                        class="avance-container"
+                                    >
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <p>No hay avances registrados aún</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <button class="btn add-avance-btn w-100" onclick="agregarAvance()">
-                                <i class="bi bi-plus-circle"></i> Agregar avance
-                            </button>
                         </div>
-                        
-                        <div class="avances-header">
-                            <h5><i class="bi bi-chat-left-text"></i> Historial de avances</h5>
-                            <span class="nuevo-avance-badge" id="nuevosAvancesBadge" style="display: none;">1 nuevo</span>
-                        </div>
-                        <div id="historialAvances" class="avance-container"></div>
+                        <!-- FIN SECCIÓN DE AVANCES -->
                     </div>
                 </div>
             </div>
-            
-            <!-- Columna Derecha -->
+
+            <!-- Right Column - SLA & Template -->
             <div>
-                <div class="card">
+                <!-- SLA Monitoring -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">⏱️ Monitoreo de tiempos SLA</h5>
+                    </div>
                     <div class="card-body">
-                        <h4><i class="bi bi-speedometer2"></i> Monitoreo de tiempos SLA</h4>
-                        <p class="text-muted small">Tiempos calculados desde la fecha y hora de afectación (GMT-5)</p>
-                        
+                        <small class="text-muted d-block mb-3">
+                            <i class="bi bi-info-circle"></i> 
+                            Tiempos calculados desde la fecha y hora de afectación (GMT-5)
+                        </small>
+
                         <div class="time-container">
                             <div class="time-section">
-                                <label class="time-label">Tiempo en progreso</label>
+                                <span class="time-label">Tiempo en progreso</span>
                                 <div class="time-value time-progreso" id="tiempoProgreso">00:00:00</div>
                             </div>
                             <div class="time-section">
-                                <label class="time-label">Tiempo suspendido</label>
+                                <span class="time-label">Tiempo suspendido</span>
                                 <div class="time-value time-suspendido" id="tiempoSuspendido">00:00:00</div>
                             </div>
                             <div class="time-section">
-                                <label class="time-label">Tiempo total transcurrido</label>
+                                <span class="time-label">Tiempo total transcurrido</span>
                                 <div class="time-value time-total" id="tiempoTotal">00:00:00</div>
                             </div>
-                            <div class="time-detail" id="fechaAfectacionMostrada">Sin fecha de afectación definida</div>
                         </div>
-                        
-                        <div class="time-container" style="background: linear-gradient(120deg, #2a5298, #1e3c72);">
-                            <div class="row">
-                                <div class="col-6">
-                                    <label class="time-label">Desde último avance</label>
-                                    <div class="time-value" style="font-size: 1.8rem;" id="tiempoUltimoAvance">--:--:--</div>
-                                </div>
-                                <div class="col-6">
-                                    <label class="time-label">Último avance</label>
-                                    <div class="time-detail" id="fechaUltimoAvance">Sin avances registrados</div>
-                                </div>
+
+                        <div class="alert-gmt5">
+                            <i class="bi bi-clock"></i>
+                            <div>
+                                <div id="fechaAfectacionMostrada">Sin fecha de afectación definida</div>
+                                <small>Desde último avance</small>
                             </div>
                         </div>
+
+                        <div class="time-container">
+                            <div class="time-section">
+                                <span class="time-label">Último avance</span>
+                                <div class="time-value" id="tiempoUltimoAvance">--:--:--</div>
+                                <div class="time-detail" id="fechaUltimoAvance">Sin avances registrados</div>
+                            </div>
+                        </div>
+
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Importante: Todos los tiempos se calculan en zona horaria GMT-5 (Ecuador).
+                            El tiempo transcurrido se calcula exclusivamente a partir de la "Fecha y hora afectación (GMT-5)"
+                        </small>
                     </div>
                 </div>
-                
-                <div class="card mt-4">
+
+                <!-- Template -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">📄 Plantilla de seguimiento</h5>
+                    </div>
                     <div class="card-body">
-                        <h4><i class="bi bi-clipboard"></i> Plantilla de seguimiento</h4>
-                        <p class="text-muted small">Complete los campos del ticket para generar la plantilla de seguimiento...</p>
+                        <small class="text-muted d-block mb-3">
+                            Complete los campos del ticket para generar la plantilla de seguimiento...
+                        </small>
+                        <pre id="plantillaSeguimiento">Complete los campos del ticket para generar la plantilla de seguimiento...</pre>
                         
-                        <button class="btn btn-primary w-100 mt-3" onclick="copiarPlantilla(this)">
-                            <i class="bi bi-clipboard"></i> Copiar plantilla al portapapeles
-                        </button>
-                        
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-primary" onclick="copiarPlantilla(this)">
+                                <i class="bi bi-clipboard"></i> Copiar plantilla al portapapeles
+                            </button>
+                        </div>
+
                         <div class="cronologia-container mt-3">
-                            <button class="btn cronologia-btn w-100" onclick="generarCronologiaTXT()">
+                            <button class="btn cronologia-btn" onclick="generarCronologiaTXT()">
                                 <i class="bi bi-download"></i> Descargar cronología detallada (TXT)
                             </button>
-                            <button class="btn copiar-cronologia-btn w-100" onclick="copiarCronologia()">
+                            <button class="btn copiar-cronologia-btn" onclick="copiarCronologia()">
                                 <i class="bi bi-clipboard"></i> Copiar cronología con tiempos SLA
                             </button>
+                            <button class="btn btn-resumen-1" onclick="copiarResumen1()">
+                                <i class="bi bi-file-text"></i> Resumen 1
+                            </button>
+                            <button class="btn btn-resumen-2" onclick="copiarResumen2()">
+                                <i class="bi bi-file-text"></i> Resumen 2
+                            </button>
                         </div>
-                        
-                        <p class="text-muted small mt-3">
-                            <i class="bi bi-info-circle"></i> La plantilla se actualiza automáticamente al modificar cualquier campo
-                        </p>
-                        
-                        <div class="sla-report-container">
-                            <div class="sla-report-title">
-                                <i class="bi bi-bar-chart"></i> Resumen SLA del ticket
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo en progreso:</span>
-                                <span class="sla-progreso" id="slaProgreso">00:00:00</span>
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo suspendido:</span>
-                                <span class="sla-suspendido" id="slaSuspendido">00:00:00</span>
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo total:</span>
-                                <span class="sla-total" id="slaTotal">00:00:00</span>
-                            </div>
-                        </div>
-                        
-                        <pre id="plantillaSeguimiento">Complete los campos del ticket para generar la plantilla de seguimiento...</pre>
+
+                        <small class="text-muted d-block mt-3">
+                            <i class="bi bi-info-circle"></i> 
+                            La plantilla se actualiza automáticamente al modificar cualquier campo
+                        </small>
                     </div>
                 </div>
-                
-                <div class="card mt-4 export-import-container">
-                    <div class="export-import-title">
-                        <i class="bi bi-cloud-arrow-up"></i> Respaldo y recuperación de tickets
+
+                <!-- SLA Summary -->
+                <div class="sla-report-container">
+                    <div class="sla-report-title">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Resumen SLA del ticket</span>
                     </div>
-                    <p class="small mb-3">Exporta todos tus tickets para respaldarlos o impórtalos para restaurar tu trabajo.</p>
+                    <div class="sla-report-item">
+                        <span>Tiempo en progreso:</span>
+                        <span class="sla-progreso" id="slaProgreso">00:00:00</span>
+                    </div>
+                    <div class="sla-report-item">
+                        <span>Tiempo suspendido:</span>
+                        <span class="sla-suspendido" id="slaSuspendido">00:00:00</span>
+                    </div>
+                    <div class="sla-report-item">
+                        <span>Tiempo total:</span>
+                        <span class="sla-total" id="slaTotal">00:00:00</span>
+                    </div>
+                </div>
+
+                <!-- Export/Import -->
+                <div class="export-import-container">
+                    <div class="export-import-title">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Respaldo y recuperación de tickets</span>
+                    </div>
+                    <p class="mb-3">Exporta todos tus tickets para respaldarlos o impórtalos para restaurar tu trabajo.</p>
                     <div class="export-import-buttons">
                         <button class="btn btn-export" onclick="exportarTickets()">
                             <i class="bi bi-download"></i> Exportar todos los tickets
@@ -433,15 +614,22 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Ticket List - ELIMINADO DE AQUÍ (ahora está arriba) -->
+
+                <!-- Footer -->
+                <footer class="text-center mt-4">
+                    <p class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Sistema de gestión de incidencias v2.9 © 2026 | Todos los tiempos en zona horaria GMT-5 (Ecuador) | 
+                        Monitoreo SLA integrado | Ing: Luis Alvarez
+                    </p>
+                </footer>
             </div>
         </div>
-        
-        <footer class="text-center mt-5">
-            <p class="text-muted">Sistema de gestión de incidencias v2.9 © 2026 | Todos los tiempos en zona horaria GMT-5 (Ecuador) | Monitoreo SLA integrado | Ing: Luis Alvarez</p>
-        </footer>
     </div>
-    
-    <!-- Modal de Resolución -->
+
+    <!-- Resolution Modal -->
     <div class="modal-resolution" id="resolutionModal">
         <div class="modal-resolution-content">
             <div class="modal-header-resolution">
@@ -449,27 +637,41 @@
             </div>
             <div class="modal-body-resolution">
                 <div class="resolution-instruction">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Importante:</strong> Ingrese la fecha y hora exacta en que se resolvió la incidencia (GMT-5).
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Importante: Ingrese la fecha y hora exacta en que se resolvió la incidencia (GMT-5).
                     Esta fecha se usará para calcular los tiempos SLA finales y aparecerá al final del historial cronológico.
                 </div>
                 <div class="input-resolution-container">
-                    <label for="resolutionDateTime" class="form-label">Fecha y hora de resolución (GMT-5)</label>
-                    <div class="input-group-datetime">
-                        <input type="text" class="form-control input-datetime-text" id="resolutionDateTime" placeholder="AAAA-MM-DD HH:mm">
-                        <button class="btn btn-calendar" onclick="insertarFechaActual('resolutionDateTime')">
-                            <i class="bi bi-calendar-event"></i>
+                    <label for="resolutionDateTime" class="form-label">
+                        Fecha y hora de resolución (GMT-5)
+                    </label>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="resolutionDateTime" 
+                            placeholder="AAAA-MM-DD HH:mm"
+                        >
+                        <button 
+                            class="btn btn-outline-primary" 
+                            type="button" 
+                            onclick="insertarFechaActual('resolutionDateTime')"
+                        >
+                            <i class="bi bi-calendar-plus"></i>
                         </button>
                     </div>
-                    <small class="format-label">Formato requerido: 2026-02-03 14:30</small>
-                    <div class="resolution-error" id="resolutionError">
-                        <i class="bi bi-exclamation-circle"></i> <span id="resolutionErrorMessage"></span>
+                    <small class="text-muted d-block mt-2">
+                        Formato requerido: 2026-02-03 14:30
+                    </small>
+                    <div id="resolutionError" class="resolution-error">
+                        <i class="bi bi-exclamation-octagon"></i> 
+                        <span id="resolutionErrorMessage"></span>
                     </div>
-                </div>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Nota SLA:</strong> El tiempo en progreso se calculará hasta esta fecha/hora.
-                    El tiempo suspendido NO contará para el cumplimiento del SLA.
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> 
+                        Nota SLA: El tiempo en progreso se calculará hasta esta fecha/hora.
+                        El tiempo suspendido NO contará para el cumplimiento del SLA.
+                    </small>
                 </div>
             </div>
             <div class="modal-footer-resolution">
@@ -482,12 +684,12 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal de Confirmación Moderno -->
+
+    <!-- Confirm Modal -->
     <div class="modal-confirm" id="modalConfirm">
         <div class="modal-confirm-content">
             <div class="modal-confirm-icon">
-                <i class="bi bi-exclamation-triangle"></i>
+                <i class="bi bi-question"></i>
             </div>
             <h3 id="modalConfirmTitle">Confirmar Acción</h3>
             <p id="modalConfirmMessage">¿Está seguro de realizar esta acción?</p>
@@ -501,8 +703,8 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal de Información -->
+
+    <!-- Info Modal -->
     <div class="modal-info" id="modalInfo">
         <div class="modal-info-content">
             <div class="modal-info-header">
@@ -511,20 +713,18 @@
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <div class="modal-info-body" id="modalInfoBody">
-                <!-- Contenido dinámico -->
-            </div>
+            <div class="modal-info-body" id="modalInfoBody"></div>
         </div>
     </div>
-    
+
     <!-- Toast Container -->
-    <div class="toast-container"></div>
-    
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- Theme Toggle -->
     <button id="themeToggle" title="Cambiar tema">
         <i class="bi bi-moon-stars"></i>
     </button>
-    
+
     <script src="script.js"></script>
 </body>
 </html>

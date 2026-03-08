@@ -725,6 +725,66 @@
         <i class="bi bi-moon-stars"></i>
     </button>
 
+    <!-- Modal de Selección de Tickets para Exportar -->
+<div id="modalSeleccionExportar" class="modal-export-selection">
+    <div class="modal-export-content">
+        <div class="modal-export-header">
+            <h3><i class="bi bi-download"></i> Seleccionar Tickets para Exportar</h3>
+            <button class="btn-close-modal" onclick="cerrarModalExportar()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-export-body">
+            <div class="export-destination-section">
+                <label class="form-label">
+                    <i class="bi bi-person-badge"></i> ¿Para quién es la exportación?
+                </label>
+                <select id="exportDestino" class="form-select">
+                    <option value="">-- Seleccione destino --</option>
+                    <option value="Monitoreo">Monitoreo</option>
+                    <option value="Electrico">Eléctrico</option>
+                    <option value="SD">SD (Service Desk)</option>
+                    <option value="N1">N1 (Nivel 1)</option>
+                    <option value="N2">N2 (Nivel 2)</option>
+                    <option value="Cliente">Cliente</option>
+                    <option value="Gerencia">Gerencia</option>
+                    <option value="Auditoria">Auditoría</option>
+                    <option value="Otro">Otro</option>
+                </select>
+                <div id="otroDestinoContainer" style="display: none; margin-top: 10px;">
+                    <input type="text" id="otroDestinoInput" class="form-control" placeholder="Especifique el destino">
+                </div>
+            </div>
+            
+            <div class="export-tickets-list">
+                <div class="export-list-header">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="selectAllTickets" onchange="toggleSelectAllTickets()">
+                        <span>Seleccionar todos</span>
+                    </label>
+                    <span class="selected-count" id="selectedTicketsCount">0 seleccionados</span>
+                </div>
+                <div class="tickets-checkbox-container" id="ticketsCheckboxContainer">
+                    <!-- Los tickets se cargarán dinámicamente aquí -->
+                </div>
+            </div>
+            
+            <div class="export-preview-info">
+                <p><strong>Nombre del archivo:</strong> <span id="exportFileNamePreview">---</span></p>
+                <p><strong>Fecha de exportación:</strong> <span id="exportDatePreview">---</span></p>
+            </div>
+        </div>
+        <div class="modal-export-footer">
+            <button class="btn btn-export-cancel" onclick="cerrarModalExportar()">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </button>
+            <button class="btn btn-export-confirm" onclick="confirmarExportacionSeleccion()">
+                <i class="bi bi-download"></i> Exportar Seleccionados
+            </button>
+        </div>
+    </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -153,25 +153,7 @@ function renderizarHostnamePuertos() {
     if (!container) return;
     container.innerHTML = '';
     hostnamePuertoPairs.forEach((pair, index) => {
-        const pairHTML = `<div class="hostname-puerto-pair" data-pair-id="${pair.id}">
-            <button type="button" class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ''}>
-                <i class="bi bi-trash"></i>
-            </button>
-            <div class="hostname-puerto-label">
-                <span class="pair-number-badge">#${index + 1}</span>
-                <span>Equipo afectado</span>
-            </div>
-            <div class="row g-2">
-                <div class="col-md-6">
-                    <label class="form-label small">Hostname</label>
-                    <input type="text" class="form-control form-control-sm" id="hostname-${pair.id}" placeholder="Ej: RTR-CORE-01" value="${pair.hostname}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small">Puertos</label>
-                    <input type="text" class="form-control form-control-sm" id="puertos-${pair.id}" placeholder="Ej: 1/0/1, 1/0/2" value="${pair.puertos}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)">
-                </div>
-            </div>
-        </div>`;
+        const pairHTML = `<div class="hostname-puerto-pair" data-pair-id="${pair.id}"> <button type="button" class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ''}> <i class="bi bi-trash"></i> </button> <div class="hostname-puerto-label"> <span class="pair-number-badge">#${index + 1}</span> <span>Equipo afectado</span> </div> <div class="row g-2"> <div class="col-md-6"> <label class="form-label small">Hostname</label> <input type="text" class="form-control form-control-sm" id="hostname-${pair.id}" placeholder="Ej: RTR-CORE-01" value="${pair.hostname}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)"> </div> <div class="col-md-6"> <label class="form-label small">Puertos</label> <input type="text" class="form-control form-control-sm" id="puertos-${pair.id}" placeholder="Ej: 1/0/1, 1/0/2" value="${pair.puertos}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)"> </div> </div> </div>`;
         container.innerHTML += pairHTML;
     });
 }
@@ -261,7 +243,7 @@ function agregarSuspensionManual() {
         return;
     }
     ticketSuspendido = true;
-    const textoCompleto = `Tiempo Seguimiento suspendido${motivo ? ` | Motivo: ${motivo}` : ''}`;
+    const textoCompleto = `Tiempo Seguimiento suspendido${motivo ? ` | Motivo: ${motivo} ` : ''}`;
     const avance = { timestamp: fechaSuspension, texto: textoCompleto, tipo: 'suspension' };
     avancesArray.push(avance);
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -297,7 +279,7 @@ function agregarReanudacionManual() {
     }
     ticketSuspendido = false;
     if (estadoActual < 2) { estadoActual = 2; }
-    const textoCompleto = `Tiempo Seguimiento reanudado${motivo ? ` | Motivo: ${motivo}` : ''}`;
+    const textoCompleto = `Tiempo Seguimiento reanudado${motivo ? ` | Motivo: ${motivo} ` : ''}`;
     const avance = { timestamp: fechaReanudacion, texto: textoCompleto, tipo: 'reanudacion' };
     avancesArray.push(avance);
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -365,7 +347,7 @@ function agregarAvance() {
 function renderizarAvances() {
     historialAvancesEl.innerHTML = '';
     if (avancesArray.length === 0) {
-        historialAvancesEl.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No hay avances registrados aún</p></div>';
+        historialAvancesEl.innerHTML = '<p class="text-muted text-center">No hay avances registrados aún</p>';
         return;
     }
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -386,15 +368,8 @@ function renderizarAvances() {
         const botonesAccion = (esEditable && !ticketResuelto) ?
             `<div class="avance-actions"><button class="btn-edit-avance" title="Editar avance" onclick="iniciarEdicionAvance(${index})"><i class="bi bi-pencil"></i></button><button class="btn-delete-avance" title="Eliminar avance" onclick="eliminarAvance(${index})"><i class="bi bi-trash"></i></button></div>`
             : '';
-        const avanceHTML = 
-            `<div class="avance-entry ${claseCSS}" data-index="${index}">
-                <div class="avance-time">
-                    <span>${fechaFormateada}</span>
-                    <span>${remitente}${avance.editado ? ' <i class="bi bi-pencil-square" style="font-size:0.7em;color:#ffc107"></i>' : ''}</span>
-                </div>
-                <div class="avance-texto">${avance.texto.replace(/\n/g, '<br>')}</div>
-                ${tieneEdicion}${botonesAccion}
-            </div>`;
+        const avanceHTML =
+            `<div class="avance-entry ${claseCSS}" data-index="${index}"> <div class="avance-time"> <span>${fechaFormateada}</span> <span>${remitente}${avance.editado ? ' <i class="bi bi-pencil-square" style="font-size:0.7em;color:#ffc107"></i>' : ''}</span> </div> <div class="avance-texto">${avance.texto.replace(/\n/g, '<br>')}</div> ${tieneEdicion}${botonesAccion} </div>`;
         historialAvancesEl.innerHTML += avanceHTML;
     });
     historialAvancesEl.scrollTop = historialAvancesEl.scrollHeight;
@@ -419,14 +394,7 @@ function iniciarEdicionAvance(index) {
         timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false
     });
-    avanceEntry.innerHTML = `<div class="avance-time"><span>${fechaFormateada}</span><span>Operador <small>(editando)</small></span></div>
-        <div class="avance-edit-mode">
-            <textarea id="editAvanceTextarea_${index}" class="form-control">${avance.texto}</textarea>
-            <div class="d-flex justify-content-end mt-2 gap-2">
-                <button class="btn-save-edit" onclick="guardarEdicionAvance(${index})"><i class="bi bi-check-lg"></i> Guardar</button>
-                <button class="btn-cancel-edit" onclick="cancelarEdicionAvance(${index})"><i class="bi bi-x-lg"></i> Cancelar</button>
-            </div>
-        </div>`;
+    avanceEntry.innerHTML = `<div class="avance-time"><span>${fechaFormateada}</span><span>Operador <small>(editando)</small></span></div> <div class="avance-edit-mode"> <textarea id="editAvanceTextarea_${index}" class="form-control">${avance.texto}</textarea> <div class="d-flex justify-content-end mt-2 gap-2"> <button class="btn-save-edit" onclick="guardarEdicionAvance(${index})"><i class="bi bi-check-lg"></i> Guardar</button> <button class="btn-cancel-edit" onclick="cancelarEdicionAvance(${index})"><i class="bi bi-x-lg"></i> Cancelar</button> </div> </div>`;
     setTimeout(() => {
         const textarea = document.getElementById(`editAvanceTextarea_${index}`);
         if (textarea) { textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }
@@ -476,7 +444,6 @@ function actualizarPlantilla() {
     const impactoEl = document.getElementById('impacto');
     const capacidadAfectadaEl = document.getElementById('capacidadAfectada');
     const noEtrCheck = document.getElementById('noEtrCheck');
-    
     let estadoTexto = "🟡 En Progreso";
     if (ticketResuelto) { estadoTexto = "✅ Resuelto"; }
     else if (ticketSuspendido) { estadoTexto = "⏸️ Suspendido"; }
@@ -564,11 +531,10 @@ ${accionesAdicionalesEl.value.trim() || 'Sin acciones adicionales definidas'}
 function copiarPlantilla(btn) {
     // FORZAR ACTUALIZACIÓN DE LA PLANTILLA CON TIEMPOS ACTUALES ANTES DE COPIAR
     actualizarPlantilla();
-    
     const plantillaEl = document.getElementById('plantillaSeguimiento');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
-    
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(plantillaEl.innerText).then(() => {
             mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Copiado!');
@@ -593,10 +559,10 @@ function copiarConFallback(plantillaEl, btn, originalHTML, originalClasses) {
         textArea.select();
         const exito = document.execCommand('copy');
         document.body.removeChild(textArea);
-        if (exito) { 
-            mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Copiado!'); 
-        } else { 
-            throw new Error('execCommand falló'); 
+        if (exito) {
+            mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Copiado!');
+        } else {
+            throw new Error('execCommand falló');
         }
     } catch (err) {
         console.error('Error al copiar:', err);
@@ -612,28 +578,27 @@ function mostrarFeedbackExito(btn, originalHTML, originalClasses, mensajeExito =
         toast.classList.remove('show');
         setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); } }, 300);
     });
-    
     // Cambiar texto del botón temporalmente
     btn.innerHTML = mensajeExito;
     btn.className = 'btn btn-success w-100 mt-3';
     btn.style.animation = 'pulse 0.5s ease';
-    
+
     mostrarToast('✅ Contenido copiado al portapapeles exitosamente', 'success');
-    
+
     // Efecto visual en la card
     const card = document.querySelector('.container-grid > div:last-child .card');
     if (card) {
         card.style.boxShadow = '0 0 20px rgba(40, 167, 69, 0.6)';
         card.style.transform = 'scale(1.02)';
-        setTimeout(() => { 
-            card.style.boxShadow = ''; 
-            card.style.transform = ''; 
+        setTimeout(() => {
+            card.style.boxShadow = '';
+            card.style.transform = '';
         }, 1000);
     }
-    
+
     // Restaurar botón después de 2 segundos
-    setTimeout(() => { 
-        btn.innerHTML = originalHTML; 
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
         btn.className = originalClasses;
         btn.style.animation = '';
     }, 2000);
@@ -731,12 +696,7 @@ function mostrarToastMejorado(mensaje, tipo = 'success', titulo = '') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${tipo}`;
     toast.id = toastId;
-    toast.innerHTML = `<i class="bi ${icons[tipo]} toast-icon"></i>
-        <div class="toast-content">
-            <div class="toast-title">${titulo || titulos[tipo]}</div>
-            <div class="toast-message">${mensaje}</div>
-        </div>
-        <button class="toast-close" onclick="cerrarToast('${toastId}')"><i class="bi bi-x-lg"></i></button>`;
+    toast.innerHTML = `<i class="bi ${icons[tipo]} toast-icon"></i> <div class="toast-content"> <div class="toast-title">${titulo || titulos[tipo]}</div> <div class="toast-message">${mensaje}</div> </div> <button class="toast-close" onclick="cerrarToast('${toastId}')"><i class="bi bi-x-lg"></i></button>`;
     container.appendChild(toast);
     setTimeout(() => { cerrarToast(toastId); }, 5000);
 }
@@ -1096,42 +1056,329 @@ function reabrirTicket() {
     });
 }
 
+// ============================================
+// NUEVA FUNCIÓN DE EXPORTAR CON MODAL DE SELECCIÓN
+// ============================================
 function exportarTickets() {
     try {
-        if (ticketActivoId && hayNuevosAvances) { guardarTicket(); }
-        let tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        if (tickets.length === 0) { mostrarToast('No hay tickets para exportar. Cree al menos un ticket primero.', 'error'); return; }
-        if (confirm("¿Exportar TODOS los tickets?\n✅ ACEPTAR = Todos\n❌ CANCELAR = Seleccionar")) {
-            const fechaActual = new Date().toISOString().slice(0, 10);
-            const nombreArchivo = `tickets_${tickets.length}_${fechaActual}.json`;
-            const dataStr = JSON.stringify(tickets, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url; link.download = nombreArchivo;
-            document.body.appendChild(link); link.click();
-            setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 0);
-            mostrarToast(`✅ Exportados ${tickets.length} tickets<br>📁 ${nombreArchivo}`, 'success');
-        } else {
-            let selected = [];
-            for (let t of tickets) {
-                const id = t.ticketId || `Ticket ${t.id}`;
-                const estado = t.isResolved ? '✓ Resuelto' : (t.isSuspended ? '⏸️ Suspendido' : 'Activo');
-                if (confirm(`¿Incluir ${id} (${estado})?`)) selected.push(t);
-            }
-            if (selected.length === 0) { mostrarToast('⚠️ Ningún ticket seleccionado', 'warning'); return; }
-            const fechaActual = new Date().toISOString().slice(0, 10);
-            const nombreArchivo = `tickets_sel_${selected.length}_${fechaActual}.json`;
-            const dataStr = JSON.stringify(selected, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url; link.download = nombreArchivo;
-            document.body.appendChild(link); link.click();
-            setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 0);
-            mostrarToast(`✅ Exportados ${selected.length} tickets<br>📁 ${nombreArchivo}`, 'success');
+        if (ticketActivoId && hayNuevosAvances) {
+            guardarTicket();
         }
-    } catch (error) { console.error('Error exportar:', error); mostrarToast(`❌ Error: ${error.message}`, 'error'); }
+
+        let tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+
+        if (tickets.length === 0) {
+            mostrarToast('No hay tickets para exportar. Cree al menos un ticket primero.', 'error');
+            return;
+        }
+
+        // Abrir modal de selección
+        abrirModalSeleccionExportar(tickets);
+
+    } catch (error) {
+        console.error('Error exportar:', error);
+        mostrarToast(`❌ Error: ${error.message}`, 'error');
+    }
+}
+
+// ============================================
+// ABRIR MODAL DE SELECCIÓN DE TICKETS
+// ============================================
+function abrirModalSeleccionExportar(tickets) {
+    const modal = document.getElementById('modalSeleccionExportar');
+    const container = document.getElementById('ticketsCheckboxContainer');
+    const selectDestino = document.getElementById('exportDestino');
+    const otroDestinoContainer = document.getElementById('otroDestinoContainer');
+    const otroDestinoInput = document.getElementById('otroDestinoInput');
+
+    // Limpiar contenedor
+    container.innerHTML = '';
+
+    // Generar lista de tickets con checkboxes
+    tickets.forEach((t, index) => {
+        let estadoIcon = '';
+        let estadoClass = '';
+        let estadoTexto = '';
+
+        if (t.isResolved) {
+            estadoIcon = '✅';
+            estadoClass = 'estado-resuelto';
+            estadoTexto = 'Resuelto';
+        } else if (t.isSuspended) {
+            estadoIcon = '⏸️';
+            estadoClass = 'estado-suspendido';
+            estadoTexto = 'Suspendido';
+        } else {
+            estadoIcon = '🟢';
+            estadoClass = 'estado-activo';
+            estadoTexto = 'Activo';
+        }
+
+        const ticketId = t.ticketId || `Ticket-${t.id}`;
+        const tramo = t.tramo || 'Sin tramo';
+
+        const itemHTML = `
+            <label class="ticket-checkbox-item">
+                <input type="checkbox" class="ticket-export-checkbox" 
+                       value="${t.id}" 
+                       data-ticket-id="${ticketId}"
+                       onchange="actualizarContadorSeleccion()">
+                <div class="ticket-info">
+                    <div class="ticket-id">${estadoIcon} ${ticketId}</div>
+                    <div class="ticket-tramo">🛤️ ${tramo}</div>
+                </div>
+                <span class="ticket-estado ${estadoClass}">${estadoTexto}</span>
+            </label>
+        `;
+
+        container.innerHTML += itemHTML;
+    });
+
+    // Actualizar preview del nombre de archivo
+    selectDestino.addEventListener('change', function () {
+        if (this.value === 'Otro') {
+            otroDestinoContainer.style.display = 'block';
+            otroDestinoInput.focus();
+        } else {
+            otroDestinoContainer.style.display = 'none';
+        }
+        actualizarPreviewNombreArchivo();
+    });
+
+    otroDestinoInput.addEventListener('input', actualizarPreviewNombreArchivo);
+
+    // Inicializar contador
+    actualizarContadorSeleccion();
+    actualizarPreviewNombreArchivo();
+
+    // Mostrar modal
+    modal.style.display = 'flex';
+}
+
+// ============================================
+// CERRAR MODAL DE EXPORTACIÓN
+// ============================================
+function cerrarModalExportar() {
+    const modal = document.getElementById('modalSeleccionExportar');
+    modal.style.display = 'none';
+
+    // Resetear valores
+    document.getElementById('exportDestino').value = '';
+    document.getElementById('otroDestinoInput').value = '';
+    document.getElementById('otroDestinoContainer').style.display = 'none';
+    document.getElementById('selectAllTickets').checked = false;
+}
+
+// ============================================
+// SELECCIONAR/DESELECCIONAR TODOS
+// ============================================
+function toggleSelectAllTickets() {
+    const selectAll = document.getElementById('selectAllTickets');
+    const checkboxes = document.querySelectorAll('.ticket-export-checkbox');
+
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+
+    actualizarContadorSeleccion();
+    actualizarPreviewNombreArchivo();
+}
+
+// ============================================
+// ACTUALIZAR CONTADOR DE SELECCIONADOS
+// ============================================
+function actualizarContadorSeleccion() {
+    const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
+    const countEl = document.getElementById('selectedTicketsCount');
+    const btnConfirm = document.querySelector('.btn-export-confirm');
+
+    countEl.textContent = `${checkboxes.length} seleccionados`;
+
+    // Habilitar/deshabilitar botón de exportar
+    if (btnConfirm) {
+        btnConfirm.disabled = checkboxes.length === 0;
+    }
+
+    actualizarPreviewNombreArchivo();
+}
+
+// ============================================
+// ACTUALIZAR PREVIEW DEL NOMBRE DE ARCHIVO
+// ============================================
+function actualizarPreviewNombreArchivo() {
+    const selectDestino = document.getElementById('exportDestino');
+    const otroDestinoInput = document.getElementById('otroDestinoInput');
+    const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
+    const fileNamePreview = document.getElementById('exportFileNamePreview');
+    const datePreview = document.getElementById('exportDatePreview');
+
+    let destino = selectDestino.value;
+    if (destino === 'Otro') {
+        destino = otroDestinoInput.value.trim() || 'Otro';
+    }
+
+    const fechaActual = new Date();
+    const fechaStr = fechaActual.toLocaleString('es-EC', {
+        timeZone: 'America/Guayaquil',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).replace(/[/:\s]/g, '-');
+
+    const cantidad = checkboxes.length;
+    const nombreBase = destino || '---';
+
+    if (fileNamePreview) {
+        fileNamePreview.textContent = `tickets_${nombreBase}_${cantidad}_${fechaStr}.json`;
+    }
+
+    if (datePreview) {
+        datePreview.textContent = fechaActual.toLocaleString('es-EC', {
+            timeZone: 'America/Guayaquil',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+}
+
+// ============================================
+// CONFIRMAR EXPORTACIÓN DE TICKETS SELECCIONADOS
+// ============================================
+function confirmarExportacionSeleccion() {
+    const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
+    const selectDestino = document.getElementById('exportDestino');
+    const otroDestinoInput = document.getElementById('otroDestinoInput');
+
+    if (checkboxes.length === 0) {
+        mostrarToast('⚠️ Debe seleccionar al menos un ticket para exportar', 'warning');
+        return;
+    }
+
+    let destino = selectDestino.value;
+    if (!destino) {
+        mostrarToast('⚠️ Debe seleccionar un destino para la exportación', 'warning');
+        selectDestino.focus();
+        return;
+    }
+
+    if (destino === 'Otro') {
+        destino = otroDestinoInput.value.trim();
+        if (!destino) {
+            mostrarToast('⚠️ Debe especificar el destino', 'warning');
+            otroDestinoInput.focus();
+            return;
+        }
+    }
+
+    // Obtener IDs de tickets seleccionados
+    const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    // Obtener tickets completos
+    let todosLosTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+    const ticketsSeleccionados = todosLosTickets.filter(t => selectedIds.includes(t.id));
+
+    // Generar nombre de archivo
+    const fechaActual = new Date();
+    const fechaStr = fechaActual.toLocaleString('es-EC', {
+        timeZone: 'America/Guayaquil',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).replace(/[/:\s]/g, '-');
+
+    const nombreArchivo = `tickets_${destino}_${ticketsSeleccionados.length}_${fechaStr}.json`;
+
+    // Crear archivo JSON
+    const dataStr = JSON.stringify(ticketsSeleccionados, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpieza
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 0);
+
+    // Cerrar modal y mostrar mensaje de éxito
+    cerrarModalExportar();
+    mostrarToast(
+        `✅ Exportados ${ticketsSeleccionados.length} tickets<br>
+         📁 ${nombreArchivo}<br>
+         📤 Destino: <strong>${destino}</strong>`,
+        'success'
+    );
+}
+
+// ============================================
+// IMPORTAR TICKETS (SE MANTIENE IGUAL)
+// ============================================
+function importarTickets() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.json')) {
+            mostrarToast('❌ Archivo debe ser .json', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                if (!Array.isArray(imported) || imported.length === 0) {
+                    throw new Error('Archivo inválido');
+                }
+                const existing = JSON.parse(localStorage.getItem('tickets') || '[]');
+                if (existing.length === 0) {
+                    localStorage.setItem('tickets', JSON.stringify(imported));
+                    cargarListaTickets();
+                    nuevoTicket();
+                    mostrarToast(`✅ Cargados ${imported.length} tickets`, 'success');
+                } else {
+                    if (confirm(`⚠️ Ya tienes ${existing.length} tickets.\n✅ ACEPTAR = Reemplazar TODOS\n❌ CANCELAR = Solo agregar NUEVOS`)) {
+                        localStorage.setItem('tickets', JSON.stringify(imported));
+                        cargarListaTickets();
+                        nuevoTicket();
+                        mostrarToast(`✅ Reemplazados por ${imported.length} tickets`, 'success');
+                    } else {
+                        const nuevos = imported.filter(nuevo => !existing.some(exist => exist.id === nuevo.id));
+                        if (nuevos.length === 0) {
+                            mostrarToast('⚠️ Todos los tickets ya existen', 'warning');
+                            return;
+                        }
+                        const combinados = [...existing, ...nuevos];
+                        localStorage.setItem('tickets', JSON.stringify(combinados));
+                        cargarListaTickets();
+                        nuevoTicket();
+                        mostrarToast(`✅ Agregados ${nuevos.length} tickets nuevos<br>Total: ${combinados.length}`, 'success');
+                    }
+                }
+                actualizarDashboardStats();
+            } catch (err) {
+                console.error('Error importar:', err);
+                mostrarToast(`❌ Error: ${err.message}`, 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
 }
 
 function importarTickets() {
@@ -1176,24 +1423,22 @@ function importarTickets() {
 // ============================================
 // FUNCIONES DE COPIADO MEJORADAS CON ACTUALIZACIÓN DE TIEMPOS
 // ============================================
-
 function generarCronologiaTXT() {
     const btn = document.querySelector('.cronologia-btn');
     const originalHTML = btn.innerHTML;
-    
     const fechaAfectacion = obtenerFechaAfectacion();
     if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación" para generar la cronología', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
     const ticketIdEl = document.getElementById('ticketId');
     if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket para generar la cronología', 'warning'); ticketIdEl.focus(); return; }
-    
+
     // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
     actualizarPlantilla();
-    
+
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
     const fechaGeneracion = ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    
+
     let historialFormateado = '';
     if (avancesArray.length === 0) { historialFormateado = '  Sin avances registrados\n'; }
     else {
@@ -1207,10 +1452,10 @@ function generarCronologiaTXT() {
             return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${indicadorEdicion}`;
         }).join('\n');
     }
-    
+
     const ticketsSecundariosValor = document.getElementById('ticketSecundarios').value.trim();
     const ticketsSecundariosFormato = ticketsSecundariosValor ? ticketsSecundariosValor.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0).map(t => `- ${t}`).join('\n') : '   - Ninguno';
-    
+
     const contenido = `╔══════════════════════════════════════════════════════════════════════════════╗
 ║ CRONOLOGÍA DETALLADA DEL TICKET - INFORME SLA COMPLETO
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -1240,22 +1485,21 @@ Generado el: ${fechaGeneracion} (GMT-5) | Sistema de gestión de incidencias v2.
 ║ El tiempo suspendido se excluye del cómputo para el cumplimiento del SLA.
 ${ticketResuelto ? '║ Ticket resuelto - tiempos finales congelados en la fecha de resolución.' : ''}
 ╚══════════════════════════════════════════════════════════════════════════════╝`;
-    
     const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `cronologia_ticket_${ticketIdEl.value.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
     document.body.appendChild(a); a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
-    
+
     mostrarToast(`✅ Cronología generada y descargada: ${a.download}`, 'success');
-    
+
     // Feedback visual en el botón
     btn.innerHTML = '✅ ¡Descargado!';
     btn.style.transform = 'scale(0.95)';
-    setTimeout(() => { 
-        btn.innerHTML = originalHTML; 
-        btn.style.transform = ''; 
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.style.transform = '';
     }, 2000);
 }
 
@@ -1263,20 +1507,19 @@ function copiarCronologia() {
     const btn = document.querySelector('.copiar-cronologia-btn');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
-    
     const fechaAfectacion = obtenerFechaAfectacion();
     if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación" para generar la cronología', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
     const ticketIdEl = document.getElementById('ticketId');
     if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket para generar la cronología', 'warning'); ticketIdEl.focus(); return; }
-    
+
     // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
     actualizarPlantilla();
-    
+
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
     const fechaGeneracion = ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    
+
     let historialFormateado = '';
     if (avancesArray.length === 0) { historialFormateado = '  Sin avances registrados\n'; }
     else {
@@ -1290,7 +1533,7 @@ function copiarCronologia() {
             return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${indicadorEdicion}`;
         }).join('\n');
     }
-    
+
     const contenidoCronologia = `╔══════════════════════════════════════════════════════════════════════════════╗
 ║ CRONOLOGÍA DETALLADA DEL TICKET - INFORME SLA COMPLETO
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -1320,29 +1563,75 @@ Generado el: ${fechaGeneracion} (GMT-5) | Sistema de gestión de incidencias v2.
 ║ El tiempo suspendido se excluye del cómputo para el cumplimiento del SLA.
 ${ticketResuelto ? '║ Ticket resuelto - tiempos finales en la fecha de resolución.' : ''}
 ╚══════════════════════════════════════════════════════════════════════════════╝`;
-
     navigator.clipboard.writeText(contenidoCronologia).then(() => {
         mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Cronología Copiada!');
-    }).catch(err => { 
-        console.error('Error al copiar:', err); 
+    }).catch(err => {
+        console.error('Error al copiar:', err);
         mostrarToast('❌ Error al copiar al portapapeles', 'error');
         btn.innerHTML = originalHTML;
         btn.className = originalClasses;
     });
 }
 
-function copiarResumen1() { 
+// ============================================
+// FUNCIÓN SIMPLIFICADA PARA CONTAR TICKETS SECUNDARIOS
+// ============================================
+function analizarTicketsSecundarios(textoTickets) {
+    if (!textoTickets || !textoTickets.trim()) {
+        return {
+            resumen: 'No hay tickets secundarios registrados',
+            total: 0
+        };
+    }
+
+    // Dividir por líneas o comas
+    const lineas = textoTickets.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0);
+
+    // Simplemente contar cuántos tickets hay
+    const totalTickets = lineas.length;
+
+    // Construir resumen simple
+    let resumen = totalTickets > 0 ? `${totalTickets} ticket${totalTickets > 1 ? 's' : ''} secundario${totalTickets > 1 ? 's' : ''}` : 'No hay tickets secundarios';
+
+    return {
+        resumen: resumen,
+        total: totalTickets
+    };
+}
+
+// ============================================
+// FUNCIÓN PARA OBTENER ÚLTIMO AVANCE (SOLO TEXTO)
+// ============================================
+function obtenerUltimoAvanceTexto() {
+    if (avancesArray.length === 0) {
+        return null;
+    }
+    // Obtener el último avance ordenado por timestamp
+    const avancesOrdenados = [...avancesArray].sort((a, b) => b.timestamp - a.timestamp);
+    const ultimoAvance = avancesOrdenados[0];
+
+    // Excluir avances de sistema (suspensión, reanudación, resuelto)
+    if (ultimoAvance.tipo === 'suspension' || ultimoAvance.tipo === 'reanudacion' || ultimoAvance.tipo === 'resuelto' || ultimoAvance.tipo === 'sistema') {
+        // Si el último es de sistema, buscar el último avance de operador
+        const avanceOperador = avancesOrdenados.find(av => av.tipo === 'normal' || av.tipo === undefined);
+        return avanceOperador ? avanceOperador.texto : null;
+    }
+
+    return ultimoAvance.texto;
+}
+
+function copiarResumen1() {
     const btn = document.querySelector('.btn-resumen-1');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
-    
     const ticketIdEl = document.getElementById('ticketId');
     const tramoEl = document.getElementById('tramo');
     const redAfectadaEl = document.getElementById('redAfectada');
     const onnetEl = document.getElementById('onnet');
     const offnetEl = document.getElementById('offnet');
     const paisEl = document.getElementById('pais');
-    
+    const ticketSecundariosEl = document.getElementById('ticketSecundarios');
+
     if (!ticketIdEl.value.trim()) {
         mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning');
         ticketIdEl.focus();
@@ -1363,12 +1652,6 @@ function copiarResumen1() {
     let estadoTexto = 'En Progreso';
     if (ticketResuelto) estadoTexto = 'Resuelto';
     else if (ticketSuspendido) estadoTexto = 'Suspendido';
-
-    // Obtener hostname principal si existe
-    let hostnameMaster = '';
-    if (hostnamePuertoPairs.length > 0 && hostnamePuertoPairs[0].hostname) {
-        hostnameMaster = ' || MASTER ' + hostnamePuertoPairs[0].hostname;
-    }
 
     // Fechas formateadas
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', {
@@ -1400,8 +1683,12 @@ function copiarResumen1() {
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
 
+    // ANALIZAR TICKETS SECUNDARIOS (VERSIÓN SIMPLIFICADA)
+    const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
+    let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
+
     // Construir resumen
-    let resumen = `Ticket: ${ticketIdEl.value}${hostnameMaster}`;
+    let resumen = `Ticket: ${ticketIdEl.value}`;
     resumen += `\nEstado: ${estadoTexto}`;
     resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
     resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
@@ -1425,6 +1712,9 @@ function copiarResumen1() {
     resumen += `\nRed Onnet: ${onnetEl.value || 'No especificado'}`;
     resumen += `\nProveedor Offnet: ${offnetEl.value || 'No especificado'}`;
     resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
+    resumen += `\n----------------------------------------`;
+    resumen += `\nINFORMACIÓN ADICIONAL:`;
+    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
 
     // Copiar al portapapeles
     navigator.clipboard.writeText(resumen).then(() => {
@@ -1441,7 +1731,6 @@ function copiarResumen2() {
     const btn = document.querySelector('.btn-resumen-2');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
-    
     const ticketIdEl = document.getElementById('ticketId');
     const tramoEl = document.getElementById('tramo');
     const redAfectadaEl = document.getElementById('redAfectada');
@@ -1452,7 +1741,7 @@ function copiarResumen2() {
     const impactoEl = document.getElementById('impacto');
     const diagnosticoEl = document.getElementById('diagnostico');
     const accionesAdicionalesEl = document.getElementById('accionesAdicionales');
-    
+
     if (!ticketIdEl.value.trim()) {
         mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning');
         ticketIdEl.focus();
@@ -1474,12 +1763,6 @@ function copiarResumen2() {
     if (ticketResuelto) estadoTexto = 'Resuelto';
     else if (ticketSuspendido) estadoTexto = 'Suspendido';
 
-    // Obtener hostname principal si existe
-    let hostnameMaster = '';
-    if (hostnamePuertoPairs.length > 0 && hostnamePuertoPairs[0].hostname) {
-        hostnameMaster = ' || MASTER ' + hostnamePuertoPairs[0].hostname;
-    }
-
     // Fechas formateadas
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', {
         timeZone: 'America/Guayaquil',
@@ -1496,12 +1779,15 @@ function copiarResumen2() {
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
 
-    // ANALIZAR TICKETS SECUNDARIOS
+    // ANALIZAR TICKETS SECUNDARIOS (VERSIÓN SIMPLIFICADA)
     const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
     let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
 
+    // OBTENER ÚLTIMO AVANCE (SOLO TEXTO, SIN FECHA)
+    const ultimoAvanceTexto = obtenerUltimoAvanceTexto();
+
     // Construir resumen
-    let resumen = `Ticket: ${ticketIdEl.value}${hostnameMaster}`;
+    let resumen = `Ticket: ${ticketIdEl.value}`;
     resumen += `\nEstado: ${estadoTexto}`;
     resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
     resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
@@ -1517,16 +1803,18 @@ function copiarResumen2() {
     resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
     resumen += `\n----------------------------------------`;
     resumen += `\nINFORMACIÓN ADICIONAL:`;
-    resumen += `\nTicket secundarios: ${analisisTickets.resumen}`;
+    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
     if (impactoEl.value.trim()) {
         resumen += `\nImpacto: ${impactoEl.value}`;
     }
     resumen += `\n----------------------------------------`;
+
     if (diagnosticoEl.value.trim()) {
         resumen += `\nDIAGNÓSTICO INICIAL:`;
         resumen += `\n${diagnosticoEl.value}`;
-        resumen += `\n----------------------------------------`;
+
     }
+    resumen += `\n----------------------------------------`;
 
     // ETR
     const noEtrCheck = document.getElementById('noEtrCheck');
@@ -1537,17 +1825,23 @@ function copiarResumen2() {
         if (horas > 0 || minutos > 0) {
             etrTxt = `${horas}h ${minutos}m`;
         }
-    } else if (noEtrCheck.checked) {
-        etrTxt = 'No hay ETR definido';
+    }
+    resumen += `\nETR: ${etrTxt}`;
+
+    resumen += `\n----------------------------------------`;
+
+    // AGREGAR ÚLTIMO AVANCE (SOLO EN RESUMEN 2)
+    if (ultimoAvanceTexto) {
+        resumen += `\nÚLTIMO AVANCE:`;
+        resumen += `\n${ultimoAvanceTexto}`;
+        resumen += `\n----------------------------------------`;
     }
 
-    resumen += `\nETR ESTIMADO: ${etrTxt}`;
-    if (accionesAdicionalesEl.value.trim()) {
-        resumen += `\n----------------------------------------`;
-        resumen += `\nACCIONES ADICIONALES:`;
-        resumen += `\n${accionesAdicionalesEl.value}`;
-    }
-    resumen += `\n----------------------------------------`;
+
+
+
+
+
 
     // Copiar al portapapeles
     navigator.clipboard.writeText(resumen).then(() => {
@@ -1558,81 +1852,6 @@ function copiarResumen2() {
         btn.innerHTML = originalHTML;
         btn.className = originalClasses;
     });
-}
-
-function analizarTicketsSecundarios(textoTickets) {
-    if (!textoTickets || !textoTickets.trim()) {
-        return {
-            resumen: 'No hay tickets secundarios registrados',
-            conteo: {},
-            total: 0
-        };
-    }
-    // Dividir por líneas o comas
-    const lineas = textoTickets.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0);
-
-    // Contadores por tipo de red
-    const conteo = {
-        'IP': 0,
-        'OTN': 0,
-        'Fibra Oscura': 0,
-        'Nokia': 0,
-        'Padtec': 0,
-        'Huawei': 0,
-        'Packet Light': 0,
-        'Infinera': 0,
-        'DWM': 0,
-        'Otros': 0
-    };
-
-    let ticketsProcesados = [];
-
-    lineas.forEach(linea => {
-        // Buscar patrones de ticket (TIK-xxx, INC-xxx, etc.)
-        const ticketMatch = linea.match(/(TIK|INC|TK)[-\s]?\d+[-\s]?\d*/i);
-        const ticketId = ticketMatch ? ticketMatch[0].toUpperCase() : linea;
-
-        // Detectar tipo de red
-        const lineaLower = linea.toLowerCase();
-        let tipoRed = 'Otros';
-
-        if (lineaLower.includes('ip')) tipoRed = 'IP';
-        else if (lineaLower.includes('otn')) tipoRed = 'OTN';
-        else if (lineaLower.includes('fibra oscura') || lineaLower.includes('fo')) tipoRed = 'Fibra Oscura';
-        else if (lineaLower.includes('nokia')) tipoRed = 'Nokia';
-        else if (lineaLower.includes('padtec')) tipoRed = 'Padtec';
-        else if (lineaLower.includes('huawei')) tipoRed = 'Huawei';
-        else if (lineaLower.includes('packet light') || lineaLower.includes('packetlight')) tipoRed = 'Packet Light';
-        else if (lineaLower.includes('infinera')) tipoRed = 'Infinera';
-        else if (lineaLower.includes('dwm')) tipoRed = 'DWM';
-
-        conteo[tipoRed]++;
-        ticketsProcesados.push({ id: ticketId, tipo: tipoRed });
-    });
-
-    // Construir resumen
-    let resumenPartes = [];
-    let totalTickets = 0;
-
-    for (const [tipo, cantidad] of Object.entries(conteo)) {
-        if (cantidad > 0) {
-            totalTickets += cantidad;
-            if (cantidad === 1) {
-                resumenPartes.push(`${cantidad} ${tipo.toLowerCase()}`);
-            } else {
-                resumenPartes.push(`${cantidad} ${tipo.toLowerCase()}s`);
-            }
-        }
-    }
-
-    let resumen = totalTickets > 0 ? resumenPartes.join(', ') : 'No hay tickets secundarios';
-
-    return {
-        resumen: resumen,
-        conteo: conteo,
-        total: totalTickets,
-        tickets: ticketsProcesados
-    };
 }
 
 document.addEventListener('DOMContentLoaded', function () {

@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Plantillas</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #0d6efd;
+            --bg-dark: #1e293b;
+            --bg-light: #f1f5f9;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, #334155 100%);
+            color: white;
+            z-index: 1000;
+            transition: all 0.3s;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 0.25rem 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .sidebar-menu a i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-menu .menu-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 1rem 1.5rem 0.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #64748b;
+        }
+
+        /* Cards */
+        .card-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, .05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            background: white;
+            cursor: pointer;
+        }
+
+        .card-custom:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .1);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .bg-n1 {
+            background-color: #e3f2fd;
+            color: #0d6efd;
+        }
+
+        .bg-monitoreo {
+            background-color: #e8f5e9;
+            color: #198754;
+        }
+
+        .bg-electrico {
+            background-color: #fff3cd;
+            color: #ffc107;
+        }
+
+        .bg-fibra {
+            background-color: #f3e5f5;
+            color: #6f42c1;
+        }
+
+        /* Preview Box */
+        .preview-box {
+            background-color: #2d3436;
+            color: #00b894;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            border-radius: 8px;
+            height: 100%;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            border: 1px solid #444;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            max-height: 650px;
+        }
+
+        .section-title-modal {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: red;
+        }
+
+        /* Dynamic Fields */
+        .equipo-acceso-group {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+            position: relative;
+        }
+
+        .btn-remove-equipo {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+        }
+
+        /* Expandable Textarea */
+        .textarea-expandible {
+            min-height: 80px;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+
+        .textarea-expandible:focus {
+            min-height: 120px;
+        }
+
+        /* Table Styles */
+        .table-history th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .table-history td {
+            vertical-align: middle;
+        }
+
+        .badge-ticket {
+            font-size: 0.85em;
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+
+            .sidebar.active {
+                margin-left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+
+        .toggle-sidebar {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--bg-dark);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .toggle-sidebar {
+                display: block;
+            }
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Tiempo Fuera Field */
+        .tiempo-fuera-display {
+            background-color: #e9ecef !important;
+            font-weight: 600;
+            color: #0d6efd;
+            cursor: not-allowed;
+        }
+
+        .tiempo-fuera-label {
+            color: #198754;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Toggle Button for Mobile -->
+    <button class="toggle-sidebar" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Gestión Plantillas</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-label">Principal</li>
+            <li>
+                <a class="active" onclick="cambiarVista('dashboard')" id="menu-dashboard">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="cambiarVista('historial')" id="menu-historial">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Historial</span>
+                    <span class="badge bg-primary ms-auto" id="badge-historial">0</span>
+                </a>
+            </li>
+            <li class="menu-label">Plantillas</li>
+            <li>
+                <a onclick="abrirModal('modalFibra')">
+                    <i class="fa-solid fa-wave-square"></i>
+                    <span>Fibra Oscura/OTN</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="abrirModal('modalN1')">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <span>Plantilla N1</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="abrirModal('modalMonitoreo')">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Monitoreo</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="abrirModal('modalElectrico')">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Eléctrico</span>
+                </a>
+            </li>
+            <li class="menu-label">Sistema</li>
+            <li>
+                <a onclick="window.location.href='index.html'" style="cursor: pointer;">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="exportarDatos()">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Exportar Datos</span>
+                </a>
+            </li>
+            <li>
+                <a onclick="borrarHistorial()">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Limpiar Historial</span>
+                </a>
+            </li>
+
+        </ul>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- VISTA: DASHBOARD -->
+        <div id="vista-dashboard" class="view-section active">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Selecciona una plantilla para comenzar</p>
+            </div>
+            <!-- Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Total Tickets</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-hoy">0</div>
+                        <div class="stat-label">Hoy</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #6f42c1;" id="stat-fibra">0</div>
+                        <div class="stat-label">Fibra/OTN</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #0d6efd;" id="stat-n1">0</div>
+                        <div class="stat-label">N1</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Plantillas -->
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="card card-custom p-4 text-center" onclick="abrirModal('modalN1')">
+                        <div class="icon-box bg-n1 mx-auto">
+                            <i class="fa-solid fa-network-wired"></i>
+                        </div>
+                        <h5 class="card-title">Plantilla N1</h5>
+                        <p class="small text-muted mb-0">Configuración de nodos de nivel 1</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card card-custom p-4 text-center" onclick="abrirModal('modalMonitoreo')">
+                        <div class="icon-box bg-monitoreo mx-auto">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <h5 class="card-title">Plantilla Monitoreo</h5>
+                        <p class="small text-muted mb-0">Escalamiento Backbone</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card card-custom p-4 text-center" onclick="abrirModal('modalElectrico')">
+                        <div class="icon-box bg-electrico mx-auto">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h5 class="card-title">Plantilla Eléctrico</h5>
+                        <p class="small text-muted mb-0">Voltaje y energía</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card card-custom p-4 text-center" onclick="abrirModal('modalFibra')">
+                        <div class="icon-box bg-fibra mx-auto">
+                            <i class="fa-solid fa-wave-square"></i>
+                        </div>
+                        <h5 class="card-title">Fibra Oscura / OTN</h5>
+                        <p class="small text-muted mb-0">Escalación Torre de Control</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- VISTA: HISTORIAL -->
+        <div id="vista-historial" class="view-section">
+            <div class="page-header">
+                <h1 class="page-title">Historial de Tickets</h1>
+                <p class="page-subtitle">Consulta y gestiona tus tickets creados</p>
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-history mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Fecha</th>
+                                    <th>Ticket</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th>Falla</th>
+                                    <th class="text-end pe-4">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-historial-body">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                        <div id="mensaje-vacio" class="text-center p-5 text-muted d-none">
+                            <i class="fa-solid fa-inbox fa-3x mb-3"></i>
+                            <p>No hay tickets registrados aún.</p>
+                            <button class="btn btn-primary mt-2" onclick="cambiarVista('dashboard')">
+                                Crear mi primer ticket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ================= MODALES ================= -->
+    <!-- Modal Plantilla N1 -->
+    <div class="modal fade" id="modalN1" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-network-wired me-2"></i>Plantilla N1 - Escalación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 border-end pe-md-4" style="max-height: 700px; overflow-y: auto;">
+                            <h6 class="text-primary mb-3">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Llenar Datos
+                                <span class="text-danger small">( * Obligatorio)</span>
+                            </h6>
+                            <form id="formN1">
+                                <div class="p-2 bg-light rounded mb-3 border">
+                                    <div class="section-title-modal mt-0">DATOS CLIENTE</div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">No. Ticket:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1 required"
+                                            id="n1Ticket" placeholder="Ej: INC-00123" required>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold required-field">Fecha
+                                                Creación:</label>
+                                            <input type="datetime-local"
+                                                class="form-control form-control-sm input-n1 required"
+                                                id="n1FechaCreacion" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold required-field">Fecha Descarte
+                                                Eléc.:</label>
+                                            <input type="datetime-local"
+                                                class="form-control form-control-sm input-n1 required"
+                                                id="n1FechaDescarte" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">Razón Social /
+                                            Nombre:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1" id="n1Cliente">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">ID:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1 required"
+                                            id="n1ID" placeholder="ID Cliente/Sitio" required>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Contacto en Sitio:</label>
+                                            <input type="text" class="form-control form-control-sm input-n1"
+                                                id="n1Contacto">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Número de Contacto:</label>
+                                            <input type="text" class="form-control form-control-sm input-n1"
+                                                id="n1Telefono">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Dirección:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1Direccion">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Coordenadas:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1Coordenadas" placeholder="Lat, Long">
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold">Horarios:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1" id="n1Horarios"
+                                            placeholder="Ej: 24/7, Lun-Vie 8-18">
+                                    </div>
+                                </div>
+                                <div class="section-title-modal">DATOS IMPORTANTES</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold required-field">Tipo de Falla:</label>
+                                    <select class="form-select form-select-sm input-n1 required" id="n1TipoFalla"
+                                        required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Caída de Servicio">Caída de Servicio</option>
+                                        <option value="Degradación">Degradación</option>
+                                        <option value="Atenuación">Atenuación</option>
+                                        <option value="Revisión de UM (sin afectación)">Revisión de UM (sin afectación)
+                                        </option>
+                                        <option value="Caída de servicio por atenuación">Caída de servicio por
+                                            atenuación</option>
+                                        <option value="Revisión de CRCs">Revisión de CRCs</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Tipo de Enlace:</label>
+                                    <select class="form-select form-select-sm input-n1" id="n1TipoEnlace">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Capacidad">Capacidad</option>
+                                        <option value="INTERNET">INTERNET</option>
+                                        <option value="MPLS IP-OTN">MPLS IP-OTN</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Nombre de Nodo:</label>
+                                    <input type="text" class="form-control form-control-sm input-n1" id="n1Nodo">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Servicio en Cascada:</label>
+                                        <select class="form-select form-select-sm input-n1" id="n1Cascada">
+                                            <option value="NO">NO</option>
+                                            <option value="SI">SI</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">ID Cascada:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1IDCascada" placeholder="ID dependiente">
+                                    </div>
+                                </div>
+                                <div class="section-title-modal">INFORMACIÓN TÉCNICA</div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Equipo Acceso:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1EquipoAcceso">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Puerto del Acceso:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1PuertoAcceso">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Equipo CPE:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1EquipoCPE">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Puerto del CPE:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1"
+                                            id="n1PuertoCPE">
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Cliente Lineal:</label>
+                                    <select class="form-select form-select-sm input-n1" id="n1ClienteLineal">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="SI - Sin respaldo">SI - Sin respaldo (Lineal)</option>
+                                        <option value="NO - Con respaldo activo">NO - Con respaldo activo</option>
+                                    </select>
+                                </div>
+                                <div class="section-title-modal">DIAGNÓSTICO</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Diagnóstico N1:</label>
+                                    <textarea class="form-control form-control-sm input-n1" id="n1Diagnostico" rows="3"
+                                        placeholder="Ej: cliente ha presentado múltiples flapeos, si hay transceiver..."></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Estado de Puertos:</label>
+                                    <input type="text" class="form-control form-control-sm input-n1"
+                                        id="n1EstadoPuertos">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Potencias de Puertos:</label>
+                                    <input type="text" class="form-control form-control-sm input-n1" id="n1Potencias"
+                                        placeholder="Usar | i dBm">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold tiempo-fuera-label">
+                                        <i class="fa-regular fa-clock me-1"></i>Fecha y Hora de Inicio de Afectación:
+                                    </label>
+                                    <input type="datetime-local" class="form-control form-control-sm input-n1"
+                                        id="n1FechaInicioAfectacion" onchange="calcularTiempoFuera()"
+                                        oninput="calcularTiempoFuera()">
+                                    <small class="text-muted d-block mt-1">Selecciona la fecha y hora cuando inició la
+                                        falla</small>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Tiempo que lleva por fuera:</label>
+                                    <input type="text"
+                                        class="form-control form-control-sm input-n1 tiempo-fuera-display"
+                                        id="n1TiempoFuera" readonly placeholder="Se calcula automáticamente">
+                                    <small class="text-muted" id="n1TiempoFueraDetalle"></small>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. N1:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1" id="n1IngN1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. N2:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1" id="n1IngN2">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. TC:</label>
+                                        <input type="text" class="form-control form-control-sm input-n1" id="n1IngTC"
+                                            value="@">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6 ps-md-4 d-flex flex-column">
+                            <h6 class="text-success mb-3">
+                                <i class="fa-solid fa-eye me-2"></i>Vista Previa en Vivo
+                            </h6>
+                            <div class="preview-box" id="previewTextN1">***ESCALACIÓN TORRE DE CONTROL***
+                                ---------DATOS CLIENTE----------
+                                * No. Ticket:
+                                * Fecha de creación de ticket:
+                                * Fecha de descarte eléctrico:
+                                * Razón Social/Nombre del cliente:
+                                * ID:
+                                * Nombre de contacto en sitio:
+                                * Número de contacto:
+                                * Dirección:
+                                * Coordenadas:
+                                * Horarios:
+                                --------DATOS IMPORTANTES--------
+                                * Tipo de falla:
+                                * Tipo de enlace:
+                                * Nombre de Nodo:
+                                * SERVICIO EN CASCADA:
+                                * ID Cascada:
+                                --------INFORMACIÓN TÉCNICA-------
+                                * Equipo Acceso:
+                                * Puerto del Acceso:
+                                * Equipo CPE:
+                                * Puerto del CPE:
+                                * Cliente lineal:
+                                DIAGNÓSTICO
+                                * Diagnóstico N1:
+                                * Estado de puertos:
+                                * Potencias de puertos:
+                                * Tiempo que lleva por fuera:
+                                * Ingeniero N1:
+                                * Ingeniero N2:
+                                * Ingeniero TC: @</div>
+                            <div class="mt-3 text-end">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="copiarYGuardarN1()">
+                                    <i class="fa-regular fa-copy me-1"></i> Copiar y Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Plantilla Monitoreo (ACTUALIZADO) -->
+    <div class="modal fade" id="modalMonitoreo" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-chart-line me-2"></i>Escalamiento Backbone</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Formulario -->
+                        <div class="col-md-6 border-end pe-md-4" style="max-height: 700px; overflow-y: auto;">
+                            <h6 class="text-success mb-3">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Llenar Datos
+                                <span class="text-danger small">( * Obligatorio)</span>
+                            </h6>
+                            <form id="formMonitoreo">
+                                <!-- DATOS CLIENTE -->
+                                <div class="p-2 bg-light rounded mb-3 border">
+                                    <div class="section-title-modal mt-0">DATOS CLIENTE</div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">No. Ticket:</label>
+                                        <input type="text" class="form-control form-control-sm input-monitoreo required"
+                                            id="monTicket" placeholder="Ej: INC-00123" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">Fecha de creación de
+                                            ticket:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm input-monitoreo required"
+                                            id="monFechaCreacion" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">Fecha de descarte
+                                            eléctrico:</label>
+                                        <input type="datetime-local"
+                                            class="form-control form-control-sm input-monitoreo required"
+                                            id="monFechaDescarte" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Cliente Ufinet:</label>
+                                        <input type="text" class="form-control form-control-sm input-monitoreo"
+                                            id="monCliente" value="UFINET ECUADOR" readonly
+                                            style="background-color: #e9ecef;">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Horario de revisión:</label>
+                                        <select class="form-select form-select-sm input-monitoreo" id="monHorario">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="EN ESTE MOMENTO">EN ESTE MOMENTO</option>
+                                            <option value="URGENTE">URGENTE</option>
+                                            <option value="BAJO IMPACTO">BAJO IMPACTO</option>
+                                            <option value="VM">VM (Ventana de Mantenimiento)</option>
+                                            <option value="Disponibilidad de Cuadrilla">Disponibilidad de Cuadrilla
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- DATOS IMPORTANTES -->
+                                <div class="section-title-modal">DATOS IMPORTANTES</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold required-field">Tipo de falla:</label>
+                                    <select class="form-select form-select-sm input-monitoreo required"
+                                        id="monTipoFalla" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Caída de Servicio">Caída de Servicio</option>
+                                        <option value="Flapeo de Enlace">Flapeo de Enlace</option>
+                                        <option value="Degradación">Degradación</option>
+                                        <option value="Atenuación">Atenuación</option>
+                                        <option value="Caída de puerto">Caída de puerto</option>
+                                        <option value="Caída de servicio por atenuación">Caída de servicio por
+                                            atenuación</option>
+                                        <option value="CRCs">CRCs</option>
+                                        <option value="Revision de Plan de Calidad">(Revision de Plan de Calidad)
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Tipo de enlace:</label>
+                                    <select class="form-select form-select-sm input-monitoreo" id="monTipoEnlace">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="IP">IP</option>
+                                        <option value="Capacidad">Capacidad</option>
+                                        <option value="INTERNET">INTERNET</option>
+                                        <option value="MPLS IP-OTN">MPLS IP-OTN</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Nombre de Nodo:</label>
+                                    <input type="text" class="form-control form-control-sm input-monitoreo"
+                                        id="monNodo">
+                                </div>
+                                <!-- INFORMACIÓN TÉCNICA DINÁMICA -->
+                                <div class="section-title-modal">INFORMACIÓN TÉCNICA</div>
+                                <div id="equiposAccesoContainer">
+                                    <!-- Los equipos se agregan aquí dinámicamente -->
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm w-100 mb-3"
+                                    onclick="agregarEquipoAcceso()">
+                                    <i class="fa-solid fa-plus me-2"></i>Agregar Equipo de Acceso
+                                </button>
+                                <!-- DIAGNÓSTICO -->
+                                <div class="section-title-modal">DIAGNÓSTICO</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Diagnóstico N1 (Causas):</label>
+                                    <textarea class="form-control form-control-sm input-monitoreo textarea-expandible"
+                                        id="monDiagnostico" rows="3"
+                                        placeholder="Describa las causas del problema..."></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Estado de puertos:</label>
+                                    <input type="text" class="form-control form-control-sm input-monitoreo"
+                                        id="monEstadoPuertos">
+                                </div>
+                                <!-- VALIDACIÓN -->
+                                <div class="section-title-modal">VALIDACIÓN</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Validación:</label>
+                                    <textarea class="form-control form-control-sm input-monitoreo textarea-expandible"
+                                        id="monValidacion" rows="3"
+                                        placeholder="Describa la validación realizada..."></textarea>
+                                </div>
+                                <!-- ESCALACIÓN -->
+                                <div class="section-title-modal">ESCALACIÓN</div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. N1:</label>
+                                        <input type="text" class="form-control form-control-sm input-monitoreo"
+                                            id="monIngN1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. N2:</label>
+                                        <input type="text" class="form-control form-control-sm input-monitoreo"
+                                            id="monIngN2">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. TC:</label>
+                                        <input type="text" class="form-control form-control-sm input-monitoreo"
+                                            id="monIngTC" value="@">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- Vista Previa -->
+                        <div class="col-md-6 ps-md-4 d-flex flex-column">
+                            <h6 class="text-success mb-3">
+                                <i class="fa-solid fa-eye me-2"></i>Vista Previa en Vivo
+                            </h6>
+                            <div class="preview-box" id="previewTextMonitoreo">ESCALAMIENTO PARA CASOS DE BACKBONE
+                                **ESCALACIÓN TORRE DE CONTROL**
+                                ---------DATOS CLIENTE----------
+                                * No. Ticket:
+                                * Fecha de creación de ticket:
+                                * Fecha de descarte eléctrico:
+                                * Cliente Ufinet: UFINET ECUADOR
+                                * Horario de revisión:
+                                --------DATOS IMPORTANTES--------
+                                * Tipo de falla:
+                                * Tipo de enlace:
+                                * Nombre de Nodo:
+                                --------INFORMACIÓN TÉCNICA-------
+                                * Equipo Acceso:
+                                * Puerto del Acceso:
+                                ----------DIAGNÓSTICO-------------
+                                * Diagnóstico N1:
+                                * Estado de puertos:
+                                ----------VALIDACIÓN--------------
+                                * Validación:
+                                ==============
+                                Ingeniero N1:
+                                Ingeniero N2:
+                                Ingeniero TC: @</div>
+                            <div class="mt-3 text-end">
+                                <button type="button" class="btn btn-success btn-sm"
+                                    onclick="copiarYGuardarMonitoreo()">
+                                    <i class="fa-regular fa-copy me-1"></i> Copiar y Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Fibra Oscura / OTN -->
+    <div class="modal fade" id="modalFibra" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #6f42c1; color: white;">
+                    <h5 class="modal-title"><i class="fa-solid fa-wave-square me-2"></i>Escalación Torre de Control</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 border-end pe-md-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Llenar Datos
+                                <span class="text-danger small">( * Obligatorio)</span>
+                            </h6>
+                            <form id="formFibra">
+                                <div class="p-2 bg-light rounded mb-3 border">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold required-field">No. Ticket:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra required"
+                                            id="fibraTicket" placeholder="Ej: INC-00123" required>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold required-field">Fecha
+                                                Reporte:</label>
+                                            <input type="datetime-local"
+                                                class="form-control form-control-sm input-fibra required"
+                                                id="fibraFechaReporte" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold required-field">Fecha Descarte
+                                                Eléc.:</label>
+                                            <input type="datetime-local"
+                                                class="form-control form-control-sm input-fibra required"
+                                                id="fibraFechaCreacion" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold required-field">ID:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra required"
+                                            id="fibraID" placeholder="ID Cliente/Sitio" required>
+                                    </div>
+                                </div>
+                                <div class="section-title-modal">DATOS CLIENTE</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Razón Social / Nombre:</label>
+                                    <input type="text" class="form-control form-control-sm input-fibra"
+                                        id="fibraCliente" placeholder="Cliente">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Referencia / Ruta:</label>
+                                    <input type="text" class="form-control form-control-sm input-fibra" id="fibraRuta">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Coordenadas:</label>
+                                    <input type="text" class="form-control form-control-sm input-fibra"
+                                        id="fibraCoordenadas" placeholder="Lat, Long">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Contacto:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra"
+                                            id="fibraContacto">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Teléfono:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra"
+                                            id="fibraTelefono">
+                                    </div>
+                                </div>
+                                <div class="section-title-modal">DATOS IMPORTANTES</div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Tipo de Falla:</label>
+                                    <select class="form-select form-select-sm input-fibra" id="fibraFalla">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="FO Comprometida">FO Comprometida</option>
+                                        <option value="FO Oscura">FO Oscura</option>
+                                        <option value="Corte de Fibra">Corte de Fibra</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Nombre de Nodo:</label>
+                                    <input type="text" class="form-control form-control-sm input-fibra" id="fibraNodo">
+                                </div>
+                                <div class="section-title-modal">ESCALACIÓN</div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. SD:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra" id="ingSD">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. N1:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra" id="ingN1">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label small fw-bold">Ing. TC:</label>
+                                        <input type="text" class="form-control form-control-sm input-fibra" id="ingTC"
+                                            value="@">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6 ps-md-4 d-flex flex-column">
+                            <h6 class="text-success mb-3">
+                                <i class="fa-solid fa-eye me-2"></i>Vista Previa en Vivo
+                            </h6>
+                            <div class="preview-box" id="previewTextFibra">***ESCALACIÓN TORRE DE CONTROL***
+                                ---------DATOS CLIENTE----------
+                                * No. Ticket:
+                                * Fecha de descarte eléctrico:
+                                * Fecha y hora de reporte:
+                                * Razón Social/Nombre del cliente:
+                                * ID:
+                                * Referencia/Ruta:
+                                * Coordenadas:
+                                * Nombre de contacto en sitio:
+                                * Número de contacto:
+                                --------DATOS IMPORTANTES--------
+                                * Tipo de falla:
+                                * Nombre de Nodo:
+                                ==============
+                                Ingeniero SD:
+                                Ingeniero N1:
+                                Ingeniero TC: @</div>
+                            <div class="mt-3 text-end">
+                                <button type="button" class="btn btn-success btn-sm" onclick="copiarYGuardarFibra()">
+                                    <i class="fa-regular fa-copy me-1"></i> Copiar y Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Placeholder Eléctrico -->
+    <div class="modal fade" id="modalElectrico" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Plantilla Eléctrico</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Contenido de Plantilla Eléctrico...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Ver Detalle -->
+    <div class="modal fade" id="modalVerDetalle" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Detalle del Ticket</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="detalleTextoCompleto" style="white-space: pre-wrap; font-family: monospace;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="copiarDesdeModal()">Copiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Inicialización
+        document.getElementById('n1IngTC').value = "@";
+        document.getElementById('ingTC').value = "@";
+        document.getElementById('monIngTC').value = "@";
+        let equipoCounter = 0;
+        actualizarEstadisticas();
+        cargarHistorial();
+
+        // ============================================
+        // FUNCIÓN PARA CALCULAR TIEMPO TRANSCURRIDO
+        // ============================================
+        function calcularTiempoTranscurrido(fechaInicio) {
+            if (!fechaInicio) return '';
+
+            const inicio = new Date(fechaInicio);
+            const ahora = new Date();
+
+            let diffMs = ahora - inicio;
+
+            if (diffMs < 0) return 'Fecha futura';
+
+            const segundosTotales = Math.floor(diffMs / 1000);
+            const minutosTotales = Math.floor(segundosTotales / 60);
+            const horasTotales = Math.floor(minutosTotales / 60);
+            const diasTotales = Math.floor(horasTotales / 24);
+            const semanasTotales = Math.floor(diasTotales / 7);
+            const mesesAprox = Math.floor(diasTotales / 30);
+
+            let resultado = '';
+
+            if (mesesAprox > 0) {
+                resultado += `${mesesAprox} mes(es), `;
+            }
+            if (semanasTotales > 0) {
+                const semanasRestantes = semanasTotales % 4;
+                if (semanasRestantes > 0) {
+                    resultado += `${semanasRestantes} semana(s), `;
+                }
+            }
+            if (diasTotales % 7 > 0) {
+                resultado += `${diasTotales % 7} día(s), `;
+            }
+
+            const horasRestantes = horasTotales % 24;
+            const minutosRestantes = minutosTotales % 60;
+            const segundosRestantes = segundosTotales % 60;
+
+            resultado += `${horasRestantes}h ${minutosRestantes}m ${segundosRestantes}s`;
+
+            return resultado;
+        }
+
+        // Función que se llama cuando cambia la fecha de inicio de afectación
+        function calcularTiempoFuera() {
+            const fechaInicio = document.getElementById('n1FechaInicioAfectacion').value;
+            const tiempoFuera = calcularTiempoTranscurrido(fechaInicio);
+
+            if (tiempoFuera) {
+                document.getElementById('n1TiempoFuera').value = tiempoFuera;
+                document.getElementById('n1TiempoFueraDetalle').innerText = 'Actualizado en tiempo real';
+            } else {
+                document.getElementById('n1TiempoFuera').value = '';
+                document.getElementById('n1TiempoFueraDetalle').innerText = '';
+            }
+
+            actualizarVistaPreviaN1();
+        }
+
+        // Event Listeners
+        const inputsN1 = document.querySelectorAll('.input-n1');
+        inputsN1.forEach(input => {
+            input.addEventListener('input', function () {
+                if (this.id !== 'n1FechaInicioAfectacion' && this.id !== 'n1TiempoFuera') {
+                    actualizarVistaPreviaN1();
+                }
+            });
+        });
+        const inputsFibra = document.querySelectorAll('.input-fibra');
+        inputsFibra.forEach(input => {
+            input.addEventListener('input', actualizarVistaPreviaFibra);
+        });
+        const inputsMonitoreo = document.querySelectorAll('.input-monitoreo');
+        inputsMonitoreo.forEach(input => {
+            input.addEventListener('input', actualizarVistaPreviaMonitoreo);
+        });
+
+        // Navegación
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        function cambiarVista(vista) {
+            document.querySelectorAll('.view-section').forEach(v => {
+                v.classList.remove('active');
+            });
+            document.querySelectorAll('.sidebar-menu a').forEach(a => {
+                a.classList.remove('active');
+            });
+            document.getElementById('vista-' + vista).classList.add('active');
+            document.getElementById('menu-' + vista).classList.add('active');
+            if (vista === 'dashboard') {
+                actualizarEstadisticas();
+            }
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        }
+        function abrirModal(idModal) {
+            const modal = new bootstrap.Modal(document.getElementById(idModal));
+            modal.show();
+            // Si es el modal de monitoreo, agregar un equipo por defecto
+            if (idModal === 'modalMonitoreo' && equipoCounter === 0) {
+                setTimeout(() => agregarEquipoAcceso(), 100);
+            }
+        }
+
+        // ============================================
+        // FUNCIONES DINÁMICAS PARA MONITOREO
+        // ============================================
+        function agregarEquipoAcceso() {
+            equipoCounter++;
+            const container = document.getElementById('equiposAccesoContainer');
+            const equipoDiv = document.createElement('div');
+            equipoDiv.className = 'equipo-acceso-group';
+            equipoDiv.id = `equipo-${equipoCounter}`;
+            equipoDiv.innerHTML = `
+<button type="button" class="btn btn-danger btn-sm btn-remove-equipo" onclick="removerEquipoAcceso(${equipoCounter})">
+<i class="fa-solid fa-times"></i>
+</button>
+<div class="mb-2">
+<label class="form-label small fw-bold">Equipo Acceso #${equipoCounter}:</label>
+<input type="text" class="form-control form-control-sm input-monitoreo equipo-acceso"
+id="monEquipoAcceso${equipoCounter}" placeholder="Nombre del equipo">
+</div>
+<div class="mb-0">
+<label class="form-label small fw-bold">Puerto #${equipoCounter}:</label>
+<input type="text" class="form-control form-control-sm input-monitoreo equipo-puerto"
+id="monPuertoAcceso${equipoCounter}" placeholder="Puerto">
+</div>
+`;
+            container.appendChild(equipoDiv);
+            // Agregar event listeners a los nuevos inputs
+            const nuevosInputs = equipoDiv.querySelectorAll('.input-monitoreo');
+            nuevosInputs.forEach(input => {
+                input.addEventListener('input', actualizarVistaPreviaMonitoreo);
+            });
+            actualizarVistaPreviaMonitoreo();
+        }
+        function removerEquipoAcceso(id) {
+            const equipo = document.getElementById(`equipo-${id}`);
+            if (equipo) {
+                equipo.remove();
+                actualizarVistaPreviaMonitoreo();
+            }
+        }
+
+        // ============================================
+        // PLANTILLA N1
+        // ============================================
+        function actualizarVistaPreviaN1() {
+            const ticket = document.getElementById('n1Ticket').value;
+            let fechaCreacion = document.getElementById('n1FechaCreacion').value;
+            let fechaDescarte = document.getElementById('n1FechaDescarte').value;
+            let fechaInicioAfectacion = document.getElementById('n1FechaInicioAfectacion').value;
+
+            // Calcular tiempo transcurrido si hay fecha de inicio
+            let tiempoFuera = '';
+            if (fechaInicioAfectacion) {
+                tiempoFuera = calcularTiempoTranscurrido(fechaInicioAfectacion);
+                document.getElementById('n1TiempoFuera').value = tiempoFuera;
+            }
+
+            if (fechaCreacion) fechaCreacion = fechaCreacion.replace('T', ' ') + " (GMT-5)";
+            if (fechaDescarte) fechaDescarte = fechaDescarte.replace('T', ' ') + " (GMT-5)";
+
+            const cliente = document.getElementById('n1Cliente').value;
+            const id = document.getElementById('n1ID').value;
+            const contacto = document.getElementById('n1Contacto').value;
+            const telefono = document.getElementById('n1Telefono').value;
+            const direccion = document.getElementById('n1Direccion').value;
+            const coordenadas = document.getElementById('n1Coordenadas').value;
+            const horarios = document.getElementById('n1Horarios').value;
+            const tipoFalla = document.getElementById('n1TipoFalla').value;
+            const tipoEnlace = document.getElementById('n1TipoEnlace').value;
+            const nodo = document.getElementById('n1Nodo').value;
+            const cascada = document.getElementById('n1Cascada').value;
+            const idCascada = document.getElementById('n1IDCascada').value;
+            const equipoAcceso = document.getElementById('n1EquipoAcceso').value;
+            const puertoAcceso = document.getElementById('n1PuertoAcceso').value;
+            const equipoCPE = document.getElementById('n1EquipoCPE').value;
+            const puertoCPE = document.getElementById('n1PuertoCPE').value;
+            const clienteLineal = document.getElementById('n1ClienteLineal').value;
+            const diagnostico = document.getElementById('n1Diagnostico').value;
+            const estadoPuertos = document.getElementById('n1EstadoPuertos').value;
+            const potencias = document.getElementById('n1Potencias').value;
+            const ingN1 = document.getElementById('n1IngN1').value;
+            const ingN2 = document.getElementById('n1IngN2').value;
+            const ingTC = document.getElementById('n1IngTC').value;
+
+            const texto = `***ESCALACIÓN TORRE DE CONTROL***
+---------DATOS CLIENTE----------
+* No. Ticket: ${ticket}
+* Fecha de creación de ticket: ${fechaCreacion}
+* Fecha de descarte eléctrico: ${fechaDescarte}
+* Razón Social/Nombre del cliente: ${cliente}
+* ID: ${id}
+* Nombre de contacto en sitio: ${contacto}
+* Número de contacto: ${telefono}
+* Dirección: ${direccion}
+* Coordenadas: ${coordenadas}
+* Horarios: ${horarios}
+--------DATOS IMPORTANTES--------
+* Tipo de falla: ${tipoFalla}
+* Tipo de enlace: ${tipoEnlace}
+* Nombre de Nodo: ${nodo}
+* SERVICIO EN CASCADA: ${cascada}
+* ID Cascada: ${idCascada}
+--------INFORMACIÓN TÉCNICA-------
+* Equipo Acceso: ${equipoAcceso}
+* Puerto del Acceso: ${puertoAcceso}
+* Equipo CPE: ${equipoCPE}
+* Puerto del CPE: ${puertoCPE}
+* Cliente lineal: ${clienteLineal}
+DIAGNÓSTICO
+* Diagnóstico N1: ${diagnostico}
+* Estado de puertos: ${estadoPuertos}
+* Potencias de puertos: ${potencias}
+* Tiempo que lleva por fuera: ${tiempoFuera}
+* Ingeniero N1: ${ingN1}
+* Ingeniero N2: ${ingN2}
+* Ingeniero TC: ${ingTC}`;
+
+            document.getElementById('previewTextN1').innerText = texto;
+        }
+
+        function copiarYGuardarN1() {
+            const ticket = document.getElementById('n1Ticket').value;
+            const id = document.getElementById('n1ID').value;
+            const fechaCreacion = document.getElementById('n1FechaCreacion').value;
+            const fechaDescarte = document.getElementById('n1FechaDescarte').value;
+            const cliente = document.getElementById('n1Cliente').value || "Sin nombre";
+            const tipoFalla = document.getElementById('n1TipoFalla').value || "Sin especificar";
+            if (!ticket || !id || !fechaCreacion || !fechaDescarte) {
+                alert("⚠️ Completa los campos obligatorios (Ticket, ID y Fechas).");
+                return;
+            }
+            const texto = document.getElementById('previewTextN1').innerText;
+            navigator.clipboard.writeText(texto).then(() => {
+                const nuevoTicket = {
+                    id: Date.now(),
+                    fechaRegistro: new Date().toLocaleString(),
+                    numeroTicket: ticket,
+                    cliente: cliente,
+                    tipo: "N1",
+                    falla: tipoFalla,
+                    contenidoCompleto: texto
+                };
+                let historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+                historial.unshift(nuevoTicket);
+                localStorage.setItem('misTickets', JSON.stringify(historial));
+                alert('✅ Ticket N1 copiado y guardado.');
+                actualizarEstadisticas();
+            }).catch(err => {
+                console.error('Error: ', err);
+            });
+        }
+
+        // ============================================
+        // PLANTILLA MONITOREO
+        // ============================================
+        function actualizarVistaPreviaMonitoreo() {
+            const ticket = document.getElementById('monTicket').value;
+            let fechaCreacion = document.getElementById('monFechaCreacion').value;
+            let fechaDescarte = document.getElementById('monFechaDescarte').value;
+            if (fechaCreacion) fechaCreacion = fechaCreacion.replace('T', ' ') + " (GMT-5)";
+            if (fechaDescarte) fechaDescarte = fechaDescarte.replace('T', ' ') + " (GMT-5)";
+            const cliente = document.getElementById('monCliente').value || "UFINET ECUADOR";
+            const horario = document.getElementById('monHorario').value;
+            const tipoFalla = document.getElementById('monTipoFalla').value;
+            const tipoEnlace = document.getElementById('monTipoEnlace').value;
+            const nodo = document.getElementById('monNodo').value;
+            const diagnostico = document.getElementById('monDiagnostico').value;
+            const estadoPuertos = document.getElementById('monEstadoPuertos').value;
+            const validacion = document.getElementById('monValidacion').value;
+            const ingN1 = document.getElementById('monIngN1').value;
+            const ingN2 = document.getElementById('monIngN2').value;
+            const ingTC = document.getElementById('monIngTC').value;
+
+            // Obtener todos los equipos de acceso
+            const equiposAcceso = [];
+            const equiposInputs = document.querySelectorAll('.equipo-acceso');
+            const puertosInputs = document.querySelectorAll('.equipo-puerto');
+            equiposInputs.forEach((input, index) => {
+                const equipo = input.value;
+                const puerto = puertosInputs[index] ? puertosInputs[index].value : '';
+                if (equipo || puerto) {
+                    equiposAcceso.push({ equipo, puerto });
+                }
+            });
+
+            // Construir sección de equipos
+            let equiposTexto = '';
+            if (equiposAcceso.length === 0) {
+                equiposTexto = '* Equipo Acceso:\n* Puerto del Acceso: ';
+            } else {
+                equiposAcceso.forEach((eq, idx) => {
+                    equiposTexto += `* Equipo Acceso ${idx + 1}: ${eq.equipo}\n* Puerto del Acceso ${idx + 1}: ${eq.puerto}\n`;
+                });
+                equiposTexto = equiposTexto.trim();
+            }
+
+            const texto = `ESCALAMIENTO PARA CASOS DE BACKBONE
+**ESCALACIÓN TORRE DE CONTROL**
+---------DATOS CLIENTE----------
+* No. Ticket: ${ticket}
+* Fecha de creación de ticket: ${fechaCreacion}
+* Fecha de descarte eléctrico: ${fechaDescarte}
+* Cliente Ufinet: ${cliente}
+* Horario de revisión: ${horario}
+--------DATOS IMPORTANTES--------
+* Tipo de falla: ${tipoFalla}
+* Tipo de enlace: ${tipoEnlace}
+* Nombre de Nodo: ${nodo}
+--------INFORMACIÓN TÉCNICA-------
+${equiposTexto}
+----------DIAGNÓSTICO-------------
+* Diagnóstico N1: ${diagnostico}
+* Estado de puertos: ${estadoPuertos}
+----------VALIDACIÓN--------------
+* Validación: ${validacion}
+==============
+Ingeniero N1: ${ingN1}
+Ingeniero N2: ${ingN2}
+Ingeniero TC: ${ingTC}`;
+
+            document.getElementById('previewTextMonitoreo').innerText = texto;
+        }
+
+        function copiarYGuardarMonitoreo() {
+            const ticket = document.getElementById('monTicket').value;
+            const fechaCreacion = document.getElementById('monFechaCreacion').value;
+            const fechaDescarte = document.getElementById('monFechaDescarte').value;
+            const cliente = document.getElementById('monCliente').value || "UFINET ECUADOR";
+            const tipoFalla = document.getElementById('monTipoFalla').value || "Sin especificar";
+            if (!ticket || !fechaCreacion || !fechaDescarte) {
+                alert("⚠️ Completa los campos obligatorios (Ticket y Fechas).");
+                return;
+            }
+            const texto = document.getElementById('previewTextMonitoreo').innerText;
+            navigator.clipboard.writeText(texto).then(() => {
+                const nuevoTicket = {
+                    id: Date.now(),
+                    fechaRegistro: new Date().toLocaleString(),
+                    numeroTicket: ticket,
+                    cliente: cliente,
+                    tipo: "Monitoreo",
+                    falla: tipoFalla,
+                    contenidoCompleto: texto
+                };
+                let historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+                historial.unshift(nuevoTicket);
+                localStorage.setItem('misTickets', JSON.stringify(historial));
+                alert('✅ Ticket Monitoreo copiado y guardado.');
+                actualizarEstadisticas();
+            }).catch(err => {
+                console.error('Error: ', err);
+            });
+        }
+
+        // ============================================
+        // PLANTILLA FIBRA
+        // ============================================
+        function actualizarVistaPreviaFibra() {
+            const ticket = document.getElementById('fibraTicket').value;
+            let fechaCreacion = document.getElementById('fibraFechaCreacion').value;
+            let fechaReporte = document.getElementById('fibraFechaReporte').value;
+            if (fechaCreacion) fechaCreacion = fechaCreacion.replace('T', ' ') + " (GMT-5)";
+            if (fechaReporte) fechaReporte = fechaReporte.replace('T', ' ') + " (GMT-5)";
+            const cliente = document.getElementById('fibraCliente').value;
+            const id = document.getElementById('fibraID').value;
+            const ruta = document.getElementById('fibraRuta').value;
+            const coordenadas = document.getElementById('fibraCoordenadas').value;
+            const contacto = document.getElementById('fibraContacto').value;
+            const telefono = document.getElementById('fibraTelefono').value;
+            const falla = document.getElementById('fibraFalla').value;
+            const nodo = document.getElementById('fibraNodo').value;
+            const ingSD = document.getElementById('ingSD').value;
+            const ingN1 = document.getElementById('ingN1').value;
+            const ingTC = document.getElementById('ingTC').value;
+
+            const texto = `***ESCALACIÓN TORRE DE CONTROL***
+---------DATOS CLIENTE----------
+* No. Ticket: ${ticket}
+* Fecha de descarte eléctrico: ${fechaCreacion}
+* Fecha y hora de reporte: ${fechaReporte}
+* Razón Social/Nombre del cliente: ${cliente}
+* ID: ${id}
+* Referencia/Ruta: ${ruta}
+* Coordenadas: ${coordenadas}
+* Nombre de contacto en sitio: ${contacto}
+* Número de contacto: ${telefono}
+--------DATOS IMPORTANTES--------
+* Tipo de falla: ${falla}
+* Nombre de Nodo: ${nodo}
+==============
+Ingeniero SD: ${ingSD}
+Ingeniero N1: ${ingN1}
+Ingeniero TC: ${ingTC}`;
+
+            document.getElementById('previewTextFibra').innerText = texto;
+        }
+
+        function copiarYGuardarFibra() {
+            const ticket = document.getElementById('fibraTicket').value;
+            const id = document.getElementById('fibraID').value;
+            const fechaCreacion = document.getElementById('fibraFechaCreacion').value;
+            const fechaReporte = document.getElementById('fibraFechaReporte').value;
+            const cliente = document.getElementById('fibraCliente').value || "Sin nombre";
+            const falla = document.getElementById('fibraFalla').value || "Sin especificar";
+            if (!ticket || !id || !fechaCreacion || !fechaReporte) {
+                alert("⚠️ Completa los campos obligatorios (Ticket, ID y Fechas).");
+                return;
+            }
+            const texto = document.getElementById('previewTextFibra').innerText;
+            navigator.clipboard.writeText(texto).then(() => {
+                const nuevoTicket = {
+                    id: Date.now(),
+                    fechaRegistro: new Date().toLocaleString(),
+                    numeroTicket: ticket,
+                    cliente: cliente,
+                    tipo: "Fibra/OTN",
+                    falla: falla,
+                    contenidoCompleto: texto
+                };
+                let historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+                historial.unshift(nuevoTicket);
+                localStorage.setItem('misTickets', JSON.stringify(historial));
+                alert('✅ Ticket Fibra copiado y guardado.');
+                actualizarEstadisticas();
+            }).catch(err => {
+                console.error('Error: ', err);
+            });
+        }
+
+        // Estadísticas
+        function actualizarEstadisticas() {
+            const historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+            const hoy = new Date().toLocaleDateString();
+            const total = historial.length;
+            const hoyCount = historial.filter(t => t.fechaRegistro.includes(hoy)).length;
+            const fibraCount = historial.filter(t => t.tipo === "Fibra/OTN").length;
+            const n1Count = historial.filter(t => t.tipo === "N1").length;
+            const monitoreoCount = historial.filter(t => t.tipo === "Monitoreo").length;
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-hoy').innerText = hoyCount;
+            document.getElementById('stat-fibra').innerText = fibraCount;
+            document.getElementById('stat-n1').innerText = n1Count;
+            document.getElementById('badge-historial').innerText = total;
+        }
+
+        // Cargar Historial
+        function cargarHistorial() {
+            const tbody = document.getElementById('tabla-historial-body');
+            const mensajeVacio = document.getElementById('mensaje-vacio');
+            const historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+            tbody.innerHTML = '';
+            if (historial.length === 0) {
+                mensajeVacio.classList.remove('d-none');
+            } else {
+                mensajeVacio.classList.add('d-none');
+                historial.forEach(t => {
+                    let badgeColor = "secondary";
+                    if (t.tipo === "N1") badgeColor = "primary";
+                    else if (t.tipo === "Fibra/OTN") badgeColor = "info";
+                    else if (t.tipo === "Monitoreo") badgeColor = "success";
+                    const row = `
+<tr>
+<td class="ps-4 small text-muted">${t.fechaRegistro}</td>
+<td><span class="badge bg-${badgeColor} badge-ticket">${t.numeroTicket}</span></td>
+<td class="fw-bold">${t.cliente}</td>
+<td><span class="badge bg-${badgeColor} text-dark">${t.tipo}</span></td>
+<td><small class="text-muted">${t.falla}</small></td>
+<td class="text-end pe-4">
+<button class="btn btn-sm btn-outline-primary me-1" onclick='verDetalle(${JSON.stringify(t).replace(/'/g, "&#39;")})'>
+<i class="fa-solid fa-eye"></i>
+</button>
+<button class="btn btn-sm btn-outline-success" onclick='copiarTicket(${JSON.stringify(t).replace(/'/g, "&#39;")})'>
+<i class="fa-solid fa-copy"></i>
+</button>
+</td>
+</tr>
+`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+
+        let textoActualParaCopiar = "";
+        function verDetalle(ticketObj) {
+            textoActualParaCopiar = ticketObj.contenidoCompleto;
+            document.getElementById('detalleTextoCompleto').innerText = ticketObj.contenidoCompleto;
+            const modal = new bootstrap.Modal(document.getElementById('modalVerDetalle'));
+            modal.show();
+        }
+        function copiarDesdeModal() {
+            navigator.clipboard.writeText(textoActualParaCopiar).then(() => {
+                alert("¡Copiado!");
+            });
+        }
+        function copiarTicket(ticketObj) {
+            navigator.clipboard.writeText(ticketObj.contenidoCompleto).then(() => {
+                alert("¡Ticket copiado al portapapeles!");
+            });
+        }
+        function borrarHistorial() {
+            if (confirm("¿Estás seguro de borrar todo el historial?")) {
+                localStorage.removeItem('misTickets');
+                cargarHistorial();
+                actualizarEstadisticas();
+                alert("Historial eliminado.");
+            }
+        }
+        function exportarDatos() {
+            const historial = JSON.parse(localStorage.getItem('misTickets')) || [];
+            const dataStr = JSON.stringify(historial, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'tickets_backup_' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            alert("Datos exportados correctamente.");
+        }
+
+        // ============================================
+        // ACTUALIZACIÓN EN TIEMPO REAL DEL TIEMPO
+        // ============================================
+        setInterval(() => {
+            const modalN1 = document.getElementById('modalN1');
+            if (modalN1 && modalN1.classList.contains('show')) {
+                const fechaInicio = document.getElementById('n1FechaInicioAfectacion').value;
+                if (fechaInicio) {
+                    calcularTiempoFuera();
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+
+</html>

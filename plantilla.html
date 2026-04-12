@@ -1168,9 +1168,31 @@
                             </form>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="preview-box" id="previewElectrico"></div>
-                            <button class="btn btn-warning btn-sm mt-2" onclick="copiarElectrico()">Copiar</button>
+                        <div class="col-md-6 ps-md-4 d-flex flex-column">
+                            <h6 class="text-warning mb-3">
+                                <i class="fa-solid fa-eye me-2"></i>Vista Previa en Vivo
+                            </h6>
+                            <div class="preview-box" id="previewElectrico">
+                                *ESCALACIÓN TORRE DE CONTROL*
+                                Ticket:
+                                Fecha:
+                                Tipo:
+                                Nodo:
+                                UPS principal:
+                                UPS adicional:
+                                Rectificadores:
+
+                                Observaciones:
+
+                                Ingeniero N1:
+                                Ingeniero TC: @
+                            </div>
+                            <div class="mt-3 text-end">
+                                <button type="button" class="btn btn-warning btn-sm" onclick="copiarElectrico()">
+                                    <i class="fa-regular fa-copy me-1"></i> Copiar y Guardar
+                                </button>
+                            </div>
+
                         </div>
 
                     </div>
@@ -1313,6 +1335,11 @@
                 setTimeout(() => agregarEquipoAcceso(), 100);
             }
         }
+        const modalElectrico = document.getElementById('modalElectrico');
+
+        modalElectrico.addEventListener('shown.bs.modal', function () {
+            actualizarElectrico();
+        });
 
         // ============================================
         // FUNCIONES DINÁMICAS PARA MONITOREO

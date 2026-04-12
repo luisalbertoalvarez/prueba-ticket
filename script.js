@@ -6,9 +6,13 @@ let avancesArray = [];
 let hayNuevosAvances = false;
 let temaActual = localStorage.getItem('temaPreferido') || 'light';
 let modalConfirmCallback = null;
-// Variables para campos dinámicos Hostname/Puertos
 let hostnamePuertoPairs = [];
 let pairCounter = 0;
+let etrInterval = null;
+let etrStartTime = null;
+let etrTotalMinutes = 0;
+let currentInputId = null;
+
 const tiempoProgresoEl = document.getElementById('tiempoProgreso');
 const tiempoSuspendidoEl = document.getElementById('tiempoSuspendido');
 const tiempoTotalEl = document.getElementById('tiempoTotal');
@@ -30,6 +34,108 @@ const resueltoIndicatorEl = document.getElementById('resueltoIndicator');
 const resolveBtnEl = document.getElementById('resolveBtn');
 const reopenBtnEl = document.getElementById('reopenBtn');
 let estadoActual = 0;
+
+// ============================================
+// SISTEMA DE NOTIFICACIONES SLA (CORREGIDO)
+// ============================================
+function solicitarPermisosNotificacion() {
+    if (!("Notification" in window)) {
+        console.log("Este navegador no soporta notificaciones de escritorio");
+        return;
+    }
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                console.log("✅ Permiso de notificaciones concedido.");
+            }
+        });
+    }
+}
+
+function mostrarNotificacionAlarma(ticketId, tipo) {
+    if (Notification.permission === "granted") {
+        const configuracion = {
+            "4h30m": {
+                titulo: "⚠️ ALERTA SLA: 4 Horas 30 Minutos",
+                cuerpo: `El ticket ${ticketId} ha superado las 4h 30m de tiempo activo. ¡Revisar urgente!`,
+                icono: "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=FF6B6B"
+            },
+            "5h30m": {
+                titulo: "🚨 ALERTA CRÍTICA SLA: 5 Horas 30 Minutos",
+                cuerpo: `El ticket ${ticketId} ha superado las 5h 30m de tiempo activo. ¡ACCIÓN INMEDIATA REQUERIDA!`,
+                icono: "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=DC2626"
+            }
+        };
+        
+        const config = configuracion[tipo] || configuracion["4h30m"];
+        
+        const notification = new Notification(config.titulo, {
+            body: config.cuerpo,
+            icon: config.icono,
+            badge: config.icono,
+            tag: `alerta-sla-${tipo}-${ticketId}`,
+            requireInteraction: true,
+            silent: false
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            this.close();
+        };
+    }
+}
+
+function verificarAlertaSLA(tiempoActivoMs, ticketId) {
+    if (!ticketId) return;
+    
+    const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+    const ticketActual = tickets.find(t => t.id === ticketId);
+    
+    const limite4h30m = 16200000; // 4h 30m en ms
+    const limite5h30m = 19800000; // 5h 30m en ms
+    
+    // Alerta de 4h 30m
+    if (tiempoActivoMs >= limite4h30m && (!ticketActual || !ticketActual.alerta4h30mDisparada)) {
+        console.log(`⚠️ ALERTA: Ticket ${ticketId} superó 4h 30m.`);
+        mostrarNotificacionAlarma(ticketId, "4h30m");
+        mostrarToast(`⚠️ ALERTA SLA: ${ticketId} ha superado 4h 30m`, 'warning');
+        
+        if (ticketActual) {
+            ticketActual.alerta4h30mDisparada = true;
+            localStorage.setItem('tickets', JSON.stringify(tickets));
+        }
+    }
+    
+    // Alerta de 5h 30m
+    if (tiempoActivoMs >= limite5h30m && (!ticketActual || !ticketActual.alerta5h30mDisparada)) {
+        console.log(`🚨 ALERTA CRÍTICA: Ticket ${ticketId} superó 5h 30m.`);
+        mostrarNotificacionAlarma(ticketId, "5h30m");
+        mostrarToast(`🚨 ALERTA CRÍTICA: ${ticketId} ha superado 5h 30m`, 'error');
+        
+        if (ticketActual) {
+            ticketActual.alerta5h30mDisparada = true;
+            localStorage.setItem('tickets', JSON.stringify(tickets));
+        }
+        
+        activarEfectoAlertaCritica();
+    }
+}
+
+function activarEfectoAlertaCritica() {
+    const container = document.querySelector('.container-grid');
+    if (container) {
+        container.style.animation = 'pulse-alert 1s ease-in-out 3';
+        setTimeout(() => { container.style.animation = ''; }, 3000);
+    }
+    const tiempoTotalEl = document.getElementById('tiempoTotal');
+    if (tiempoTotalEl) {
+        tiempoTotalEl.classList.add('critical-alert');
+        setTimeout(() => { tiempoTotalEl.classList.remove('critical-alert'); }, 30000);
+    }
+}
+// ============================================
+// FIN DEL SISTEMA DE NOTIFICACIONES
+// ============================================
 
 function configurarTema() {
     htmlElement.setAttribute('data-bs-theme', temaActual);
@@ -60,7 +166,61 @@ function actualizarIconoTema() {
 }
 
 configurarTema();
+solicitarPermisosNotificacion();
 themeToggleBtn.addEventListener('click', alternarTema);
+
+function abrirDatePicker(inputId) {
+    currentInputId = inputId;
+    const modal = document.getElementById('datePickerModal');
+    const dateInput = document.getElementById('pickerDate');
+    const timeInput = document.getElementById('pickerTime');
+    const inputEl = document.getElementById(inputId);
+    if (inputEl && inputEl.value.trim()) {
+        const [datePart, timePart] = inputEl.value.trim().split(' ');
+        if (datePart) dateInput.value = datePart;
+        if (timePart) timeInput.value = timePart;
+    } else {
+        const ahora = new Date();
+        const year = ahora.getFullYear();
+        const month = String(ahora.getMonth() + 1).padStart(2, '0');
+        const day = String(ahora.getDate()).padStart(2, '0');
+        const hours = String(ahora.getHours()).padStart(2, '0');
+        const minutes = String(ahora.getMinutes()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
+        timeInput.value = `${hours}:${minutes}`;
+    }
+    modal.style.display = 'flex';
+}
+
+function cerrarDatePicker() {
+    const modal = document.getElementById('datePickerModal');
+    modal.style.display = 'none';
+    currentInputId = null;
+}
+
+function confirmarDatePicker() {
+    if (!currentInputId) return;
+    const dateInput = document.getElementById('pickerDate').value;
+    const timeInput = document.getElementById('pickerTime').value;
+    if (!dateInput || !timeInput) {
+        mostrarToast('Seleccione fecha y hora', 'error');
+        return;
+    }
+
+    const fechaCompleta = `${dateInput} ${timeInput}`;
+    const inputEl = document.getElementById(currentInputId);
+    if (inputEl) {
+        inputEl.value = fechaCompleta;
+        validarFormatoFecha(currentInputId);
+        if (currentInputId === 'fechaAfectacion') {
+            actualizarCronometro();
+            actualizarPlantilla();
+        }
+        actualizarPlantilla();
+        mostrarToast(`Fecha establecida: ${fechaCompleta}`, 'success');
+    }
+    cerrarDatePicker();
+}
 
 function insertarFechaActual(inputId) {
     const ahora = new Date();
@@ -86,6 +246,7 @@ function validarFormatoFecha(inputId) {
     const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d$/;
     input.classList.remove('input-format-error');
     if (!valor) return true;
+
     if (!regex.test(valor)) {
         input.classList.add('input-format-error');
         mostrarToast(`Formato inválido en ${inputId}. Use: AAAA-MM-DD HH:mm (ej: 2026-02-03 14:30)`, 'error');
@@ -106,6 +267,7 @@ function obtenerFechaAfectacion() {
     const [hours, minutes] = timePart.split(':').map(Number);
     const fechaUTC = Date.UTC(year, month - 1, day, hours + 5, minutes);
     const fecha = new Date(fechaUTC);
+
     if (isNaN(fecha.getTime())) {
         console.error('Fecha inválida:', fechaInput.value);
         return null;
@@ -113,24 +275,105 @@ function obtenerFechaAfectacion() {
     return fecha;
 }
 
+function iniciarContadorETR() {
+    if (etrInterval) {
+        clearInterval(etrInterval);
+        etrInterval = null;
+    }
+    const noEtrCheck = document.getElementById('noEtrCheck');
+    const etrHoras = parseInt(document.getElementById('etrHoras').value) || 0;
+    const etrMinutos = parseInt(document.getElementById('etrMinutos').value) || 0;
+    const container = document.getElementById('etrContadorContainer');
+
+    if (noEtrCheck.checked || (etrHoras === 0 && etrMinutos === 0)) {
+        if (container) container.style.display = 'none';
+        return;
+    }
+
+    if (container) container.style.display = 'block';
+    etrTotalMinutes = (etrHoras * 60) + etrMinutos;
+    etrStartTime = Date.now();
+    actualizarContadorETR();
+    etrInterval = setInterval(actualizarContadorETR, 1000);
+    actualizarPlantilla();
+    if (ticketActivoId) {
+        guardarTicket();
+    }
+}
+
+function actualizarContadorETR() {
+    if (!etrStartTime || etrTotalMinutes <= 0) return;
+    const container = document.getElementById('etrContadorContainer');
+    const tiempoEl = document.getElementById('etrContadorTiempo');
+    const progresoEl = document.getElementById('etrContadorProgreso');
+    const estadoEl = document.getElementById('etrContadorEstado');
+
+    if (!container || !tiempoEl || !progresoEl || !estadoEl) return;
+
+    const elapsedMs = Date.now() - etrStartTime;
+    const elapsedMinutes = elapsedMs / (1000 * 60);
+    const remainingMinutes = Math.max(0, etrTotalMinutes - elapsedMinutes);
+    const totalSeconds = Math.floor(remainingMinutes * 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const tiempoFormateado = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    tiempoEl.textContent = tiempoFormateado;
+    const porcentaje = Math.max(0, Math.min(100, (remainingMinutes / etrTotalMinutes) * 100));
+    progresoEl.style.width = `${porcentaje}%`;
+
+    if (remainingMinutes <= 0) {
+        tiempoEl.classList.add('expired');
+        tiempoEl.classList.remove('warning');
+        progresoEl.classList.add('expired');
+        progresoEl.classList.remove('warning');
+        estadoEl.textContent = '⚠️ ETR Vencido';
+        estadoEl.classList.add('expired');
+        estadoEl.classList.remove('warning');
+    } else if (porcentaje <= 25) {
+        tiempoEl.classList.add('warning');
+        tiempoEl.classList.remove('expired');
+        progresoEl.classList.add('warning');
+        progresoEl.classList.remove('expired');
+        estadoEl.textContent = '⚠️ Poco tiempo restante';
+        estadoEl.classList.add('warning');
+        estadoEl.classList.remove('expired');
+    } else {
+        tiempoEl.classList.remove('warning', 'expired');
+        progresoEl.classList.remove('warning', 'expired');
+        estadoEl.classList.remove('warning', 'expired');
+        estadoEl.textContent = '✓ En tiempo';
+    }
+    actualizarPlantilla();
+}
+
+function detenerContadorETR() {
+    if (etrInterval) {
+        clearInterval(etrInterval);
+        etrInterval = null;
+    }
+}
+
 function toggleNoEtr() {
     const noEtrCheck = document.getElementById('noEtrCheck');
     const etrInputs = document.getElementById('etrInputs');
     const etrHoras = document.getElementById('etrHoras');
     const etrMinutos = document.getElementById('etrMinutos');
+    const etrContadorContainer = document.getElementById('etrContadorContainer');
     if (noEtrCheck.checked) {
-        etrInputs.style.display = 'none';
+        if (etrInputs) etrInputs.style.display = 'none';
+        if (etrContadorContainer) etrContadorContainer.style.display = 'none';
         etrHoras.value = '0';
         etrMinutos.value = '0';
+        detenerContadorETR();
     } else {
-        etrInputs.style.display = 'block';
+        if (etrInputs) etrInputs.style.display = 'block';
+        iniciarContadorETR();
     }
     actualizarPlantilla();
 }
 
-// ============================================
-// FUNCIONES PARA CAMPOS DINÁMICOS HOSTNAME/PUERTOS
-// ============================================
 function inicializarHostnamePuertos() {
     const container = document.getElementById('hostnamePuertosContainer');
     if (!container) return;
@@ -153,7 +396,19 @@ function renderizarHostnamePuertos() {
     if (!container) return;
     container.innerHTML = '';
     hostnamePuertoPairs.forEach((pair, index) => {
-        const pairHTML = `<div class="hostname-puerto-pair" data-pair-id="${pair.id}"> <button type="button" class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ''}> <i class="bi bi-trash"></i> </button> <div class="hostname-puerto-label"> <span class="pair-number-badge">#${index + 1}</span> <span>Equipo afectado</span> </div> <div class="row g-2"> <div class="col-md-6"> <label class="form-label small">Hostname</label> <input type="text" class="form-control form-control-sm" id="hostname-${pair.id}" placeholder="Ej: RTR-CORE-01" value="${pair.hostname}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)"> </div> <div class="col-md-6"> <label class="form-label small">Puertos</label> <input type="text" class="form-control form-control-sm" id="puertos-${pair.id}" placeholder="Ej: 1/0/1, 1/0/2" value="${pair.puertos}" onchange="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)"> </div> </div> </div>`;
+        const pairHTML = `
+             <div class="hostname-puerto-pair" data-id="${pair.id}">
+                 <button type="button" class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ''}>
+                     <i class="bi bi-x"></i>
+                 </button>
+                 <div class="hostname-puerto-label">
+                     <span class="pair-number-badge">#${index + 1}</span> Equipo afectado
+                 </div>
+                 <div class="d-flex gap-2">
+                     <input type="text" class="form-control form-control-sm" placeholder="Hostname" value="${pair.hostname}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)">
+                     <input type="text" class="form-control form-control-sm" placeholder="Puertos" value="${pair.puertos}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)">
+                 </div>
+             </div>`;
         container.innerHTML += pairHTML;
     });
 }
@@ -216,9 +471,6 @@ function obtenerHostnamePuertosParaGuardar() {
         id: pair.id, numero: pair.numero, hostname: pair.hostname, puertos: pair.puertos
     }));
 }
-// ============================================
-// FIN FUNCIONES HOSTNAME/PUERTOS
-// ============================================
 
 function agregarSuspensionManual() {
     if (ticketResuelto) {
@@ -231,19 +483,22 @@ function agregarSuspensionManual() {
     const motivo = motivoInput.value.trim();
     if (!valor) { mostrarToast('Ingrese fecha y hora para registrar la suspensión', 'error'); input.focus(); return; }
     if (!validarFormatoFecha('suspensionManual')) return;
+
     const [datePart, timePart] = valor.split(' ');
     const [year, month, day] = datePart.split('-').map(Number);
     const [hours, minutes] = timePart.split(':').map(Number);
     const fechaUTC = Date.UTC(year, month - 1, day, hours + 5, minutes);
     const fechaSuspension = new Date(fechaUTC);
+
     if (isNaN(fechaSuspension.getTime())) { mostrarToast('Fecha inválida para la suspensión', 'error'); return; }
     const fechaAfectacion = obtenerFechaAfectacion();
     if (fechaAfectacion && fechaSuspension < fechaAfectacion) {
         mostrarToast('La suspensión no puede ser anterior a la fecha de afectación', 'error');
         return;
     }
+
     ticketSuspendido = true;
-    const textoCompleto = `Tiempo Seguimiento suspendido${motivo ? ` | Motivo: ${motivo} ` : ''}`;
+    const textoCompleto = `Tiempo Seguimiento suspendido${motivo ? ` | Motivo: ${motivo}` : ''}`;
     const avance = { timestamp: fechaSuspension, texto: textoCompleto, tipo: 'suspension' };
     avancesArray.push(avance);
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -266,20 +521,23 @@ function agregarReanudacionManual() {
     const motivo = motivoInput.value.trim();
     if (!valor) { mostrarToast('Ingrese fecha y hora para registrar la reanudación', 'error'); input.focus(); return; }
     if (!validarFormatoFecha('reanudacionManual')) return;
+
     const [datePart, timePart] = valor.split(' ');
     const [year, month, day] = datePart.split('-').map(Number);
     const [hours, minutes] = timePart.split(':').map(Number);
     const fechaUTC = Date.UTC(year, month - 1, day, hours + 5, minutes);
     const fechaReanudacion = new Date(fechaUTC);
+
     if (isNaN(fechaReanudacion.getTime())) { mostrarToast('Fecha inválida para la reanudación', 'error'); return; }
     const fechaAfectacion = obtenerFechaAfectacion();
     if (fechaAfectacion && fechaReanudacion < fechaAfectacion) {
         mostrarToast('La reanudación no puede ser anterior a la fecha de afectación', 'error');
         return;
     }
+
     ticketSuspendido = false;
     if (estadoActual < 2) { estadoActual = 2; }
-    const textoCompleto = `Tiempo Seguimiento reanudado${motivo ? ` | Motivo: ${motivo} ` : ''}`;
+    const textoCompleto = `Tiempo Seguimiento reanudado${motivo ? ` | Motivo: ${motivo}` : ''}`;
     const avance = { timestamp: fechaReanudacion, texto: textoCompleto, tipo: 'reanudacion' };
     avancesArray.push(avance);
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -295,8 +553,10 @@ function toggleFechaManualAvance() {
     const checkbox = document.getElementById('usarFechaManual');
     const input = document.getElementById('fechaAvanceManual');
     const btnCalendar = input.parentElement.querySelector('.btn-calendar');
+    const btnNow = input.parentElement.querySelector('.btn-now');
     input.disabled = !checkbox.checked;
-    btnCalendar.disabled = !checkbox.checked;
+    if (btnCalendar) btnCalendar.disabled = !checkbox.checked;
+    if (btnNow) btnNow.disabled = !checkbox.checked;
     if (checkbox.checked) { insertarFechaActual('fechaAvanceManual'); }
 }
 
@@ -305,15 +565,18 @@ function agregarAvance() {
     if (!avanceInputEl.value.trim()) { mostrarToast('Por favor ingrese un avance o comentario antes de agregar', 'error'); avanceInputEl.focus(); return; }
     let fechaAvance;
     const usarManual = document.getElementById('usarFechaManual').checked;
+
     if (usarManual) {
         const valorManual = document.getElementById('fechaAvanceManual').value.trim();
         if (!valorManual) { mostrarToast('Seleccione una fecha y hora para el avance manual', 'error'); return; }
         if (!validarFormatoFecha('fechaAvanceManual')) return;
+         
         const [datePart, timePart] = valorManual.split(' ');
         const [year, month, day] = datePart.split('-').map(Number);
         const [hours, minutes] = timePart.split(':').map(Number);
         const fechaUTC = Date.UTC(year, month - 1, day, hours + 5, minutes);
         fechaAvance = new Date(fechaUTC);
+        
         if (isNaN(fechaAvance.getTime())) { mostrarToast('Formato de fecha inválido para el avance', 'error'); return; }
         const fechaAfectacion = obtenerFechaAfectacion();
         if (fechaAfectacion && fechaAvance < fechaAfectacion) {
@@ -329,6 +592,7 @@ function agregarAvance() {
     } else {
         fechaAvance = new Date();
     }
+
     const nuevoAvance = { timestamp: fechaAvance, texto: avanceInputEl.value.trim(), tipo: 'normal' };
     avancesArray.push(nuevoAvance);
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -347,7 +611,7 @@ function agregarAvance() {
 function renderizarAvances() {
     historialAvancesEl.innerHTML = '';
     if (avancesArray.length === 0) {
-        historialAvancesEl.innerHTML = '<p class="text-muted text-center">No hay avances registrados aún</p>';
+        historialAvancesEl.innerHTML = '<div class="empty-state"><p>No hay avances registrados aún</p></div>';
         return;
     }
     avancesArray.sort((a, b) => a.timestamp - b.timestamp);
@@ -356,22 +620,26 @@ function renderizarAvances() {
             timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', hour12: false
         });
+        
         let claseCSS = ''; let remitente = 'Operador'; let esEditable = false;
         if (avance.tipo === 'suspension') { claseCSS = 'suspension sistema'; remitente = 'Sistema'; }
         else if (avance.tipo === 'reanudacion') { claseCSS = 'reanudacion sistema'; remitente = 'Sistema'; }
         else if (avance.tipo === 'resuelto') { claseCSS = 'sistema resuelto'; remitente = 'Sistema'; }
         else if (avance.tipo === 'sistema') { claseCSS = 'sistema'; remitente = 'Sistema'; }
         else { esEditable = true; }
+        
         const tieneEdicion = avance.editado ?
             `<div class="avance-edited-indicator"><i class="bi bi-pencil-square"></i> Editado: ${new Date(avance.editado).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>`
             : '';
+        
         const botonesAccion = (esEditable && !ticketResuelto) ?
             `<div class="avance-actions"><button class="btn-edit-avance" title="Editar avance" onclick="iniciarEdicionAvance(${index})"><i class="bi bi-pencil"></i></button><button class="btn-delete-avance" title="Eliminar avance" onclick="eliminarAvance(${index})"><i class="bi bi-trash"></i></button></div>`
             : '';
-        const avanceHTML =
-            `<div class="avance-entry ${claseCSS}" data-index="${index}"> <div class="avance-time"> <span>${fechaFormateada}</span> <span>${remitente}${avance.editado ? ' <i class="bi bi-pencil-square" style="font-size:0.7em;color:#ffc107"></i>' : ''}</span> </div> <div class="avance-texto">${avance.texto.replace(/\n/g, '<br>')}</div> ${tieneEdicion}${botonesAccion} </div>`;
+        
+        const avanceHTML = `<div class="avance-entry ${claseCSS}" data-index="${index}"><div class="avance-time"><span>${fechaFormateada}</span><span>${remitente}</span></div><div class="avance-texto">${avance.texto.replace(/\n/g, '<br>')}</div>${tieneEdicion}${botonesAccion}</div>`;
         historialAvancesEl.innerHTML += avanceHTML;
     });
+
     historialAvancesEl.scrollTop = historialAvancesEl.scrollHeight;
     if (hayNuevosAvances) {
         nuevosAvancesBadgeEl.style.display = 'inline-block';
@@ -390,11 +658,14 @@ function iniciarEdicionAvance(index) {
     }
     const avanceEntry = document.querySelector(`.avance-entry[data-index="${index}"]`);
     if (!avanceEntry) return;
+
     const fechaFormateada = avance.timestamp.toLocaleString('es-EC', {
         timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false
     });
-    avanceEntry.innerHTML = `<div class="avance-time"><span>${fechaFormateada}</span><span>Operador <small>(editando)</small></span></div> <div class="avance-edit-mode"> <textarea id="editAvanceTextarea_${index}" class="form-control">${avance.texto}</textarea> <div class="d-flex justify-content-end mt-2 gap-2"> <button class="btn-save-edit" onclick="guardarEdicionAvance(${index})"><i class="bi bi-check-lg"></i> Guardar</button> <button class="btn-cancel-edit" onclick="cancelarEdicionAvance(${index})"><i class="bi bi-x-lg"></i> Cancelar</button> </div> </div>`;
+
+    avanceEntry.innerHTML = `<div class="avance-entry avance-edit-mode" data-index="${index}"><div class="avance-time"><span>${fechaFormateada}</span><span>Operador (editando)</span></div><textarea id="editAvanceTextarea_${index}" class="form-control form-control-sm" rows="3">${avance.texto}</textarea><div class="avance-actions" style="opacity: 1; justify-content: flex-end; margin-top: 8px;"><button class="btn-cancel-edit" onclick="cancelarEdicionAvance(${index})">Cancelar</button><button class="btn-save-edit" onclick="guardarEdicionAvance(${index})">Guardar</button></div></div>`;
+
     setTimeout(() => {
         const textarea = document.getElementById(`editAvanceTextarea_${index}`);
         if (textarea) { textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }
@@ -449,10 +720,21 @@ function actualizarPlantilla() {
     else if (ticketSuspendido) { estadoTexto = "⏸️ Suspendido"; }
 
     let etrTxt = 'No definido';
+    let etrRestanteTxt = '';
     if (!noEtrCheck.checked) {
         const horas = parseInt(document.getElementById('etrHoras').value) || 0;
         const minutos = parseInt(document.getElementById('etrMinutos').value) || 0;
-        if (horas > 0 || minutos > 0) { etrTxt = `${horas}h ${minutos}m`; }
+        if (horas > 0 || minutos > 0) {
+            etrTxt = `${horas}h ${minutos}m`;
+            if (etrTotalMinutes > 0 && etrStartTime) {
+                const elapsedMs = Date.now() - etrStartTime;
+                const elapsedMinutes = elapsedMs / (1000 * 60);
+                const remainingMinutes = Math.max(0, etrTotalMinutes - elapsedMinutes);
+                const remainingHours = Math.floor(remainingMinutes / 60);
+                const remainingMins = Math.floor(remainingMinutes % 60);
+                etrRestanteTxt = `(Restante: ${remainingHours}h ${remainingMins}m)`;
+            }
+        }
     } else if (noEtrCheck.checked) {
         etrTxt = 'No hay ETR definido';
     }
@@ -478,18 +760,21 @@ function actualizarPlantilla() {
         fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false }) :
         'No definida';
 
-    // ACTUALIZAR TIEMPOS SLA ANTES DE GENERAR PLANTILLA
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = fechaAfectacion ?
         calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora) :
         { activeTime: 0, suspendedTime: 0, totalTime: 0 };
 
-    const ticketsSecundariosTexto = ticketSecundariosEl.value.trim() ?
-        ticketSecundariosEl.value.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0).map(t => `   - ${t}`).join('\n')
-        : '   - Ninguno';
+    const ticketsSecundariosValor = ticketSecundariosEl.value.trim();
+    const ticketsSecundariosAnalisis = analizarTicketsSecundarios(ticketsSecundariosValor);
+    const ticketsSecundariosTexto = ticketsSecundariosAnalisis.total > 0 ?
+        ticketsSecundariosAnalisis.validos.map(t => `- ${t}`).join('\n') :
+        '   - Ninguno';
+    const ticketsSecundariosFinal = ticketsSecundariosAnalisis.total > 0
+        ? `${ticketsSecundariosAnalisis.resumen}\n${ticketsSecundariosTexto}`
+        : `0\n   - Ninguno`;
 
     const hostnamePuertosTexto = obtenerHostnamePuertosTexto();
-
     const plantillaTexto =
         `========================================
 📋 TICKET DE INCIDENCIA - SEGUIMIENTO
@@ -510,31 +795,25 @@ ${ticketResuelto ? '⚠️ TICKET RESUELTO ⚠️' : ''}
 🏢 Proveedor Offnet: ${offnetEl.value || '-'}
 🌍 País: ${paisEl.value || '-'}
 📝 INFORMACIÓN ADICIONAL:
-• Ticket secundarios:
-${ticketsSecundariosTexto}
+• Ticket secundarios: ${ticketsSecundariosFinal}
 • Impacto: ${impactoEl.value || 'Sin impacto definido'}
 • Capacidad afectada: ${capacidadAfectadaEl.value || 'No especificada'}
 🔍 DIAGNÓSTICO INICIAL:
 ${diagnosticoEl.value || 'Sin diagnóstico'}
-⏰ ETR ESTIMADO: ${etrTxt}
-📜 HISTORIAL DE AVANCES (orden cronológico):
-${historialTexto}
 🔧 ACCIONES ADICIONALES:
 ${accionesAdicionalesEl.value.trim() || 'Sin acciones adicionales definidas'}
+⏰ ETR ESTIMADO: ${etrTxt}${etrRestanteTxt}
+📜 HISTORIAL DE AVANCES (orden cronológico):
+${historialTexto}
 ========================================`;
     document.getElementById('plantillaSeguimiento').innerText = plantillaTexto;
 }
 
-// ============================================
-// FUNCIONES DE COPIADO MEJORADAS CON FEEDBACK
-// ============================================
 function copiarPlantilla(btn) {
-    // FORZAR ACTUALIZACIÓN DE LA PLANTILLA CON TIEMPOS ACTUALES ANTES DE COPIAR
     actualizarPlantilla();
     const plantillaEl = document.getElementById('plantillaSeguimiento');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
-
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(plantillaEl.innerText).then(() => {
             mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Copiado!');
@@ -578,14 +857,11 @@ function mostrarFeedbackExito(btn, originalHTML, originalClasses, mensajeExito =
         toast.classList.remove('show');
         setTimeout(() => { if (toast.parentNode) { toast.parentNode.removeChild(toast); } }, 300);
     });
-    // Cambiar texto del botón temporalmente
     btn.innerHTML = mensajeExito;
     btn.className = 'btn btn-success w-100 mt-3';
     btn.style.animation = 'pulse 0.5s ease';
-
     mostrarToast('✅ Contenido copiado al portapapeles exitosamente', 'success');
 
-    // Efecto visual en la card
     const card = document.querySelector('.container-grid > div:last-child .card');
     if (card) {
         card.style.boxShadow = '0 0 20px rgba(40, 167, 69, 0.6)';
@@ -596,7 +872,6 @@ function mostrarFeedbackExito(btn, originalHTML, originalClasses, mensajeExito =
         }, 1000);
     }
 
-    // Restaurar botón después de 2 segundos
     setTimeout(() => {
         btn.innerHTML = originalHTML;
         btn.className = originalClasses;
@@ -642,6 +917,8 @@ function actualizarCronometro() {
         slaSuspendidoEl.innerText = formatear(suspendedTime);
         slaTotalEl.innerText = formatear(totalTime);
         mostrarFechaAfectacion();
+        
+        verificarAlertaSLA(activeTime, ticketActivoId);
     } else {
         tiempoProgresoEl.innerText = '00:00:00';
         tiempoSuspendidoEl.innerText = '00:00:00';
@@ -652,6 +929,7 @@ function actualizarCronometro() {
         fechaAfectacionMostradaEl.textContent = 'Sin fecha de afectación definida';
         fechaAfectacionMostradaEl.className = 'time-detail text-muted';
     }
+
     if (avancesArray.length > 0) {
         const ultimoAvance = avancesArray[avancesArray.length - 1];
         const elapsedSinceUpdate = ahora - ultimoAvance.timestamp;
@@ -682,12 +960,12 @@ function actualizarSuspensionUI() {
         suspendBtnEl.classList.remove('btn-outline-success');
         suspendBtnEl.classList.add('btn-outline-warning');
     }
+
     if (ticketResuelto) { resueltoIndicatorEl.style.display = 'inline-flex'; }
     else { resueltoIndicatorEl.style.display = 'none'; }
 }
 
 function mostrarToast(mensaje, tipo = 'success') { mostrarToastMejorado(mensaje, tipo); }
-
 function mostrarToastMejorado(mensaje, tipo = 'success', titulo = '') {
     const container = document.querySelector('.toast-container');
     const toastId = 'toast-' + Date.now();
@@ -696,7 +974,7 @@ function mostrarToastMejorado(mensaje, tipo = 'success', titulo = '') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${tipo}`;
     toast.id = toastId;
-    toast.innerHTML = `<i class="bi ${icons[tipo]} toast-icon"></i> <div class="toast-content"> <div class="toast-title">${titulo || titulos[tipo]}</div> <div class="toast-message">${mensaje}</div> </div> <button class="toast-close" onclick="cerrarToast('${toastId}')"><i class="bi bi-x-lg"></i></button>`;
+    toast.innerHTML = `<i class="bi ${icons[tipo]} toast-icon"></i><div class="toast-content"><div class="toast-title">${titulo || titulos[tipo]}</div><div class="toast-message">${mensaje}</div></div><button class="toast-close" onclick="cerrarToast('${toastId}')"><i class="bi bi-x-lg"></i></button>`;
     container.appendChild(toast);
     setTimeout(() => { cerrarToast(toastId); }, 5000);
 }
@@ -777,6 +1055,7 @@ function calculateActiveAndSuspendedTime(incidentTime, avances, currentTime) {
     }
     const totalTime = currentTime - incidentTime;
     const events = avances.filter(av => (av.tipo === 'suspension' || av.tipo === 'reanudacion') && av.timestamp >= incidentTime && av.timestamp <= currentTime).map(av => ({ time: av.timestamp, type: av.tipo })).sort((a, b) => a.time - b.time);
+
     let activeTime = 0; let suspendedTime = 0; let currentState = 'active'; let lastTime = incidentTime;
     for (const event of events) {
         const duration = event.time - lastTime;
@@ -784,8 +1063,10 @@ function calculateActiveAndSuspendedTime(incidentTime, avances, currentTime) {
         currentState = (event.type === 'suspension') ? 'suspended' : 'active';
         lastTime = event.time;
     }
+
     const finalDuration = currentTime - lastTime;
     if (finalDuration > 0) { if (currentState === 'active') { activeTime += finalDuration; } else { suspendedTime += finalDuration; } }
+
     activeTime = Math.max(0, Math.round(activeTime));
     suspendedTime = Math.max(0, Math.round(suspendedTime));
     return { activeTime, suspendedTime, totalTime: Math.round(totalTime) };
@@ -806,9 +1087,11 @@ function guardarTicket() {
     const impactoEl = document.getElementById('impacto');
     const capacidadAfectadaEl = document.getElementById('capacidadAfectada');
     const noEtrCheck = document.getElementById('noEtrCheck');
+
     const avancesParaGuardar = avancesArray.map(avance => ({ timestamp: avance.timestamp.toISOString(), texto: avance.texto, tipo: avance.tipo, editado: avance.editado }));
     const etrHoras = document.getElementById('etrHoras').value;
     const etrMinutos = document.getElementById('etrMinutos').value;
+
     const ticket = {
         id: ticketActivoId || Date.now(), workflowState: estadoActual, isSuspended: ticketSuspendido, isResolved: ticketResuelto,
         resolutionDate: ticketResuelto ? fechaResolucion.toISOString() : null, noEtr: noEtrCheck.checked, ticketId: ticketIdEl.value,
@@ -817,7 +1100,18 @@ function guardarTicket() {
         impacto: impactoEl.value, capacidadAfectada: capacidadAfectadaEl.value, diagnostico: diagnosticoEl.value, etrHoras: etrHoras, etrMinutos: etrMinutos,
         accionesAdicionales: accionesAdicionalesEl.value, avancesArray: avancesParaGuardar
     };
+
     let tks = JSON.parse(localStorage.getItem('tickets')) || [];
+    // PRESERVAR ESTADO DE ALERTAS SI EL TICKET YA EXISTÍA
+    const existente = tks.find(t => t.id === ticket.id);
+    if (existente) {
+        ticket.alerta4h30mDisparada = existente.alerta4h30mDisparada || false;
+        ticket.alerta5h30mDisparada = existente.alerta5h30mDisparada || false;
+    } else {
+        ticket.alerta4h30mDisparada = false;
+        ticket.alerta5h30mDisparada = false;
+    }
+    
     tks = tks.filter(t => t.id !== ticket.id);
     tks.push(ticket);
     localStorage.setItem('tickets', JSON.stringify(tks));
@@ -840,13 +1134,16 @@ function cargarListaTickets() {
         listaTicketsEl.innerHTML = `<div class="ticket-dropdown-container"><select class="ticket-dropdown" disabled><option value="">N/A - N/A</option></select></div>`;
         return;
     }
+
     const dropdownContainer = document.createElement('div');
     dropdownContainer.className = 'ticket-dropdown-container';
     const select = document.createElement('select');
     select.className = 'ticket-dropdown';
+
     const defaultOption = document.createElement('option');
     defaultOption.value = ''; defaultOption.textContent = 'N/A - N/A'; defaultOption.disabled = true; defaultOption.selected = !ticketActivoId;
     select.appendChild(defaultOption);
+
     tickets.forEach(t => {
         const option = document.createElement('option');
         option.value = t.id;
@@ -856,11 +1153,13 @@ function cargarListaTickets() {
         else if (t.workflowState === 1) { estadoIcon = ' 📊'; estadoClass = 'ticket-escalonado-option'; }
         else if (t.workflowState === 3) { estadoIcon = ' 🔄'; estadoClass = 'ticket-restablecido-option'; }
         else { estadoIcon = ' 🟢'; estadoClass = 'ticket-activo-option'; }
+        
         option.textContent = `${t.ticketId} - ${t.tramo || 'Sin tramo'}${estadoIcon}`;
         option.className = estadoClass;
         if (t.id === ticketActivoId) { option.selected = true; }
         select.appendChild(option);
     });
+
     select.addEventListener('change', (e) => { if (e.target.value) { cargarTicket(parseInt(e.target.value)); } });
     dropdownContainer.appendChild(select);
     listaTicketsEl.appendChild(dropdownContainer);
@@ -875,6 +1174,7 @@ function cargarTicket(id) {
     ticketSuspendido = t.isSuspended ?? false;
     ticketResuelto = t.isResolved || false;
     fechaResolucion = t.resolutionDate ? new Date(t.resolutionDate) : null;
+
     document.getElementById('ticketId').value = t.ticketId || '';
     document.getElementById('fechaAfectacion').value = t.fechaAfectacion || '';
     document.getElementById('tramo').value = t.tramo || '';
@@ -888,17 +1188,24 @@ function cargarTicket(id) {
     document.getElementById('capacidadAfectada').value = t.capacidadAfectada || '';
     document.getElementById('diagnostico').value = t.diagnostico || '';
     document.getElementById('accionesAdicionales').value = t.accionesAdicionales || '';
+
     const etrHorasEl = document.getElementById('etrHoras');
     const etrMinutosEl = document.getElementById('etrMinutos');
     if (t.etrHoras !== undefined && t.etrMinutos !== undefined) {
         etrHorasEl.value = t.etrHoras || '0'; etrMinutosEl.value = t.etrMinutos || '0';
+        if ((t.etrHoras > 0 || t.etrMinutos > 0) && !t.noEtr) {
+            iniciarContadorETR();
+        }
     } else { etrHorasEl.value = '0'; etrMinutosEl.value = '0'; }
+
     const noEtrCheck = document.getElementById('noEtrCheck');
-    if (t.noEtr) { noEtrCheck.checked = true; document.getElementById('etrInputs').style.display = 'none'; }
+    if (t.noEtr) { noEtrCheck.checked = true; document.getElementById('etrInputs').style.display = 'none'; document.getElementById('etrContadorContainer').style.display = 'none'; }
     else { noEtrCheck.checked = false; document.getElementById('etrInputs').style.display = 'block'; }
+
     if (t.avancesArray && Array.isArray(t.avancesArray)) {
         avancesArray = t.avancesArray.map(avance => ({ timestamp: new Date(avance.timestamp), texto: avance.texto, tipo: avance.tipo || 'normal', editado: avance.editado || null })).sort((a, b) => a.timestamp - b.timestamp);
     } else { avancesArray = []; }
+
     renderizarAvances();
     document.getElementById('usarFechaManual').checked = false;
     document.getElementById('fechaAvanceManual').disabled = true;
@@ -906,6 +1213,7 @@ function cargarTicket(id) {
     hayNuevosAvances = false;
     nuevosAvancesBadgeEl.style.display = 'none';
     actualizarSuspensionUI(); actualizarPlantilla(); actualizarCronometro(); mostrarFechaAfectacion();
+
     if (ticketResuelto) {
         resolveBtnEl.innerHTML = '✅ Resuelto'; resolveBtnEl.classList.replace('btn-outline-success', 'btn-success'); resolveBtnEl.disabled = true; reopenBtnEl.style.display = 'inline-block';
     } else {
@@ -918,15 +1226,21 @@ function cargarTicket(id) {
 function nuevoTicket() {
     ticketActivoId = null; estadoActual = 0; ticketSuspendido = false; ticketResuelto = false; fechaResolucion = null; avancesArray = []; hayNuevosAvances = false;
     hostnamePuertoPairs = []; pairCounter = 0;
+
+    detenerContadorETR();
+    document.getElementById('etrContadorContainer').style.display = 'none';
+
     const camposReset = ['ticketId', 'tramo', 'redAfectada', 'onnet', 'offnet', 'pais', 'ticketSecundarios', 'impacto', 'capacidadAfectada', 'diagnostico', 'accionesAdicionales', 'avanceInput', 'suspensionManual', 'reanudacionManual', 'motivoSuspension', 'motivoReanudacion', 'fechaAvanceManual'];
     camposReset.forEach(id => { const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('is-invalid', 'is-valid', 'input-format-error'); } });
     document.getElementById('etrHoras').value = '0'; document.getElementById('etrMinutos').value = '0';
+
     const fechaAfectEl = document.getElementById('fechaAfectacion');
     if (fechaAfectEl && fechaAfectEl.value.trim()) { validarFormatoFecha('fechaAfectacion'); }
     document.getElementById('suspensionManual').value = ''; document.getElementById('reanudacionManual').value = '';
     document.getElementById('motivoSuspension').value = ''; document.getElementById('motivoReanudacion').value = '';
     document.getElementById('usarFechaManual').checked = false; document.getElementById('fechaAvanceManual').disabled = true; document.getElementById('fechaAvanceManual').value = '';
     document.getElementById('noEtrCheck').checked = false; document.getElementById('etrInputs').style.display = 'block';
+
     renderizarAvances(); inicializarHostnamePuertos();
     tiempoProgresoEl.innerText = '00:00:00'; tiempoSuspendidoEl.innerText = '00:00:00'; tiempoTotalEl.innerText = '00:00:00';
     slaProgresoEl.innerText = '00:00:00'; slaSuspendidoEl.innerText = '00:00:00'; slaTotalEl.innerText = '00:00:00';
@@ -958,12 +1272,13 @@ function toggleEstado() {
     if (ticketResuelto) { mostrarToast('No se puede modificar el estado de un ticket ya resuelto', 'warning'); return; }
     if (!ticketActivoId) { mostrarToast('Seleccione un ticket primero para suspender/reanudar. Puede crear uno nuevo o seleccionar de la lista.', 'error'); nuevoTicket(); return; }
     ticketSuspendido = !ticketSuspendido;
-    const mensaje = ticketSuspendido ? "Ticket suspendido" : "Ticket reanudado";
+    const mensaje = ticketSuspendido ? "Ticket suspendido " : "Ticket reanudado ";
     const tipoAvance = ticketSuspendido ? 'suspension' : 'reanudacion';
     if (!ticketSuspendido && estadoActual < 2) { estadoActual = 2; }
     const nuevoAvance = { timestamp: new Date(), texto: mensaje, tipo: tipoAvance };
     avancesArray.push(nuevoAvance); avancesArray.sort((a, b) => a.timestamp - b.timestamp);
     renderizarAvances(); hayNuevosAvances = true;
+
     let tks = JSON.parse(localStorage.getItem('tickets')) || [];
     const t = tks.find(x => x.id === ticketActivoId);
     if (t) {
@@ -1003,17 +1318,21 @@ function confirmarResolucion() {
     const errorMsgEl = document.getElementById('resolutionErrorMessage');
     if (!resolutionValue) { errorMsgEl.textContent = 'Debe ingresar la fecha y hora de resolución'; errorEl.style.display = 'block'; resolutionInput.focus(); return; }
     if (!validarFormatoFechaManual(resolutionValue)) { errorMsgEl.textContent = 'Formato inválido. Use: AAAA-MM-DD HH:mm (ej: 2026-02-03 14:30)'; errorEl.style.display = 'block'; return; }
+
     const [datePart, timePart] = resolutionValue.split(' ');
     const [year, month, day] = datePart.split('-').map(Number);
     const [hours, minutes] = timePart.split(':').map(Number);
     const fechaUTC = Date.UTC(year, month - 1, day, hours + 5, minutes);
     const fechaResolucionPropuesta = new Date(fechaUTC);
+
     if (isNaN(fechaResolucionPropuesta.getTime())) { errorMsgEl.textContent = 'Fecha inválida para la resolución'; errorEl.style.display = 'block'; return; }
     const fechaAfectacion = obtenerFechaAfectacion();
     if (!fechaAfectacion) { errorMsgEl.textContent = 'Error: Fecha de afectación no definida'; errorEl.style.display = 'block'; return; }
     if (fechaResolucionPropuesta < fechaAfectacion) { errorMsgEl.textContent = 'La fecha de resolución no puede ser anterior a la fecha de afectación'; errorEl.style.display = 'block'; return; }
+
     const ahoraGMT5 = new Date(new Date().getTime() - (5 * 60 * 60 * 1000));
     if (fechaResolucionPropuesta > ahoraGMT5) { if (!confirm('La fecha de resolución está en el futuro. ¿Desea continuar?')) { return; } }
+
     cerrarModalResolucion(); aplicarResolucion(fechaResolucionPropuesta, resolutionValue);
 }
 
@@ -1033,6 +1352,7 @@ function aplicarResolucion(fechaResolucionPropuesta, fechaTextoOriginal) {
     document.querySelectorAll('.add-avance-btn, .manual-state-btn').forEach(el => { el.disabled = true; el.classList.add('disabled'); });
     resolveBtnEl.innerHTML = '✅ Resuelto'; resolveBtnEl.classList.replace('btn-outline-success', 'btn-success'); resolveBtnEl.disabled = true;
     reopenBtnEl.style.display = 'inline-block'; suspendBtnEl.disabled = true; resueltoIndicatorEl.style.display = 'inline-flex';
+
     const tiempoProgresoFinal = document.getElementById('slaProgreso').innerText;
     mostrarToast(`¡Ticket resuelto! Tiempo final en progreso: ${tiempoProgresoFinal}<br>Fecha de resolución: ${fechaResolucionGMT5}`, 'success');
     actualizarDashboardStats();
@@ -1046,6 +1366,7 @@ function reabrirTicket() {
         const ahora = new Date();
         avancesArray.push({ timestamp: ahora, texto: `🔄 TICKET REABIERTO - ${ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false })}`, tipo: 'sistema' });
         avancesArray.sort((a, b) => a.timestamp - b.timestamp);
+        
         document.querySelectorAll('#avanceInput, #suspensionManual, #reanudacionManual, #fechaAvanceManual, #usarFechaManual, #motivoSuspension, #motivoReanudacion').forEach(el => { el.disabled = false; });
         document.querySelectorAll('.add-avance-btn, .manual-state-btn').forEach(el => { el.disabled = false; el.classList.remove('disabled'); });
         resolveBtnEl.innerHTML = '🏁 Marcar como resuelto'; resolveBtnEl.classList.replace('btn-success', 'btn-outline-success'); resolveBtnEl.disabled = false;
@@ -1056,50 +1377,34 @@ function reabrirTicket() {
     });
 }
 
-// ============================================
-// NUEVA FUNCIÓN DE EXPORTAR CON MODAL DE SELECCIÓN
-// ============================================
 function exportarTickets() {
     try {
         if (ticketActivoId && hayNuevosAvances) {
             guardarTicket();
         }
-
         let tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-
         if (tickets.length === 0) {
             mostrarToast('No hay tickets para exportar. Cree al menos un ticket primero.', 'error');
             return;
         }
-
-        // Abrir modal de selección
         abrirModalSeleccionExportar(tickets);
-
     } catch (error) {
         console.error('Error exportar:', error);
         mostrarToast(`❌ Error: ${error.message}`, 'error');
     }
 }
 
-// ============================================
-// ABRIR MODAL DE SELECCIÓN DE TICKETS
-// ============================================
 function abrirModalSeleccionExportar(tickets) {
     const modal = document.getElementById('modalSeleccionExportar');
     const container = document.getElementById('ticketsCheckboxContainer');
     const selectDestino = document.getElementById('exportDestino');
     const otroDestinoContainer = document.getElementById('otroDestinoContainer');
     const otroDestinoInput = document.getElementById('otroDestinoInput');
-
-    // Limpiar contenedor
     container.innerHTML = '';
-
-    // Generar lista de tickets con checkboxes
     tickets.forEach((t, index) => {
         let estadoIcon = '';
         let estadoClass = '';
         let estadoTexto = '';
-
         if (t.isResolved) {
             estadoIcon = '✅';
             estadoClass = 'estado-resuelto';
@@ -1113,28 +1418,13 @@ function abrirModalSeleccionExportar(tickets) {
             estadoClass = 'estado-activo';
             estadoTexto = 'Activo';
         }
-
+        
         const ticketId = t.ticketId || `Ticket-${t.id}`;
         const tramo = t.tramo || 'Sin tramo';
-
-        const itemHTML = `
-            <label class="ticket-checkbox-item">
-                <input type="checkbox" class="ticket-export-checkbox" 
-                       value="${t.id}" 
-                       data-ticket-id="${ticketId}"
-                       onchange="actualizarContadorSeleccion()">
-                <div class="ticket-info">
-                    <div class="ticket-id">${estadoIcon} ${ticketId}</div>
-                    <div class="ticket-tramo">🛤️ ${tramo}</div>
-                </div>
-                <span class="ticket-estado ${estadoClass}">${estadoTexto}</span>
-            </label>
-        `;
-
+        const itemHTML = `<label class="ticket-checkbox-item"><input type="checkbox" class="ticket-export-checkbox" value="${t.id}" data-ticket-id="${ticketId}" onchange="actualizarContadorSeleccion()"><div class="ticket-info"><div class="ticket-id">${estadoIcon} ${ticketId}</div><div class="ticket-tramo">🛤️ ${tramo}</div></div><span class="ticket-estado ${estadoClass}">${estadoTexto}</span></label>`;
         container.innerHTML += itemHTML;
     });
 
-    // Actualizar preview del nombre de archivo
     selectDestino.addEventListener('change', function () {
         if (this.value === 'Otro') {
             otroDestinoContainer.style.display = 'block';
@@ -1144,74 +1434,48 @@ function abrirModalSeleccionExportar(tickets) {
         }
         actualizarPreviewNombreArchivo();
     });
-
     otroDestinoInput.addEventListener('input', actualizarPreviewNombreArchivo);
-
-    // Inicializar contador
     actualizarContadorSeleccion();
     actualizarPreviewNombreArchivo();
-
-    // Mostrar modal
     modal.style.display = 'flex';
 }
 
-// ============================================
-// CERRAR MODAL DE EXPORTACIÓN
-// ============================================
 function cerrarModalExportar() {
     const modal = document.getElementById('modalSeleccionExportar');
     modal.style.display = 'none';
-
-    // Resetear valores
     document.getElementById('exportDestino').value = '';
     document.getElementById('otroDestinoInput').value = '';
     document.getElementById('otroDestinoContainer').style.display = 'none';
     document.getElementById('selectAllTickets').checked = false;
 }
 
-// ============================================
-// SELECCIONAR/DESELECCIONAR TODOS
-// ============================================
 function toggleSelectAllTickets() {
     const selectAll = document.getElementById('selectAllTickets');
     const checkboxes = document.querySelectorAll('.ticket-export-checkbox');
-
     checkboxes.forEach(cb => {
         cb.checked = selectAll.checked;
     });
-
     actualizarContadorSeleccion();
     actualizarPreviewNombreArchivo();
 }
 
-// ============================================
-// ACTUALIZAR CONTADOR DE SELECCIONADOS
-// ============================================
 function actualizarContadorSeleccion() {
     const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
     const countEl = document.getElementById('selectedTicketsCount');
     const btnConfirm = document.querySelector('.btn-export-confirm');
-
     countEl.textContent = `${checkboxes.length} seleccionados`;
-
-    // Habilitar/deshabilitar botón de exportar
     if (btnConfirm) {
         btnConfirm.disabled = checkboxes.length === 0;
     }
-
     actualizarPreviewNombreArchivo();
 }
 
-// ============================================
-// ACTUALIZAR PREVIEW DEL NOMBRE DE ARCHIVO
-// ============================================
 function actualizarPreviewNombreArchivo() {
     const selectDestino = document.getElementById('exportDestino');
     const otroDestinoInput = document.getElementById('otroDestinoInput');
     const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
     const fileNamePreview = document.getElementById('exportFileNamePreview');
     const datePreview = document.getElementById('exportDatePreview');
-
     let destino = selectDestino.value;
     if (destino === 'Otro') {
         destino = otroDestinoInput.value.trim() || 'Otro';
@@ -1234,7 +1498,6 @@ function actualizarPreviewNombreArchivo() {
     if (fileNamePreview) {
         fileNamePreview.textContent = `tickets_${nombreBase}_${cantidad}_${fechaStr}.json`;
     }
-
     if (datePreview) {
         datePreview.textContent = fechaActual.toLocaleString('es-EC', {
             timeZone: 'America/Guayaquil',
@@ -1248,14 +1511,10 @@ function actualizarPreviewNombreArchivo() {
     }
 }
 
-// ============================================
-// CONFIRMAR EXPORTACIÓN DE TICKETS SELECCIONADOS
-// ============================================
 function confirmarExportacionSeleccion() {
     const checkboxes = document.querySelectorAll('.ticket-export-checkbox:checked');
     const selectDestino = document.getElementById('exportDestino');
     const otroDestinoInput = document.getElementById('otroDestinoInput');
-
     if (checkboxes.length === 0) {
         mostrarToast('⚠️ Debe seleccionar al menos un ticket para exportar', 'warning');
         return;
@@ -1267,7 +1526,6 @@ function confirmarExportacionSeleccion() {
         selectDestino.focus();
         return;
     }
-
     if (destino === 'Otro') {
         destino = otroDestinoInput.value.trim();
         if (!destino) {
@@ -1277,14 +1535,10 @@ function confirmarExportacionSeleccion() {
         }
     }
 
-    // Obtener IDs de tickets seleccionados
     const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-
-    // Obtener tickets completos
     let todosLosTickets = JSON.parse(localStorage.getItem('tickets')) || [];
     const ticketsSeleccionados = todosLosTickets.filter(t => selectedIds.includes(t.id));
 
-    // Generar nombre de archivo
     const fechaActual = new Date();
     const fechaStr = fechaActual.toLocaleString('es-EC', {
         timeZone: 'America/Guayaquil',
@@ -1297,36 +1551,22 @@ function confirmarExportacionSeleccion() {
     }).replace(/[/:\s]/g, '-');
 
     const nombreArchivo = `tickets_${destino}_${ticketsSeleccionados.length}_${fechaStr}.json`;
-
-    // Crear archivo JSON
     const dataStr = JSON.stringify(ticketsSeleccionados, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+    const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' }); 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = nombreArchivo;
     document.body.appendChild(link);
     link.click();
-
-    // Limpieza
     setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }, 0);
-
-    // Cerrar modal y mostrar mensaje de éxito
     cerrarModalExportar();
-    mostrarToast(
-        `✅ Exportados ${ticketsSeleccionados.length} tickets<br>
-         📁 ${nombreArchivo}<br>
-         📤 Destino: <strong>${destino}</strong>`,
-        'success'
-    );
+    mostrarToast(`✅ Exportados ${ticketsSeleccionados.length} tickets<br>📁 ${nombreArchivo}<br>📤 Destino: <strong>${destino}</strong>`, 'success');
 }
 
-// ============================================
-// IMPORTAR TICKETS (SE MANTIENE IGUAL)
-// ============================================
 function importarTickets() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1334,65 +1574,20 @@ function importarTickets() {
     input.onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
-        if (!file.name.toLowerCase().endsWith('.json')) {
-            mostrarToast('❌ Archivo debe ser .json', 'error');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = event => {
-            try {
-                const imported = JSON.parse(event.target.result);
-                if (!Array.isArray(imported) || imported.length === 0) {
-                    throw new Error('Archivo inválido');
-                }
-                const existing = JSON.parse(localStorage.getItem('tickets') || '[]');
-                if (existing.length === 0) {
-                    localStorage.setItem('tickets', JSON.stringify(imported));
-                    cargarListaTickets();
-                    nuevoTicket();
-                    mostrarToast(`✅ Cargados ${imported.length} tickets`, 'success');
-                } else {
-                    if (confirm(`⚠️ Ya tienes ${existing.length} tickets.\n✅ ACEPTAR = Reemplazar TODOS\n❌ CANCELAR = Solo agregar NUEVOS`)) {
-                        localStorage.setItem('tickets', JSON.stringify(imported));
-                        cargarListaTickets();
-                        nuevoTicket();
-                        mostrarToast(`✅ Reemplazados por ${imported.length} tickets`, 'success');
-                    } else {
-                        const nuevos = imported.filter(nuevo => !existing.some(exist => exist.id === nuevo.id));
-                        if (nuevos.length === 0) {
-                            mostrarToast('⚠️ Todos los tickets ya existen', 'warning');
-                            return;
-                        }
-                        const combinados = [...existing, ...nuevos];
-                        localStorage.setItem('tickets', JSON.stringify(combinados));
-                        cargarListaTickets();
-                        nuevoTicket();
-                        mostrarToast(`✅ Agregados ${nuevos.length} tickets nuevos<br>Total: ${combinados.length}`, 'success');
-                    }
-                }
-                actualizarDashboardStats();
-            } catch (err) {
-                console.error('Error importar:', err);
-                mostrarToast(`❌ Error: ${err.message}`, 'error');
-            }
-        };
-        reader.readAsText(file);
-    };
-    input.click();
-}
-
-function importarTickets() {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = '.json';
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
         if (!file.name.toLowerCase().endsWith('.json')) { mostrarToast('❌ Archivo debe ser .json', 'error'); return; }
         const reader = new FileReader();
         reader.onload = event => {
             try {
-                const imported = JSON.parse(event.target.result);
+                let imported = JSON.parse(event.target.result);
                 if (!Array.isArray(imported) || imported.length === 0) { throw new Error('Archivo inválido'); }
+                
+                // NORMALIZAR TICKETS IMPORTADOS PARA AGREGAR PROPIEDADES DE ALERTA
+                imported = imported.map(t => ({
+                    ...t,
+                    alerta4h30mDisparada: t.alerta4h30mDisparada || false,
+                    alerta5h30mDisparada: t.alerta5h30mDisparada || false
+                }));
+
                 const existing = JSON.parse(localStorage.getItem('tickets') || '[]');
                 if (existing.length === 0) {
                     localStorage.setItem('tickets', JSON.stringify(imported));
@@ -1420,9 +1615,6 @@ function importarTickets() {
     input.click();
 }
 
-// ============================================
-// FUNCIONES DE COPIADO MEJORADAS CON ACTUALIZACIÓN DE TIEMPOS
-// ============================================
 function generarCronologiaTXT() {
     const btn = document.querySelector('.cronologia-btn');
     const originalHTML = btn.innerHTML;
@@ -1430,17 +1622,14 @@ function generarCronologiaTXT() {
     if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación" para generar la cronología', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
     const ticketIdEl = document.getElementById('ticketId');
     if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket para generar la cronología', 'warning'); ticketIdEl.focus(); return; }
-
-    // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
     actualizarPlantilla();
-
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
     const fechaGeneracion = ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
     let historialFormateado = '';
-    if (avancesArray.length === 0) { historialFormateado = '  Sin avances registrados\n'; }
+    if (avancesArray.length === 0) { historialFormateado = 'Sin avances registrados\n'; }
     else {
         historialFormateado = avancesArray.map((avance, index) => {
             const fechaStr = avance.timestamp.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
@@ -1454,17 +1643,22 @@ function generarCronologiaTXT() {
     }
 
     const ticketsSecundariosValor = document.getElementById('ticketSecundarios').value.trim();
-    const ticketsSecundariosFormato = ticketsSecundariosValor ? ticketsSecundariosValor.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0).map(t => `- ${t}`).join('\n') : '   - Ninguno';
+    const ticketsSecundariosAnalisis = analizarTicketsSecundarios(ticketsSecundariosValor);
+    const ticketsSecundariosFormato = ticketsSecundariosAnalisis.total > 0 ?
+        ticketsSecundariosAnalisis.validos.map(t => `- ${t}`).join('\n') :
+        'Ninguno';
 
     const contenido = `╔══════════════════════════════════════════════════════════════════════════════╗
 ║ CRONOLOGÍA DETALLADA DEL TICKET - INFORME SLA COMPLETO
 ╚══════════════════════════════════════════════════════════════════════════════╝
-ID Ticket        : ${ticketIdEl.value}
-Tramo afectado   : ${document.getElementById('tramo').value || 'No especificado'}
-${obtenerHostnamePuertosTexto().split('\n').map(l => 'Hostname/Puertos : ' + l).join('\n')}
-Fecha afectación : ${fechaAfectacionStr} (GMT-5)
-Estado actual    : ${ticketResuelto ? 'RESUELTO' : (ticketSuspendido ? 'SUSPENDIDO' : 'EN PROGRESO')}
+ID Ticket          : ${ticketIdEl.value}
+Tramo afectado     : ${document.getElementById('tramo').value || 'No especificado'}
+${obtenerHostnamePuertosTexto().split('\n').map(l => 'Hostname/Puertos     : ' + l).join('\n')}
+Fecha afectación   : ${fechaAfectacionStr} (GMT-5)
+Estado actual      : ${ticketResuelto ? 'RESUELTO' : (ticketSuspendido ? 'SUSPENDIDO' : 'EN PROGRESO')}
 ${ticketResuelto ? `Fecha resolución : ${fechaResolucion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false })} (GMT-5)` : ''}
+Ticket secundarios : ${ticketsSecundariosAnalisis.total}
+${ticketsSecundariosFormato}
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ TIEMPOS SLA CALCULADOS DESDE LA FECHA DE AFECTACIÓN
 ├──────────────────────────────────────────────────────────────────────────────┤
@@ -1476,7 +1670,7 @@ ${ticketResuelto ? `Fecha resolución : ${fechaResolucion.toLocaleString('es-EC'
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ HISTORIAL DE AVANCES (orden cronológico)
 ├──────────────────────────────────────────────────────────────────────────────┤
-${historialFormateado || '  Sin avances registrados'}
+${historialFormateado || 'Sin avances registrados'}
 └──────────────────────────────────────────────────────────────────────────────┘
 Generado el: ${fechaGeneracion} (GMT-5) | Sistema de gestión de incidencias v2.9
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -1488,136 +1682,21 @@ ${ticketResuelto ? '║ Ticket resuelto - tiempos finales congelados en la fecha
     const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `cronologia_ticket_${ticketIdEl.value.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
-
+    a.href = url;
+    a.download = `cronologia_ticket_${ticketIdEl.value.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 0);
     mostrarToast(`✅ Cronología generada y descargada: ${a.download}`, 'success');
-
-    // Feedback visual en el botón
     btn.innerHTML = '✅ ¡Descargado!';
     btn.style.transform = 'scale(0.95)';
     setTimeout(() => {
         btn.innerHTML = originalHTML;
         btn.style.transform = '';
     }, 2000);
-}
-
-function copiarCronologia() {
-    const btn = document.querySelector('.copiar-cronologia-btn');
-    const originalHTML = btn.innerHTML;
-    const originalClasses = btn.className;
-    const fechaAfectacion = obtenerFechaAfectacion();
-    if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación" para generar la cronología', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
-    const ticketIdEl = document.getElementById('ticketId');
-    if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket para generar la cronología', 'warning'); ticketIdEl.focus(); return; }
-
-    // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
-    actualizarPlantilla();
-
-    const ahora = ticketResuelto ? fechaResolucion : new Date();
-    const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
-    const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-    const fechaGeneracion = ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-    let historialFormateado = '';
-    if (avancesArray.length === 0) { historialFormateado = '  Sin avances registrados\n'; }
-    else {
-        historialFormateado = avancesArray.map((avance, index) => {
-            const fechaStr = avance.timestamp.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
-            let icono = '•';
-            if (avance.tipo === 'suspension') icono = '⏸️';
-            else if (avance.tipo === 'reanudacion') icono = '▶️';
-            else if (avance.tipo === 'resuelto') icono = '✅';
-            const indicadorEdicion = avance.editado ? ' ✏️' : '';
-            return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${indicadorEdicion}`;
-        }).join('\n');
-    }
-
-    const contenidoCronologia = `╔══════════════════════════════════════════════════════════════════════════════╗
-║ CRONOLOGÍA DETALLADA DEL TICKET - INFORME SLA COMPLETO
-╚══════════════════════════════════════════════════════════════════════════════╝
-ID Ticket        : ${ticketIdEl.value}
-Tramo afectado   : ${document.getElementById('tramo').value || 'No especificado'}
-${obtenerHostnamePuertosTexto().split('\n').map(l => 'Hostname/Puertos : ' + l).join('\n')}
-Fecha afectación : ${fechaAfectacionStr} (GMT-5)
-Estado actual    : ${ticketResuelto ? 'RESUELTO' : (ticketSuspendido ? 'SUSPENDIDO' : 'EN PROGRESO')}
-${ticketResuelto ? `Fecha resolución : ${fechaResolucion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false })} (GMT-5)` : ''}
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ TIEMPOS SLA CALCULADOS DESDE LA FECHA DE AFECTACIÓN
-├──────────────────────────────────────────────────────────────────────────────┤
-│ Tiempo total transcurrido : ${formatear(totalTime)}
-│ Tiempo en progreso        : ${formatear(activeTime)}
-│ Tiempo suspendido         : ${formatear(suspendedTime)}
-│ ${ticketResuelto ? '* Ticket resuelto - tiempos congelados en la fecha de resolución' : ''}
-└──────────────────────────────────────────────────────────────────────────────┘
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ HISTORIAL DE AVANCES (orden cronológico)
-├──────────────────────────────────────────────────────────────────────────────┤
-${historialFormateado}
-└──────────────────────────────────────────────────────────────────────────────┘
-Generado el: ${fechaGeneracion} (GMT-5) | Sistema de gestión de incidencias v2.9
-╔══════════════════════════════════════════════════════════════════════════════╗
-║ Nota SLA: Los tiempos se calculan exclusivamente desde la fecha de afectación
-║ considerando todos los eventos de suspensión y reanudación.
-║ El tiempo suspendido se excluye del cómputo para el cumplimiento del SLA.
-${ticketResuelto ? '║ Ticket resuelto - tiempos finales en la fecha de resolución.' : ''}
-╚══════════════════════════════════════════════════════════════════════════════╝`;
-    navigator.clipboard.writeText(contenidoCronologia).then(() => {
-        mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Cronología Copiada!');
-    }).catch(err => {
-        console.error('Error al copiar:', err);
-        mostrarToast('❌ Error al copiar al portapapeles', 'error');
-        btn.innerHTML = originalHTML;
-        btn.className = originalClasses;
-    });
-}
-
-// ============================================
-// FUNCIÓN SIMPLIFICADA PARA CONTAR TICKETS SECUNDARIOS
-// ============================================
-function analizarTicketsSecundarios(textoTickets) {
-    if (!textoTickets || !textoTickets.trim()) {
-        return {
-            resumen: 'No hay tickets secundarios registrados',
-            total: 0
-        };
-    }
-
-    // Dividir por líneas o comas
-    const lineas = textoTickets.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0);
-
-    // Simplemente contar cuántos tickets hay
-    const totalTickets = lineas.length;
-
-    // Construir resumen simple
-    let resumen = totalTickets > 0 ? `${totalTickets} ticket${totalTickets > 1 ? 's' : ''} secundario${totalTickets > 1 ? 's' : ''}` : 'No hay tickets secundarios';
-
-    return {
-        resumen: resumen,
-        total: totalTickets
-    };
-}
-
-// ============================================
-// FUNCIÓN PARA OBTENER ÚLTIMO AVANCE (SOLO TEXTO)
-// ============================================
-function obtenerUltimoAvanceTexto() {
-    if (avancesArray.length === 0) {
-        return null;
-    }
-    // Obtener el último avance ordenado por timestamp
-    const avancesOrdenados = [...avancesArray].sort((a, b) => b.timestamp - a.timestamp);
-    const ultimoAvance = avancesOrdenados[0];
-
-    // Excluir avances de sistema (suspensión, reanudación, resuelto)
-    if (ultimoAvance.tipo === 'suspension' || ultimoAvance.tipo === 'reanudacion' || ultimoAvance.tipo === 'resuelto' || ultimoAvance.tipo === 'sistema') {
-        // Si el último es de sistema, buscar el último avance de operador
-        const avanceOperador = avancesOrdenados.find(av => av.tipo === 'normal' || av.tipo === undefined);
-        return avanceOperador ? avanceOperador.texto : null;
-    }
-
-    return ultimoAvance.texto;
 }
 
 function copiarResumen1() {
@@ -1631,92 +1710,46 @@ function copiarResumen1() {
     const offnetEl = document.getElementById('offnet');
     const paisEl = document.getElementById('pais');
     const ticketSecundariosEl = document.getElementById('ticketSecundarios');
-
-    if (!ticketIdEl.value.trim()) {
-        mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning');
-        ticketIdEl.focus();
-        return;
-    }
-
+    if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning'); ticketIdEl.focus(); return; }
     const fechaAfectacion = obtenerFechaAfectacion();
-    if (!fechaAfectacion) {
-        mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación"', 'warning');
-        document.getElementById('fechaAfectacion').focus();
-        return;
-    }
-
-    // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
+    if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación"', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
     actualizarPlantilla();
 
-    // Obtener estado
     let estadoTexto = 'En Progreso';
-    if (ticketResuelto) estadoTexto = 'Resuelto';
+    if (ticketResuelto) estadoTexto = 'Resuelto'; 
     else if (ticketSuspendido) estadoTexto = 'Suspendido';
 
-    // Fechas formateadas
-    const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', {
-        timeZone: 'America/Guayaquil',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-
+    const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     let fechaResolucionStr = '';
     if (ticketResuelto && fechaResolucion) {
-        fechaResolucionStr = fechaResolucion.toLocaleString('es-EC', {
-            timeZone: 'America/Guayaquil',
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
+        fechaResolucionStr = fechaResolucion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     }
 
-    // TIEMPOS SLA ACTUALIZADOS
     const ahora = ticketResuelto ? fechaResolucion : new Date();
     const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
-
-    // ANALIZAR TICKETS SECUNDARIOS (VERSIÓN SIMPLIFICADA)
     const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
-    let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
+    const analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
 
-    // Construir resumen
     let resumen = `Ticket: ${ticketIdEl.value}`;
     resumen += `\nEstado: ${estadoTexto}`;
     resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
     resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
     resumen += `\nFecha de afectación (GMT-5): ${fechaAfectacionStr}`;
-
-    if (fechaResolucionStr) {
-        resumen += `\nFecha de resolución (GMT-5): ${fechaResolucionStr}`;
-    }
-
+    if (fechaResolucionStr) { resumen += `\nFecha de resolución (GMT-5): ${fechaResolucionStr}`; }
     resumen += `\n----------------------------------------`;
     resumen += `\nTIEMPOS SLA (ACTUALIZADOS):`;
     resumen += `\nTiempo en progreso: ${formatear(activeTime)}`;
     resumen += `\nTiempo suspendido: ${formatear(suspendedTime)}`;
     resumen += `\nTiempo total transcurrido: ${formatear(totalTime)}`;
-
-    if (ticketResuelto) {
-        resumen += `\n⚠️ TICKET RESUELTO ⚠️`;
-    }
-
+    if (ticketResuelto) { resumen += `\n⚠️ EVENTO RESUELTO ⚠️`; }
     resumen += `\n----------------------------------------`;
     resumen += `\nRed Onnet: ${onnetEl.value || 'No especificado'}`;
     resumen += `\nProveedor Offnet: ${offnetEl.value || 'No especificado'}`;
     resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
     resumen += `\n----------------------------------------`;
     resumen += `\nINFORMACIÓN ADICIONAL:`;
-    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
+    resumen += `\nTickets secundarios: ${analisisTickets.total}`;
 
-    // Copiar al portapapeles
     navigator.clipboard.writeText(resumen).then(() => {
         mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Resumen 1 Copiado!');
     }).catch(err => {
@@ -1727,6 +1760,31 @@ function copiarResumen1() {
     });
 }
 
+function analizarTicketsSecundarios(textoTickets) {
+    if (!textoTickets || !textoTickets.trim()) {
+        return { resumen: 'No hay tickets secundarios registrados', total: 0, validos: [] };
+    }
+    const lineas = textoTickets.split(/[\n,;]+/).map(t => t.trim()).filter(t => t.length > 0);
+    const regexTicket = /^TIK-[A-Z0-9-]+/i;
+    const ticketsValidos = lineas.filter(linea => regexTicket.test(linea));
+    const totalTickets = ticketsValidos.length;
+    let resumen = totalTickets > 0 ?
+    `${totalTickets} ticket${totalTickets > 1 ? 's' : ''} secundario${totalTickets > 1 ? 's' : ''}` :
+    'No hay tickets secundarios válidos';
+    return { resumen: resumen, total: totalTickets, validos: ticketsValidos };
+}
+
+function obtenerUltimoAvanceTexto() {
+    if (avancesArray.length === 0) { return null; }
+    const avancesOrdenados = [...avancesArray].sort((a, b) => b.timestamp - a.timestamp);
+    const ultimoAvance = avancesOrdenados[0];
+    if (ultimoAvance.tipo === 'suspension' || ultimoAvance.tipo === 'reanudacion' || ultimoAvance.tipo === 'resuelto' || ultimoAvance.tipo === 'sistema') {
+        const avanceOperador = avancesOrdenados.find(av => av.tipo === 'normal' || av.tipo === undefined);
+        return avanceOperador ? avanceOperador.texto : null;
+    }
+    return ultimoAvance.texto;
+}
+
 function copiarResumen2() {
     const btn = document.querySelector('.btn-resumen-2');
     const originalHTML = btn.innerHTML;
@@ -1734,36 +1792,69 @@ function copiarResumen2() {
     const ticketIdEl = document.getElementById('ticketId');
     const tramoEl = document.getElementById('tramo');
     const redAfectadaEl = document.getElementById('redAfectada');
-    const onnetEl = document.getElementById('onnet');
     const offnetEl = document.getElementById('offnet');
     const paisEl = document.getElementById('pais');
     const ticketSecundariosEl = document.getElementById('ticketSecundarios');
-    const impactoEl = document.getElementById('impacto');
     const diagnosticoEl = document.getElementById('diagnostico');
-    const accionesAdicionalesEl = document.getElementById('accionesAdicionales');
-
+    const noEtrCheck = document.getElementById('noEtrCheck');
+    const etrHorasInput = document.getElementById('etrHoras');
+    const etrMinutosInput = document.getElementById('etrMinutos');
     if (!ticketIdEl.value.trim()) {
         mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning');
         ticketIdEl.focus();
         return;
     }
-
     const fechaAfectacion = obtenerFechaAfectacion();
     if (!fechaAfectacion) {
         mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación"', 'warning');
         document.getElementById('fechaAfectacion').focus();
         return;
     }
-
-    // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
     actualizarPlantilla();
 
-    // Obtener estado
+    const ahora = ticketResuelto ? fechaResolucion : new Date();
+    const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
+    const etrHoras = parseInt(etrHorasInput.value) || 0;
+    const etrMinutos = parseInt(etrMinutosInput.value) || 0;
+    let etrOriginalTexto = 'No definido';
+    let etrRestanteTexto = 'No definido';
+    let etrRestanteCountdown = '--:--:--';
+
+    if (!noEtrCheck.checked && (etrHoras > 0 || etrMinutos > 0)) {
+        etrOriginalTexto = `${etrHoras}h ${etrMinutos}m`;
+        if (etrTotalMinutes > 0 && etrStartTime) {
+            const elapsedMs = Date.now() - etrStartTime;
+            const elapsedMinutes = elapsedMs / (1000 * 60);
+            const remainingMinutes = Math.max(0, etrTotalMinutes - elapsedMinutes);
+            const totalSeconds = Math.floor(remainingMinutes * 60);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            etrRestanteCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            etrRestanteTexto = `${etrRestanteCountdown} (Restante)`;
+        } else {
+            const totalEtrMinutes = (etrHoras * 60) + etrMinutos;
+            const remainingMinutes = Math.max(0, totalEtrMinutes - activeTime / (1000 * 60));
+            const totalSeconds = Math.floor(remainingMinutes * 60);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            etrRestanteCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            etrRestanteTexto = `${etrRestanteCountdown} (Estimado)`;
+        }
+    } else if (noEtrCheck.checked) {
+        etrOriginalTexto = 'Sin ETR definido';
+        etrRestanteTexto = 'N/A';
+        etrRestanteCountdown = 'N/A';
+    }
+
+    const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
+    let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
+    const ultimoAvanceTexto = obtenerUltimoAvanceTexto();
     let estadoTexto = 'En Progreso';
     if (ticketResuelto) estadoTexto = 'Resuelto';
     else if (ticketSuspendido) estadoTexto = 'Suspendido';
 
-    // Fechas formateadas
     const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', {
         timeZone: 'America/Guayaquil',
         year: 'numeric',
@@ -1775,77 +1866,38 @@ function copiarResumen2() {
         hour12: false
     });
 
-    // TIEMPOS SLA ACTUALIZADOS
-    const ahora = ticketResuelto ? fechaResolucion : new Date();
-    const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
-
-    // ANALIZAR TICKETS SECUNDARIOS (VERSIÓN SIMPLIFICADA)
-    const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
-    let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
-
-    // OBTENER ÚLTIMO AVANCE (SOLO TEXTO, SIN FECHA)
-    const ultimoAvanceTexto = obtenerUltimoAvanceTexto();
-
-    // Construir resumen
-    let resumen = `Ticket: ${ticketIdEl.value}`;
-    resumen += `\nEstado: ${estadoTexto}`;
-    resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
-    resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
-    resumen += `\nFecha de afectación (GMT-5): ${fechaAfectacionStr}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nTIEMPOS SLA (ACTUALIZADOS):`;
-    resumen += `\nTiempo en progreso: ${formatear(activeTime)}`;
-    resumen += `\nTiempo suspendido: ${formatear(suspendedTime)}`;
-    resumen += `\nTiempo total transcurrido: ${formatear(totalTime)}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nRed Onnet: ${onnetEl.value || 'No especificado'}`;
-    resumen += `\nProveedor Offnet: ${offnetEl.value || 'No especificado'}`;
-    resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nINFORMACIÓN ADICIONAL:`;
-    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
-    if (impactoEl.value.trim()) {
-        resumen += `\nImpacto: ${impactoEl.value}`;
-    }
-    resumen += `\n----------------------------------------`;
-
-    if (diagnosticoEl.value.trim()) {
-        resumen += `\nDIAGNÓSTICO INICIAL:`;
-        resumen += `\n${diagnosticoEl.value}`;
-
-    }
-    resumen += `\n----------------------------------------`;
-
-    // ETR
-    const noEtrCheck = document.getElementById('noEtrCheck');
-    let etrTxt = 'No definido';
-    if (!noEtrCheck.checked) {
-        const horas = parseInt(document.getElementById('etrHoras').value) || 0;
-        const minutos = parseInt(document.getElementById('etrMinutos').value) || 0;
-        if (horas > 0 || minutos > 0) {
-            etrTxt = `${horas}h ${minutos}m`;
-        }
-    }
-    resumen += `\nETR: ${etrTxt}`;
-
-    resumen += `\n----------------------------------------`;
-
-    // AGREGAR ÚLTIMO AVANCE (SOLO EN RESUMEN 2)
+    let resumen = `📋 TICKET DE INCIDENCIA - SEGUIMIENTO`;
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    resumen += `\n🎫 Ticket: ${ticketIdEl.value}`;
+    resumen += `\n📊 Estado: ${estadoTexto}`;
+    resumen += `\n🛤️ Tramo: ${tramoEl.value || 'No especificado'}`;
+    resumen += `\n🌐 Red afectada: ${redAfectadaEl.value || 'No especificada'}`;
+    resumen += `\n📅 Fecha afectación (GMT-5): ${fechaAfectacionStr}`;
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    resumen += `\n⏱️ TIEMPOS SLA:`;
+    resumen += `\n• Tiempo en progreso: ${formatear(activeTime)}`;
+    resumen += `\n• Tiempo suspendido: ${formatear(suspendedTime)}`;
+    resumen += `\n• Tiempo total: ${formatear(totalTime)}`;
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    resumen += `\n⏰ ETR ESTIMADO:`;
+    resumen += `\n• ETR Configurado: ${etrOriginalTexto}`;
+    resumen += `\n• Tiempo restante: ${etrRestanteTexto}`;
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    resumen += `\n🏢 Proveedor Offnet: ${offnetEl.value || 'No especificado'}`;
+    resumen += `\n🌍 País: ${paisEl.value || 'No especificado'}`;
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    resumen += `\n📝 INFORMACIÓN ADICIONAL:`;
+    resumen += `\n• Tickets secundarios: ${analisisTickets.total}`;
+    resumen += `\n• Diagnóstico: ${diagnosticoEl.value || 'Sin diagnóstico'}`;
     if (ultimoAvanceTexto) {
-        resumen += `\nÚLTIMO AVANCE:`;
+        resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        resumen += `\n💬 ÚLTIMO AVANCE:`;
         resumen += `\n${ultimoAvanceTexto}`;
-        resumen += `\n----------------------------------------`;
     }
+    resumen += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
-
-
-
-
-
-
-    // Copiar al portapapeles
     navigator.clipboard.writeText(resumen).then(() => {
-        mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Resumen 2 Copiado!');
+        mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ ¡Resumen 5H Copiado!');
     }).catch(err => {
         console.error('Error al copiar:', err);
         mostrarToast('❌ Error al copiar al portapapeles', 'error');
@@ -1865,3 +1917,96 @@ document.addEventListener('DOMContentLoaded', function () {
         if (existe) { cargarTicket(ultimoTicketId); }
     }
 });
+
+// Funciones para Cuadro de Cierre
+function abrirCuadroCierre() {
+    const modal = document.getElementById('modalCuadroCierre');
+    const ticketId = document.getElementById('ticketId').value || 'TIK-111-1111';
+    const fechaAfectacion = document.getElementById('fechaAfectacion').value;
+    let fechaInicio = '';
+    let horaInicio = '';
+    let fechaFinal = '';
+    let horaFinal = '';
+    if (fechaAfectacion) {
+        const [fecha, hora] = fechaAfectacion.split(' ');
+        fechaInicio = fecha;
+        horaInicio = hora;
+    }
+
+    const ahora = new Date();
+    const year = ahora.getFullYear();
+    const month = String(ahora.getMonth() + 1).padStart(2, '0');
+    const day = String(ahora.getDate()).padStart(2, '0');
+    const hours = String(ahora.getHours()).padStart(2, '0');
+    const minutes = String(ahora.getMinutes()).padStart(2, '0');
+    fechaFinal = `${year}-${month}-${day}`;
+    horaFinal = `${hours}:${minutes}`;
+
+    let tiempoTotal = '00:00';
+    if (fechaAfectacion) {
+        const inicio = new Date(`${fechaInicio}T${horaInicio}`);
+        const final = new Date(`${fechaFinal}T${horaFinal}`);
+        const diffMs = final - inicio;
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        tiempoTotal = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}`;
+    }
+
+    document.getElementById('cierreTicketId').value = ticketId;
+    document.getElementById('cierreTiempoTotal').value = tiempoTotal;
+    document.getElementById('cierreFechaInicio').value = fechaInicio;
+    document.getElementById('cierreHoraInicio').value = horaInicio;
+    document.getElementById('cierreFechaFinal').value = fechaFinal;
+    document.getElementById('cierreHoraFinal').value = horaFinal;
+    document.getElementById('cierreBrigada').value = '';
+    document.getElementById('cierreAmbitoFall').value = '';
+    document.getElementById('cierreCausaFall').value = '';
+    document.getElementById('cierreSolucion').value = '';
+    document.getElementById('cierreRazonTiempo').value = '';
+    document.getElementById('cierreCoordenadas').value = '';
+
+    modal.style.display = 'flex';
+}
+
+function cerrarCuadroCierre() {
+    const modal = document.getElementById('modalCuadroCierre');
+    modal.style.display = 'none';
+}
+
+function generarCuadroCierre() {
+    const ticketId = document.getElementById('cierreTicketId').value;
+    const tiempoTotal = document.getElementById('cierreTiempoTotal').value;
+    const fechaInicio = document.getElementById('cierreFechaInicio').value;
+    const horaInicio = document.getElementById('cierreHoraInicio').value;
+    const fechaFinal = document.getElementById('cierreFechaFinal').value;
+    const horaFinal = document.getElementById('cierreHoraFinal').value;
+    const brigada = document.getElementById('cierreBrigada').value;
+    const ambitoFall = document.getElementById('cierreAmbitoFall').value;
+    const causaFall = document.getElementById('cierreCausaFall').value;
+    const solucion = document.getElementById('cierreSolucion').value;
+    const razonTiempo = document.getElementById('cierreRazonTiempo').value;
+    const coordenadas = document.getElementById('cierreCoordenadas').value;
+    const sla = document.getElementById('cierreSLA').value;
+    const cuadroTexto = `
+TT: ${ticketId}
+Tiempo total del ticket: ${tiempoTotal}
+Fecha de inicio: ${fechaInicio}
+Hora de inicio: ${horaInicio}
+Fecha de final: ${fechaFinal}
+Hora de final: ${horaFinal}
+Brigada: ${brigada}
+Ámbito de la falla: ${ambitoFall}
+Causa de la falla: ${causaFall}
+Solución: ${solucion}
+Razón de Tiempo no imputable: ${razonTiempo}
+Coordenadas: ${coordenadas}
+SLA: ${sla}
+`.trim();
+    navigator.clipboard.writeText(cuadroTexto).then(() => {
+        mostrarToast('✅ Cuadro de cierre copiado al portapapeles', 'success');
+        cerrarCuadroCierre();
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        mostrarToast('❌ Error al copiar el cuadro de cierre', 'error');
+    });
+}

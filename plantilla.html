@@ -1082,14 +1082,98 @@
     </div>
     <!-- Modal Placeholder Eléctrico -->
     <div class="modal fade" id="modalElectrico" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">Plantilla Eléctrico</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-bolt me-2"></i>Plantilla Eléctrica</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body">
-                    <p>Contenido de Plantilla Eléctrico...</p>
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <form id="formElectrico">
+
+                                <div class="mb-2">
+                                    <label>Ticket:</label>
+                                    <input type="text" id="elecTicket" class="form-control form-control-sm">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Fecha:</label>
+                                    <div class="d-flex gap-2">
+                                        <input type="text" id="elecFecha" class="form-control form-control-sm" readonly>
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            onclick="ponerFecha()">Ahora</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Tipo:</label><br>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="setTipo('UPS EN BATERIA')">UPS batería</button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                        onclick="setTipo('TEMPERATURA ALTA')">Temperatura</button>
+                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                        onclick="setTipo('REVISION ELECTRICA')">Revisión</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="setTipo('GENERAL-DEFAULT')">General-Defualt</button>
+                                    <input type="hidden" id="elecTipo">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Nodo:</label>
+                                    <input type="text" id="elecNodo" class="form-control form-control-sm">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>UPS principal (%):</label>
+                                    <input type="number" id="elecUps1" class="form-control form-control-sm">
+                                </div>
+
+                                <div class="mb-2">
+                                    <button type="button" class="btn btn-sm btn-success" onclick="toggleUPS()">Agregar
+                                        UPS adicional</button>
+                                    <input type="number" id="elecUps2" class="form-control form-control-sm mt-2 d-none"
+                                        placeholder="UPS adicional %">
+                                </div>
+
+                                <div class="mb-2">
+                                    <button type="button" class="btn btn-sm btn-dark"
+                                        onclick="toggleRectificadores()">Rectificadores</button>
+                                    <div id="rectificadores" class="d-none mt-2">
+                                        <input type="text" id="rect1" class="form-control form-control-sm mb-1"
+                                            placeholder="Rectificador 1">
+                                        <input type="text" id="rect2" class="form-control form-control-sm"
+                                            placeholder="Rectificador 2">
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Observaciones:</label>
+                                    <textarea id="elecObs" class="form-control form-control-sm"></textarea>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Ingeniero N1:</label>
+                                    <input type="text" id="elecN1" class="form-control form-control-sm">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label>Ingeniero TC:</label>
+                                    <input type="text" id="elecTC" class="form-control form-control-sm" value="@">
+                                </div>
+
+                            </form>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="preview-box" id="previewElectrico"></div>
+                            <button class="btn btn-warning btn-sm mt-2" onclick="copiarElectrico()">Copiar</button>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -1660,6 +1744,86 @@ Ingeniero TC: ${ingTC}`;
                 }
             }
         }, 1000);
+
+        // ACTUALIZACIÓN ELECTRICO
+
+        function ponerFecha() {
+            const now = new Date();
+            const fecha = now.toISOString().replace('T', ' ').substring(0, 19) + " GMT-5";
+            document.getElementById('elecFecha').value = fecha;
+            actualizarElectrico();
+        }
+
+        function setTipo(tipo) {
+            document.getElementById('elecTipo').value = tipo;
+
+            let mensaje = "";
+            if (tipo === "UPS EN BATERIA") {
+                mensaje = "Nodo en batería, se solicita asistencia con GENERADOR URGENTE";
+            } else if (tipo === "TEMPERATURA ALTA") {
+                mensaje = "Se visualiza temperatura alta en el nodo, asistencia *URGENTE*";
+            } else if (tipo === "REVISION ELECTRICA") {
+                mensaje = "Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*";
+            } else if (tipo === "GENERAL-DEFAULT") {
+                mensaje = "UPS con alarma *GENERAL-DEFAULT*l";
+            }
+
+            document.getElementById('elecObs').value = mensaje;
+            actualizarElectrico();
+        }
+
+        function toggleUPS() {
+            document.getElementById('elecUps2').classList.toggle('d-none');
+        }
+
+        function toggleRectificadores() {
+            document.getElementById('rectificadores').classList.toggle('d-none');
+        }
+
+        function actualizarElectrico() {
+            const ticket = document.getElementById('elecTicket').value;
+            const fecha = document.getElementById('elecFecha').value;
+            const tipo = document.getElementById('elecTipo').value;
+            const nodo = document.getElementById('elecNodo').value;
+
+            let ups1 = document.getElementById('elecUps1').value;
+            let ups2 = document.getElementById('elecUps2').value;
+
+            if (ups1) ups1 += "%";
+            if (ups2) ups2 += "%";
+
+            const rect1 = document.getElementById('rect1')?.value || "";
+            const rect2 = document.getElementById('rect2')?.value || "";
+
+            const obs = document.getElementById('elecObs').value;
+            const n1 = document.getElementById('elecN1').value;
+            const tc = document.getElementById('elecTC').value;
+
+            let texto = `*ESCALACIÓN TORRE DE CONTROL*
+Ticket: ${ticket}
+Fecha: ${fecha}
+Tipo: ${tipo}
+Nodo: ${nodo}
+UPS principal: ${ups1}
+UPS adicional: ${ups2}
+Rectificadores: ${rect1} ${rect2}
+
+Observaciones: ${obs}
+
+Ingeniero N1: ${n1}
+Ingeniero TC: ${tc}`;
+
+            document.getElementById('previewElectrico').innerText = texto;
+        }
+
+        document.querySelectorAll('#formElectrico input, #formElectrico textarea')
+            .forEach(el => el.addEventListener('input', actualizarElectrico));
+
+        function copiarElectrico() {
+            const texto = document.getElementById('previewElectrico').innerText;
+            navigator.clipboard.writeText(texto);
+            alert("Copiado");
+        }
     </script>
 </body>
 

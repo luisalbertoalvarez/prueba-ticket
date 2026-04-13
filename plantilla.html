@@ -1091,17 +1091,20 @@
 
                 <div class="modal-body">
                     <div class="row">
-
+                        <h6 class="text-warning mb-3">
+                            <i class="fa-solid fa-pen-to-square me-2"></i>Llenar Datos
+                            <span class="text-danger small">( * Obligatorio)</span>
+                        </h6>
                         <div class="col-md-6">
                             <form id="formElectrico">
 
                                 <div class="mb-2">
-                                    <label>Ticket:</label>
+                                    <label class="form-label small fw-bold required-field">Ticket:</label>
                                     <input type="text" id="elecTicket" class="form-control form-control-sm">
                                 </div>
 
                                 <div class="mb-2">
-                                    <label>Fecha:</label>
+                                    <label class="form-label small fw-bold required-field">Fecha:</label>
                                     <div class="d-flex gap-2">
                                         <input type="text" id="elecFecha" class="form-control form-control-sm" readonly>
                                         <button type="button" class="btn btn-sm btn-primary"
@@ -1110,7 +1113,7 @@
                                 </div>
 
                                 <div class="mb-2">
-                                    <label>Tipo:</label><br>
+                                    <label class="form-label small fw-bold required-field">Tipo:</label>
                                     <button type="button" class="btn btn-sm btn-outline-danger"
                                         onclick="setTipo('UPS EN BATERIA')">UPS batería</button>
                                     <button type="button" class="btn btn-sm btn-outline-warning"
@@ -1123,12 +1126,12 @@
                                 </div>
 
                                 <div class="mb-2">
-                                    <label>Nodo:</label>
+                                    <label class="form-label small fw-bold required-field">Nodo:</label>
                                     <input type="text" id="elecNodo" class="form-control form-control-sm">
                                 </div>
 
                                 <div class="mb-2">
-                                    <label>UPS principal (%):</label>
+                                    <label class="form-label small fw-bold required-field">UPS principal (%):</label>
                                     <input type="number" id="elecUps1" class="form-control form-control-sm">
                                 </div>
 
@@ -1150,19 +1153,29 @@
                                     </div>
                                 </div>
 
+
+
                                 <div class="mb-2">
                                     <label>Observaciones:</label>
                                     <textarea id="elecObs" class="form-control form-control-sm"></textarea>
                                 </div>
 
-                                <div class="mb-2">
-                                    <label>Ingeniero N1:</label>
-                                    <input type="text" id="elecN1" class="form-control form-control-sm">
-                                </div>
+                                <hr class="mt-4 mb-2">
+                                <h6 class="fw-bold text-secondary">ESCALACIÓN</h6>
 
-                                <div class="mb-2">
-                                    <label>Ingeniero TC:</label>
-                                    <input type="text" id="elecTC" class="form-control form-control-sm" value="@">
+                                <div class="row g-3 mt-1">
+
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label small fw-bold">Ing. N1:</label>
+                                        <input type="text" id="elecN1" class="form-control form-control-sm">
+                                    </div>
+
+
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label small fw-bold">Ing. TC:</label>
+                                        <input type="text" id="elecTC" class="form-control form-control-sm" value="@">
+                                    </div>
+
                                 </div>
 
                             </form>
@@ -1341,9 +1354,9 @@
         }
         const modalElectrico = document.getElementById('modalElectrico');
 
-       modalElectrico.addEventListener('show.bs.modal', function () {
-    actualizarElectrico();
-});
+        modalElectrico.addEventListener('show.bs.modal', function () {
+            actualizarElectrico();
+        });
 
         // ============================================
         // FUNCIONES DINÁMICAS PARA MONITOREO
@@ -1846,7 +1859,7 @@ Ingeniero TC: ${ingTC}`;
 ${obs}
 
 ==============  
-Ingeniero N1: ${n1}  
+Ingeniero N1: ${n1}
 Ingeniero TC: ${tc}`;
 
             document.getElementById('previewElectrico').innerText = texto;
@@ -1856,9 +1869,32 @@ Ingeniero TC: ${tc}`;
             .forEach(el => el.addEventListener('input', actualizarElectrico));
 
         function copiarElectrico() {
+            const ticket = document.getElementById('elecTicket').value.trim();
+            const tipo = document.getElementById('elecTipo').value;
+            const ups1 = document.getElementById('elecUps1').value;
+
+            // VALIDACIONES
+            if (!ticket) {
+                alert("⚠️ El campo Ticket es obligatorio");
+                return;
+            }
+
+            if (!tipo) {
+                alert("⚠️ Debes seleccionar un Tipo");
+                return;
+            }
+
+            if (!ups1) {
+                alert("⚠️ El UPS principal es obligatorio");
+                return;
+            }
+
+            // SI TODO OK
             const texto = document.getElementById('previewElectrico').innerText;
-            navigator.clipboard.writeText(texto);
-            alert("Copiado");
+
+            navigator.clipboard.writeText(texto).then(() => {
+                alert("✅ Copiado correctamente");
+            });
         }
     </script>
 </body>

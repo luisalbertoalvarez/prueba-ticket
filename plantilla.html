@@ -1813,11 +1813,11 @@ Ingeniero TC: ${ingTC}`;
 
             let mensaje = "";
             if (tipo === "UPS EN BATERIA") {
-                mensaje = "⚠️ Nodo en batería, se solicita asistencia con GENERADOR URGENTE";
+                mensaje = "⚠️ Nodo en batería, se solicita asistencia con *GENERADOR URGENTE*";
             } else if (tipo === "TEMPERATURA ALTA") {
-                mensaje = "⚠️ Se visualiza temperatura alta en el nodo, asistencia *URGENTE";
+                mensaje = "⚠️ Se visualiza *temperatura alta* en el nodo, asistencia *URGENTE*";
             } else if (tipo === "REVISION ELECTRICA") {
-                mensaje = "🔧 Movilizar personal para revisión de *EQUIPOS ELÉCTRICOSo";
+                mensaje = "🔧 Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*";
             } else if (tipo === "GENERAL-DEFAULT") {
                 mensaje = " ⚡ UPS con alarma *GENERAL-DEFAULT*";
             }

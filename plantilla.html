@@ -1792,11 +1792,21 @@ Ingeniero TC: ${ingTC}`;
         // ACTUALIZACIÓN ELECTRICO
 
         function ponerFecha() {
-            const now = new Date();
-            const fecha = now.toISOString().replace('T', ' ').substring(0, 19) + " GMT-5";
-            document.getElementById('elecFecha').value = fecha;
-            actualizarElectrico();
-        }
+    const now = new Date();
+
+    // Formato: YYYY-MM-DD HH:mm:ss
+    const fecha =
+        now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, '0') + "-" +
+        String(now.getDate()).padStart(2, '0') + " " +
+        String(now.getHours()).padStart(2, '0') + ":" +
+        String(now.getMinutes()).padStart(2, '0') + ":" +
+        String(now.getSeconds()).padStart(2, '0') +
+        " GMT-5";
+
+    document.getElementById('elecFecha').value = fecha;
+    actualizarElectrico();
+}
 
         function setTipo(tipo) {
             document.getElementById('elecTipo').value = tipo;

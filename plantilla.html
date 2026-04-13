@@ -1173,17 +1173,21 @@
                                 <i class="fa-solid fa-eye me-2"></i>Vista Previa en Vivo
                             </h6>
                             <div class="preview-box" id="previewElectrico">
-                                *ESCALACIÓN TORRE DE CONTROL*
-                                Ticket:
-                                Fecha:
-                                Tipo:
-                                Nodo:
-                                UPS principal:
-                                UPS adicional:
-                                Rectificadores:
+                                ***ESCALACIÓN TORRE DE CONTROL***
+                                ---------DATOS PRINCIPALES----------
+                                * Ticket:
+                                * Fecha:
+                                * Tipo:
+                                * Nodo:
 
-                                Observaciones:
+                                --------ENERGÍA--------
+                                * UPS principal:
+                                * UPS adicional:
+                                * Rectificadores:
 
+                                ----------OBSERVACIONES-------------
+
+                                ==============
                                 Ingeniero N1:
                                 Ingeniero TC: @
                             </div>
@@ -1786,13 +1790,13 @@ Ingeniero TC: ${ingTC}`;
 
             let mensaje = "";
             if (tipo === "UPS EN BATERIA") {
-                mensaje = "Nodo en batería, se solicita asistencia con GENERADOR URGENTE";
+                mensaje = "⚠️ Nodo en batería, se solicita asistencia con GENERADOR URGENTE";
             } else if (tipo === "TEMPERATURA ALTA") {
-                mensaje = "Se visualiza temperatura alta en el nodo, asistencia *URGENTE*";
+                mensaje = "⚠️ Se visualiza temperatura alta en el nodo, asistencia *URGENTE";
             } else if (tipo === "REVISION ELECTRICA") {
-                mensaje = "Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*";
+                mensaje = "🔧 Movilizar personal para revisión de *EQUIPOS ELÉCTRICOSo";
             } else if (tipo === "GENERAL-DEFAULT") {
-                mensaje = "UPS con alarma *GENERAL-DEFAULT*l";
+                mensaje = " ⚡ UPS con alarma *GENERAL-DEFAULT*";
             }
 
             document.getElementById('elecObs').value = mensaje;
@@ -1826,18 +1830,23 @@ Ingeniero TC: ${ingTC}`;
             const n1 = document.getElementById('elecN1').value;
             const tc = document.getElementById('elecTC').value;
 
-            let texto = `*ESCALACIÓN TORRE DE CONTROL*
-Ticket: ${ticket}
-Fecha: ${fecha}
-Tipo: ${tipo}
-Nodo: ${nodo}
-UPS principal: ${ups1}
-UPS adicional: ${ups2}
-Rectificadores: ${rect1} ${rect2}
+            let texto = `***ESCALACIÓN TORRE DE CONTROL***
+---------DATOS PRINCIPALES----------
+* Ticket: ${ticket}
+* Fecha: ${fecha}
+* Tipo: ${tipo}
+* Nodo: ${nodo}
 
-Observaciones: ${obs}
+--------ENERGÍA--------
+* UPS principal: ${ups1}
+* UPS adicional: ${ups2}
+* Rectificadores: ${rect1} ${rect2}
 
-Ingeniero N1: ${n1}
+----------OBSERVACIONES-------------
+${obs}
+
+==============  
+Ingeniero N1: ${n1}  
 Ingeniero TC: ${tc}`;
 
             document.getElementById('previewElectrico').innerText = texto;

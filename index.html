@@ -1,792 +1,375 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
-
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket de Incidencia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Centro de Operaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f6;--surface:#fff;--ink:#14213d;--mut:#6b7893;--line:#e1e6ef;--side:#101a33;--side2:#1a2748;--acc:#10b5a4;--acc2:#0b8f82;--warn:#f59e0b;--bad:#ef4444;--ok:#22c55e;--r:14px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1224;--surface:#131d38;--ink:#e8edf8;--mut:#8f9bb8;--line:#233156;--side:#0a1226;--side2:#16223f}}
+:root[data-theme="dark"]{--bg:#0b1224;--surface:#131d38;--ink:#e8edf8;--mut:#8f9bb8;--line:#233156;--side:#0a1226;--side2:#16223f}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+/* Sidebar */
+.side{width:268px;background:var(--side);color:#cbd5ea;display:flex;flex-direction:column;padding:20px 14px;flex-shrink:0;transition:transform .35s cubic-bezier(.3,.8,.3,1);z-index:30}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 10px 22px;color:#fff;font-weight:800;font-size:17px}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--acc),#3b82f6);display:grid;place-items:center;box-shadow:0 6px 18px rgba(16,181,164,.4)}
+.nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.item{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;background:none;border-radius:12px;text-align:left;font-weight:600;font-size:14.5px;color:#cbd5ea;position:relative;transition:background .2s,color .2s}
+.item:hover{background:var(--side2);color:#fff}
+.item.active{background:linear-gradient(90deg,rgba(16,181,164,.25),rgba(16,181,164,.05));color:#fff}
+.item.active::before{content:"";position:absolute;left:-14px;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--acc)}
+.item svg{width:20px;height:20px;flex-shrink:0}
+.chev{margin-left:auto;transition:transform .3s}
+.open>.item .chev{transform:rotate(90deg)}
+.sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.3,.8,.3,1)}
+.open>.sub{grid-template-rows:1fr}
+.sub>div{overflow:hidden;margin-left:22px;border-left:1px solid #26345c;padding-left:8px}
+.sub .item{padding:9px 12px;font-size:13.5px;font-weight:500}
+.sub .item .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex-shrink:0}
+.badge{margin-left:auto;background:var(--bad);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.user{display:flex;align-items:center;gap:10px;padding:12px;border-top:1px solid #26345c;margin-top:10px;color:#fff;font-size:13px}
+.avatar{width:34px;height:34px;border-radius:50%;background:#3b82f6;display:grid;place-items:center;font-weight:700}
+.user small{display:block;color:#8d9ac0}
+
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:14px;padding:18px 28px;border-bottom:1px solid var(--line);background:var(--surface)}
+.burger{display:none;border:1px solid var(--line);background:none;border-radius:10px;padding:8px}
+.top h1{font-size:20px;margin:0;font-weight:800}
+.top p{margin:2px 0 0;color:var(--mut);font-size:13px}
+.sp{flex:1}
+.btn{border:0;background:var(--acc);color:#fff;font-weight:700;padding:10px 18px;border-radius:11px;font-size:14px;transition:transform .15s,background .2s,box-shadow .2s;box-shadow:0 6px 16px rgba(16,181,164,.3)}
+.btn:hover{background:var(--acc2);transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{background:var(--bg)}
+.view{flex:1;overflow:auto;padding:26px 28px 40px}
+.view>*{animation:in .45s cubic-bezier(.3,.8,.3,1) both}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:50%;background:var(--c);opacity:.12}
+.kpi span{color:var(--mut);font-size:13px;font-weight:600}
+.kpi b{display:block;font-size:34px;font-weight:800;margin-top:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-h h2{margin:0;font-size:16px;font-weight:700;flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:99px;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--mut);transition:.2s}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+th{text-align:left;font-size:12.5px;color:var(--mut);font-weight:600;padding:12px 20px;background:var(--bg)}
+td{padding:14px 20px;border-top:1px solid var(--line)}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:var(--bg)}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c)}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.empty{padding:40px;text-align:center;color:var(--mut)}
+
+.set{display:flex;align-items:center;gap:16px;padding:18px 20px;border-top:1px solid var(--line)}
+.set:first-of-type{border-top:0}
+.set div{flex:1}.set small{color:var(--mut);display:block;margin-top:2px}
+.sw{width:46px;height:26px;border-radius:99px;background:var(--line);border:0;position:relative;transition:background .25s;padding:0;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.3,.8,.3,1);box-shadow:0 2px 4px rgba(0,0,0,.25)}
+.sw[aria-checked=true]{background:var(--acc)}
+.sw[aria-checked=true]::after{transform:translateX(20px)}
+details{border-top:1px solid var(--line);padding:16px 20px}
+details:first-of-type{border-top:0}
+summary{font-weight:700;cursor:pointer}
+details p{color:var(--mut);margin:10px 0 0;line-height:1.55}
+
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(8,14,30,.55);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+.ov.show{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:20px;width:100%;max-width:480px;padding:26px;transform:translateY(24px) scale(.96);transition:transform .35s cubic-bezier(.3,1.3,.5,1);box-shadow:0 30px 80px rgba(0,0,0,.35);max-height:90vh;overflow:auto}
+.ov.show .modal{transform:none}
+.modal h3{margin:0 0 4px;font-size:20px}
+.modal .sub2{color:var(--mut);margin:0 0 18px;font-size:13.5px}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+input,select,textarea{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
+textarea{resize:vertical;min-height:80px}
+.row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.dl{display:grid;grid-template-columns:110px 1fr;gap:10px 12px;font-size:14px;margin:0}
+.modal.wide{max-width:960px}
+.tg{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}
+.sec{margin:20px 0 -4px;padding-top:14px;border-top:1px dashed var(--line);font-size:13px;font-weight:800;color:var(--acc2)}
+.sec:first-of-type{border-top:0;margin-top:6px;padding-top:0}
+pre.tpl{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;font:12.5px/1.65 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0;position:sticky;top:0}
+@media (max-width:760px){.tg{grid-template-columns:1fr}.fg3{grid-template-columns:1fr}}
+.dl dt{color:var(--mut)}.dl dd{margin:0;font-weight:600}
+.toast{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:14px 20px;border-radius:12px;font-weight:600;transform:translateY(100px);opacity:0;transition:.4s cubic-bezier(.3,1.3,.5,1);z-index:60}
+.toast.show{transform:none;opacity:1}
+.scrim{display:none}
+
+@media (max-width:860px){
+ .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
+ .side.show{transform:none}
+ .scrim{display:block;position:fixed;inset:0;background:rgba(8,14,30,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
+ .scrim.show{opacity:1;pointer-events:auto}
+ .burger{display:block}
+ .top{padding:14px 16px}.view{padding:18px 16px 40px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
-
 <body>
-    <div id="themeTransition" class="theme-transition">
-        <div class="spinner"></div>
-    </div>
+<aside class="side" id="side">
+ <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>NetOps</div>
+ <nav class="nav" id="nav"></nav>
+ <div class="user" id="user" style="cursor:pointer" title="Cambiar nombre"><div class="avatar" id="av">?</div><div><span id="uname"></span><small>Ingeniero N1</small></div></div>
+</aside>
+<div class="scrim" id="scrim"></div>
 
-    <div class="container-fluid">
-        <header class="text-center mb-4">
-            <h1><i class="bi bi-ticket-perforated"></i> Ticket de Incidencia</h1>
-            <p class="subtitle">Sistema de gestión y seguimiento de incidencias de red con monitoreo SLA</p>
-        </header>
+<section class="main">
+ <header class="top">
+  <button class="burger" id="burger" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <div><h1 id="title"></h1><p id="subtitle"></p></div>
+  <div class="sp"></div>
+  <button class="btn" id="newBtn">+ Nuevo escalamiento</button>
+</header>
+ <main class="view" id="view"></main>
+</section>
 
-        <!-- Dashboard Stats -->
-        <div class="dashboard-stats">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary"><i class="bi bi-inbox"></i></div>
-                <div class="stat-content">
-                    <h3 id="totalTickets">0</h3>
-                    <p>Total Tickets</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-success"><i class="bi bi-play-circle"></i></div>
-                <div class="stat-content">
-                    <h3 id="activeTickets">0</h3>
-                    <p>En Progreso</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-warning"><i class="bi bi-pause-circle"></i></div>
-                <div class="stat-content">
-                    <h3 id="suspendedTickets">0</h3>
-                    <p>Suspendidos</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-info"><i class="bi bi-check-circle"></i></div>
-                <div class="stat-content">
-                    <h3 id="resolvedTickets">0</h3>
-                    <p>Resueltos</p>
-                </div>
-            </div>
-        </div>
+<div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast"></div>
 
-        <!-- Ticket en Curso -->
-        <div class="ticket-en-curso-container mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="ticket-header">
-                        <h5><i class="bi bi-clock-history"></i> Ticket en Curso</h5>
-                        <div id="listaTickets">
-                            <div class="ticket-dropdown-container">
-                                <select class="ticket-dropdown" disabled>
-                                    <option value="">N/A - N/A</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <button class="btn btn-primary" onclick="guardarTicket()">
-                            <i class="bi bi-save"></i> Guardar Ticket
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="nuevoTicket()">
-                            <i class="bi bi-plus-circle"></i> Nuevo Ticket
-                        </button>
-                        <button class="btn btn-outline-warning" id="suspendBtn" onclick="toggleEstado()">
-                            <i class="bi bi-pause-circle"></i> Suspender Ticket
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="eliminarTicket()">
-                            <i class="bi bi-trash"></i> Eliminar Ticket
-                        </button>
-                        <button class="btn btn-outline-success" id="resolveBtn" onclick="resolverTicket()">
-                            <i class="bi bi-flag"></i> Marcar como resuelto
-                        </button>
-                        <button class="btn btn-outline-info" id="reopenBtn" onclick="reabrirTicket()"
-                            style="display: none;">
-                            <i class="bi bi-arrow-counterclockwise"></i> Reabrir ticket
-                        </button>
-                        <button class="btn btn-outline-secondary" id="cuadroCierreBtn" onclick="abrirCuadroCierre()">
-                            <i class="bi bi-clipboard-check"></i> Cuadro de Cierre
-                        </button>
+<script>
+const ico={
+ seg:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+ esc:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+ cfg:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 115 0c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
+ ok:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'};
+const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg>`;
+const TYPES={Corte:'#ef4444',N1:'#3b82f6',Eléctrico:'#f59e0b','Fibra Oscura':'#8b5cf6',OTN:'#10b5a4'};
+const ST={Abierto:'#ef4444','En proceso':'#f59e0b',Escalado:'#3b82f6',Resuelto:'#22c55e'};
+let T=[
+ {id:'INC-4821',site:'Nodo Guayaquil Centro',type:'Corte',st:'Abierto',pr:'Crítica',time:'18 min',who:'Equipo Fibra Sur',desc:'Corte de fibra troncal detectado por pérdida de señal.'},
+ {id:'INC-4820',site:'Cliente Puerto Marítimo',type:'N1',st:'En proceso',pr:'Alta',time:'42 min',who:'Soporte N1',desc:'Intermitencia reportada en enlace dedicado.'},
+ {id:'INC-4817',site:'Sitio Durán 02',type:'Eléctrico',st:'Escalado',pr:'Alta',time:'1 h 10 min',who:'Energía y planta',desc:'Falla de rectificador, banco de baterías en descarga.'},
+ {id:'INC-4812',site:'Tramo Daule – Samborondón',type:'Fibra Oscura',st:'En proceso',pr:'Media',time:'2 h 05 min',who:'Fibra Oscura',desc:'Atenuación elevada en hilo 12 del tramo.'},
+ {id:'INC-4809',site:'Anillo OTN Costa',type:'OTN',st:'Abierto',pr:'Crítica',time:'2 h 40 min',who:'Transporte OTN',desc:'Alarma LOS en tarjeta de línea 10G.'},
+ {id:'INC-4801',site:'Nodo Milagro',type:'Corte',st:'Resuelto',pr:'Media',time:'4 h 15 min',who:'Equipo Fibra Norte',desc:'Fusión realizada y enlace restablecido.'},
+ {id:'INC-4798',site:'Cliente Banco Litoral',type:'N1',st:'Resuelto',pr:'Baja',time:'5 h 02 min',who:'Soporte N1',desc:'Cambio de parámetros en CPE.'},
+ {id:'INC-4795',site:'Sitio Salinas 01',type:'Eléctrico',st:'En proceso',pr:'Media',time:'6 h 30 min',who:'Energía y planta',desc:'Revisión de transferencia automática.'}];
+const MENU=[
+ {id:'seg',label:'Seguimiento',icon:'seg'},
+ {id:'esc',label:'Escalamiento',icon:'esc',sub:Object.keys(TYPES)},
+ {id:'res',label:'Resueltos',icon:'ok'},
+ {id:'cfg',label:'Configuración',icon:'cfg'},
+ {id:'help',label:'Ayuda',icon:'help'}];
+const $=s=>document.querySelector(s);
+let cur='seg',filter='Todos';
 
-                            <!-- 👇 NUEVO BOTÓN AÑADIDO -->
-                            <button class="btn btn-primary" onclick="window.location.href='plantilla.html'">
-                                <i class="bi bi-file-earmark-plus me-2"></i>Crear Plantilla de Seguimiento
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+function buildNav(){
+ $('#nav').innerHTML=MENU.map(m=>m.sub?`
+  <div class="grp ${cur.startsWith('esc')?'open':''}" id="g-esc">
+   <button class="item ${cur.startsWith('esc')?'active':''}" data-toggle>${svg(m.icon)}${m.label}<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+   <div class="sub"><div>${m.sub.map(s=>{const n=T.filter(t=>t.type===s&&t.st!=='Resuelto').length;return `<button class="item ${cur==='esc:'+s?'active':''}" data-go="esc:${s}" style="--c:${TYPES[s]}"><span class="dot"></span>${s}${n?`<span class="badge" style="background:${TYPES[s]}">${n}</span>`:''}</button>`}).join('')}</div></div>
+  </div>`:`<button class="item ${cur===m.id?'active':''}" data-go="${m.id}">${svg(m.icon)}${m.label}</button>`).join('');
+}
+$('#nav').addEventListener('click',e=>{
+ const t=e.target.closest('[data-toggle]');
+ if(t){t.parentElement.classList.toggle('open');return}
+ const g=e.target.closest('[data-go]');
+ if(g){go(g.dataset.go);closeSide()}
+});
 
-        <div class="container-grid">
-            <!-- Columna Izquierda -->
-            <div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> 📋 Detalles del Ticket</h5>
+function go(v){cur=v;filter='Todos';buildNav();render()}
+function closeSide(){$('#side').classList.remove('show');$('#scrim').classList.remove('show')}
+$('#burger').onclick=()=>{$('#side').classList.add('show');$('#scrim').classList.add('show')};
+$('#scrim').onclick=closeSide;
 
-                        <div class="form-section">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">ID Ticket</label>
-                                    <input type="text" class="form-control" id="ticketId"
-                                        placeholder="Ej: INC-2026-001">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Fecha y hora afectación (GMT-5)</label>
-                                    <div class="input-group-datetime">
-                                        <input type="text" class="form-control input-datetime-text" id="fechaAfectacion"
-                                            placeholder="2026-02-03 14:30" onclick="abrirDatePicker('fechaAfectacion')"
-                                            readonly>
-                                        <button type="button" class="btn btn-now"
-                                            onclick="abrirDatePicker('fechaAfectacion')"
-                                            title="Seleccionar fecha y hora">
-                                            <i class="bi bi-clock"></i>
-                                        </button>
-                                    </div>
-                                    <small class="format-label">Formato: 2026-02-03 14:30</small>
-                                </div>
-                            </div>
-                        </div>
+function count(el,to){let n=0;const step=Math.max(1,Math.ceil(to/20));const i=setInterval(()=>{n=Math.min(to,n+step);el.textContent=n;if(n>=to)clearInterval(i)},30)}
 
-                        <!-- Suspensión Manual -->
-                         
-                        <div class="manual-state-section suspension-manual-section">
-                            <div class="manual-state-title suspension-manual-title">
-                                <i class="bi bi-pause-circle"></i> Marcar suspensión manual
-                            </div>
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" id="motivoSuspension"
-                                        placeholder="Motivo (opcional)">
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="input-group-datetime">
-                                        <input type="text" class="form-control input-datetime-text"
-                                            id="suspensionManual" placeholder="2026-02-03 14:30"
-                                            onclick="abrirDatePicker('suspensionManual')" readonly>
-                                        <button type="button" class="btn btn-now"
-                                            onclick="abrirDatePicker('suspensionManual')"
-                                            title="Seleccionar fecha y hora">
-                                            <i class="bi bi-clock"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                            </div>
-                            
-                            <button class="btn suspension-manual-btn manual-state-btn w-100 mt-2"
-                                onclick="agregarSuspensionManual()">
-                                <i class="bi bi-pause-circle"></i> Registrar Suspensión
-                            </button>
-                        </div>
+function rows(list){
+ if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
+ return `<div class="scroll"><table><thead><tr><th>ID</th><th>Sitio o cliente</th><th>Tipo</th><th>Estado</th><th>Prioridad</th><th>Tiempo</th></tr></thead><tbody>${list.map(t=>`
+ <tr data-id="${t.id}"><td><b>${t.id}</b></td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`).join('')}</tbody></table></div>`;
+}
 
-                        <!-- Reanudación Manual -->
-                        <div class="manual-state-section progreso-manual-section">
-                            <div class="manual-state-title progreso-manual-title">
-                                <i class="bi bi-play-circle"></i> Marcar progreso manual
-                            </div>
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" id="motivoReanudacion"
-                                        placeholder="Motivo (opcional)">
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="input-group-datetime">
-                                        <input type="text" class="form-control input-datetime-text"
-                                            id="reanudacionManual" placeholder="2026-02-03 14:30"
-                                            onclick="abrirDatePicker('reanudacionManual')" readonly>
-                                        <button type="button" class="btn btn-now"
-                                            onclick="abrirDatePicker('reanudacionManual')"
-                                            title="Seleccionar fecha y hora">
-                                            <i class="bi bi-clock"></i>
-                                        </button>
-                                    </div>
-                                </div>                                
-                            </div>
-                            <button class="btn progreso-manual-btn manual-state-btn w-100 mt-2"
-                                onclick="agregarReanudacionManual()">
-                                <i class="bi bi-play-circle"></i> Registrar Reanudación
-                            </button>
-                        </div>
-                        <!-- Información de equipo afectado -->
-                        <div class="form-section">
-                            <h6 class="mb-3"><i class="bi bi-hdd-network"></i> Información técnica del equipo afectado
-                            </h6>
-                            <div class="row">
+function render(){
+ const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
+ $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res')?'none':'';$('#newBtn').textContent=cur==='esc:Corte'?'+ Escalar corte':'+ Nuevo escalamiento';
+ if(cur==='seg'){
+  $('#title').textContent='Seguimiento';$('#subtitle').textContent='Estado en vivo de todos los incidentes';
+  const open=T.filter(t=>t.st!=='Resuelto');
+  const k=[['Incidentes activos',open.length,'#3b82f6'],['Críticos',open.filter(t=>t.pr==='Crítica').length,'#ef4444'],['Escalados',T.filter(t=>t.st==='Escalado').length,'#f59e0b'],['Resueltos hoy',T.filter(t=>t.st==='Resuelto').length,'#22c55e']];
+  const list=filter==='Todos'?open:open.filter(t=>t.type===filter);
+  v.innerHTML=`<div class="kpis">${k.map(x=>`<div class="kpi" style="--c:${x[2]}"><span>${x[0]}</span><b data-n="${x[1]}">0</b></div>`).join('')}</div>
+  <div class="card"><div class="card-h"><h2>Incidentes</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
+  v.querySelectorAll('[data-n]').forEach(el=>count(el,+el.dataset.n));
+ }else if(isEsc){
+  $('#title').textContent='Escalamiento · '+type;$('#subtitle').textContent='Incidentes de tipo '+type+' y su avance';
+  const list=T.filter(t=>t.type===type&&t.st!=='Resuelto');
+  v.innerHTML=`<div class="card"><div class="card-h"><h2>${list.length} incidentes de ${type}</h2></div>${rows(list)}</div>`;
+ }else if(cur==='res'){
+  $('#title').textContent='Resueltos';$('#subtitle').textContent='Incidentes ya cerrados';
+  const done=T.filter(t=>t.st==='Resuelto');const list=filter==='Todos'?done:done.filter(t=>t.type===filter);
+  v.innerHTML=`<div class="card"><div class="card-h"><h2>${done.length} resueltos</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
+ }else if(cur==='cfg'){
+  $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
+  const opts=[['Alertas sonoras','Suena un aviso cuando entra un incidente crítico',true],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
+  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>`).join('')}</div>`;
+ }else{
+  $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
+  v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
+ }
+}
 
-                                <div class="col-md-12">
-                                    <label class="form-label">Tramo afectado</label>
-                                    <input type="text" class="form-control" id="tramo"
-                                        placeholder="Ej: Quito-Guayaquil">
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Equipos afectados (Hostname/Puertos)</label>                                
-                                <div id="hostnamePuertosContainer"></div>
-                                
-                                <button class="btn btn-outline-primary btn-sm mt-2"
-                                    onclick="agregarCampoHostnamePuerto()">
-                                    <i class="bi bi-plus-circle"></i> Agregar otro equipo/corte
-                                </button>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Red afectada</label>
-                                    <select class="form-select" id="redAfectada">
-                                        <option value="">Seleccionar red</option>
-                                        <option value="Nokia">Nokia</option>
-                                        <option value="Padtec">Padtec</option>
-                                        <option value="Huawei">Huawei</option>
-                                        <option value="OTN">OTN</option>
-                                        <option value="Fibra Oscura">Fibra Oscura</option>
-                                        <option value="FO">FO</option>
-                                        <option value="Infinera">Infinera</option>
-                                        <option value="Packet Light">Packet Light</option>
-                                        <option value="Huawei OTN y IP">Huawei "OTN" y IP</option>
-                                        <option value="IP">IP</option>
-                                        <option value="CORTE-URBANO">Corte-Urbano</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Red Onnet</label>
-                                    <select class="form-select" id="onnet">
-                                        <option value="">Seleccionar</option>
-                                        <option value="Si">Si</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+/* Delegated events on view */
+$('#view').addEventListener('click',e=>{
+ const f=e.target.closest('[data-f]');if(f){filter=f.dataset.f;render();return}
+ const r=e.target.closest('tr[data-id]');if(r){detail(r.dataset.id);return}
+ const s=e.target.closest('[data-sw]');
+ if(s){const on=s.getAttribute('aria-checked')!=='true';s.setAttribute('aria-checked',on);
+  if(s.dataset.sw==='3'){if(on)document.documentElement.dataset.theme='dark';else document.documentElement.dataset.theme='light'}
+  toast(on?'Opción activada':'Opción desactivada')}
+});
 
-                        <div class="form-section">
-                            <h6 class="mb-3"><i class="bi bi-info-circle"></i> Información adicional de la incidencia
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">Proveedor Offnet</label>
-                                    <input type="text" class="form-control" id="offnet" placeholder="Ej: CNT, AT&T">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">País de falla</label>
-                                    <input type="text" class="form-control" id="pais" placeholder="Ej: Ecuador">
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <label class="form-label">Ticket secundarios</label>
-                                    <textarea class="form-control" id="ticketSecundarios" rows="2"
-                                        placeholder="Tickets relacionados con esta incidencia (uno por línea)"></textarea>
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Impacto</label>
-                                    <input type="text" class="form-control" id="impacto" placeholder="Ej: Sin servicio">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Capacidad afectada</label>
-                                    <input type="text" class="form-control" id="capacidadAfectada"
-                                        placeholder="Ej: 10 Gbps">
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <label class="form-label">Diagnóstico inicial</label>
-                                    <textarea class="form-control" id="diagnostico" rows="2"
-                                        placeholder="Describa el diagnóstico inicial"></textarea>
-                                </div>
-                            </div>
-                            <div class="form-section">
-                                <label class="form-label"><i class="bi bi-tools"></i> Acciones adicionales</label>
-                                <textarea class="form-control" id="accionesAdicionales" rows="2"
-                                    placeholder="Describa acciones adicionales realizadas"></textarea>
-                            </div>
-                        </div>
+/* Modal */
+function open(html,w){$('#modal').className='modal'+(w?' wide':'');$('#modal').oninput=$('#modal').onchange=null;$('#modal').innerHTML=html;$('#ov').classList.add('show')}
+function close(){$('#ov').classList.remove('show')}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov'||e.target.closest('[data-close]'))close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
-                        <!-- ETR Section -->
-                        <div class="etr-section">
-                            <div class="card-body">
-                                <h6 class="mb-3"><i class="bi bi-clock"></i> ETR Estimado (Tiempo estimado de
-                                    resolución)</h6>
+function detail(id){
+ const t=T.find(x=>x.id===id),sg=t.seg||[];
+ open(`<h3>${t.id}</h3><p class="sub2">${t.site}</p>
+ <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd><dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button><button class="btn ghost" id="vt">Ver plantilla</button><button class="btn ghost" id="ct">Copiar plantilla</button><button class="btn ghost" id="sg">Crear plantilla seguimiento</button>${t.st!=='Resuelto'?`<button class="btn" id="resolve">Marcar resuelto</button>`:`<button class="btn" id="reopen">Reabrir</button>`}</div>`);
+ $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplCorte(dataOf(t));$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
+ $('#ct').onclick=()=>copyText(tplCorte(dataOf(t)),'Plantilla copiada');
+ document.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>copyText(sg[b.dataset.cs].text,'Seguimiento copiado'));
+ $('#sg').onclick=()=>ask({title:'Plantilla de seguimiento',sub:'Los datos se toman del ticket '+t.id+'. Solo falta el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
+ const r=$('#resolve');if(r)r.onclick=()=>{t.st='Resuelto';close();buildNav();render();toast(t.id+' resuelto: ahora está en Resueltos')};
+ const o=$('#reopen');if(o)o.onclick=()=>{t.st='Abierto';close();buildNav();render();toast(t.id+' reabierto')};
+}
 
-                                <div class="no-etr-check">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="noEtrCheck"
-                                            onchange="toggleNoEtr()">
-                                        <label class="form-check-label" for="noEtrCheck">
-                                            No hay ETR definido (sin tiempo estimado de resolución)
-                                        </label>
-                                    </div>
-                                </div>
+function segForm(t,num){
+ const base=dataOf(t);
+ open(`<h3>Seguimiento · ${esc(num)}</h3><p class="sub2">Datos tomados del ticket ${esc(t.id)}. Solo escribe el diagnóstico.</p>
+ <div class="tg"><div><label for="s-diag">Diagnóstico N1</label><textarea id="s-diag" style="min-height:200px"></textarea></div><div><pre class="tpl" id="tpl"></pre></div></div>
+ <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="scp">Copiar plantilla</button><button class="btn" id="smk">Guardar y copiar</button></div>`,true);
+ const gen=()=>tplCorte({...base,ticket:num,diag:$('#s-diag').value.trim()},'SEGUIMIENTO TORRE DE CONTROL');
+ const upd=()=>{$('#tpl').textContent=gen()};$('#modal').oninput=upd;upd();$('#s-diag').focus();
+ $('#scp').onclick=()=>copyText(gen(),'Plantilla copiada');
+ $('#smk').onclick=()=>{(t.seg=t.seg||[]).push({num,text:gen()});copyText(gen(),'Seguimiento '+num+' guardado y copiado');close()};
+}
 
-                                <div id="etrInputs">
-                                    <div class="etr-inputs-container">
-                                        <div class="etr-input-group">
-                                            <label class="form-label">Horas</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="bi bi-clock"></i></span>
-                                                <input type="number" class="form-control" id="etrHoras" min="0"
-                                                    value="0" onchange="iniciarContadorETR()">
-                                            </div>
-                                        </div>
-                                        <div class="etr-input-group">
-                                            <label class="form-label">Minutos</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="bi bi-clock"></i></span>
-                                                <input type="number" class="form-control" id="etrMinutos" min="0"
-                                                    max="59" value="0" onchange="iniciarContadorETR()">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted d-block mt-2">
-                                        <i class="bi bi-info-circle"></i> Ejemplo: Para 1h 30m, ingrese 1 en horas y 30
-                                        en minutos
-                                    </small>
-                                </div>
+$('#newBtn').onclick=()=>{
+ if(cur==='esc:Corte')return corteForm();
+ const pre=cur.startsWith('esc:')?cur.slice(4):'Corte';
+ open(`<h3>Nuevo escalamiento</h3><p class="sub2">Se notificará al área responsable al guardar.</p>
+ <label for="f-type">Tipo</label><select id="f-type">${Object.keys(TYPES).map(k=>`<option ${k===pre?'selected':''}>${k}</option>`).join('')}</select>
+ <label for="f-site">Sitio o cliente</label><input id="f-site" placeholder="Ej. Nodo Guayaquil Centro">
+ <label for="f-pr">Prioridad</label><select id="f-pr"><option>Crítica</option><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+ <label for="f-desc">Descripción</label><textarea id="f-desc" placeholder="Describe la falla y lo que ya se revisó"></textarea>
+ <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="save">Crear escalamiento</button></div>`);
+ $('#save').onclick=()=>{
+  const site=$('#f-site').value.trim();
+  if(!site){$('#f-site').style.borderColor='var(--bad)';$('#f-site').focus();return}
+  const id='INC-'+(4822+T.length-8);
+  T.unshift({id,site,type:$('#f-type').value,st:'Escalado',pr:$('#f-pr').value,time:'Ahora',who:'Por asignar',desc:$('#f-desc').value||'Sin descripción.'});
+  close();buildNav();render();toast('Escalamiento '+id+' creado');
+ };
+};
 
-                                <div id="etrContadorContainer" class="etr-contador-container" style="display: none;">
-                                    <div class="etr-contador-label">
-                                        <i class="bi bi-hourglass-split"></i> Tiempo restante ETR:
-                                    </div>
-                                    <div class="etr-contador-tiempo" id="etrContadorTiempo">00:00:00</div>
-                                    <div class="etr-contador-barra">
-                                        <div class="etr-contador-progreso" id="etrContadorProgreso"></div>
-                                    </div>
-                                    <div class="etr-contador-estado" id="etrContadorEstado">En tiempo</div>
-                                </div>
-                            </div>
-                        </div>
+const fdt=x=>{if(!x)return '';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
+function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* IP Gestión del Acceso: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+function dataOf(t){return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
+function copyText(t,msg){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(msg))}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-                        
-                    </div>
-                </div>
+function ask(o){
+ const el=document.createElement('div');el.className='ov';el.style.zIndex=70;
+ el.innerHTML=`<div class="modal" role="dialog" aria-modal="true" style="max-width:400px"><h3>${o.title}</h3><p class="sub2">${o.sub||''}</p><label for="ask-i">${o.label}</label><input id="ask-i" placeholder="${o.ph||''}" autocomplete="off"><div class="row">${o.cancel?'<button class="btn ghost" data-x>Cancelar</button>':''}<button class="btn" data-ok>${o.ok||'Guardar'}</button></div></div>`;
+ document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+ const inp=el.querySelector('input');if(o.val)inp.value=o.val;setTimeout(()=>inp.focus(),60);
+ const end=()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)};
+ const ok=()=>{const v=inp.value.trim();if(!v){inp.style.borderColor='var(--bad)';return}end();o.cb(v)};
+ el.querySelector('[data-ok]').onclick=ok;
+ inp.onkeydown=e=>{if(e.key==='Enter')ok();if(e.key==='Escape'){e.stopPropagation();if(o.cancel){end();o.onCancel&&o.onCancel()}}};
+ const x=el.querySelector('[data-x]');if(x)x.onclick=()=>{end();o.onCancel&&o.onCancel()};
+}
 
-                <!-- Avances -->
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <h5 class="mb-3"><i class="bi bi-chat-left-text"></i> 📝 Avance / Comentario</h5>
-                        <textarea class="form-control mb-3" id="avanceInput" rows="3"
-                            placeholder="Describa el avance o comentario realizado..."></textarea>
+let ME='';try{ME=localStorage.getItem('netops-me')||''}catch(e){}
+function paintMe(){$('#uname').textContent=ME||'Sin nombre';$('#av').textContent=ME?ME.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase():'?'}
+function setMe(n){ME=n;try{localStorage.setItem('netops-me',n)}catch(e){}paintMe();toast('Hola, '+n.split(' ')[0])}
+function askMe(c){ask({title:c?'Cambiar nombre':'Bienvenido al panel',sub:'Se usará como Ingeniero N1 en tus escalamientos.',label:'Tu nombre completo',ph:'Ej. Juan Ramírez',ok:c?'Guardar':'Continuar',cancel:c,val:ME,cb:setMe})}
+function initMe(){paintMe();$('#user').onclick=()=>askMe(true);if(!ME)askMe(false)}
 
-                        <div class="manual-avance-section">
-                            <div class="manual-avance-title">
-                                <i class="bi bi-calendar-check"></i> Fecha y hora del avance
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="usarFechaManual"
-                                    onchange="toggleFechaManualAvance()">
-                                <label class="form-check-label" for="usarFechaManual">
-                                    Usar fecha/hora personalizada
-                                </label>
-                            </div>
-                            <div class="input-group-datetime">
-                                <input type="text" class="form-control input-datetime-text" id="fechaAvanceManual"
-                                    placeholder="2026-02-03 14:30" onclick="abrirDatePicker('fechaAvanceManual')"
-                                    readonly disabled>
-                                <button type="button" class="btn btn-now" onclick="abrirDatePicker('fechaAvanceManual')"
-                                    title="Seleccionar fecha y hora" disabled>
-                                    <i class="bi bi-clock"></i>
-                                </button>
-                            </div>
-                            <small class="format-label">Formato: 2026-02-03 14:30 (GMT-5)</small>
-                        </div>
+const CUSTOM=[];
+const HORARIOS=['AHORA URGENTE','DISPONIBILIDAD DE CUADRILLA','COORDINAR CON O&M','EN HORARIO DE BAJO IMPACTO'];
+const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H'];
 
-                        <button class="btn add-avance-btn w-100" onclick="agregarAvance()">
-                            <i class="bi bi-plus-circle"></i> Agregar Avance
-                        </button>
-                        <small class="text-muted d-block mt-2">
-                            <i class="bi bi-exclamation-circle"></i> Este campo es obligatorio para agregar un avance al
-                            ticket
-                        </small>
+function corteForm(){
+ const I=(id,l,t)=>`<div><label for="c-${id}">${l}</label><input id="c-${id}" type="${t||'text'}"></div>`;
+ const S=(id,l,opts)=>`<div><label for="c-${id}">${l}</label><select id="c-${id}"><option value="" disabled selected>Seleccionar</option>${opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
+ const cliOpts=()=>'<option value="" disabled>Seleccionar</option><option>UFINET</option>'+CUSTOM.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__otro">Otro…</option>';
+ const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" style="font-weight:500"></label></div><div><label>IP Gestión<input class="g-i" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
+ open(`<h3>Escalación Torre de Control · Corte</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
+ <div class="tg"><div>
+ <div class="sec">Datos cliente</div>
+ <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${I('fc','Fecha de creación de ticket','datetime-local')}${I('fd','Fecha de descarte eléctrico','datetime-local')}</div>
+ ${S('hor','Horario de revisión',HORARIOS)}
+ <div class="sec">Datos importantes</div>
+ ${I('nodo','Nombre de Nodo')}
+ ${S('falla','Tipo de falla',FALLAS)}
+ <div id="egs">${grp(1,false)}</div>
+ <div style="margin-top:14px"><button type="button" class="btn ghost" id="addEq">+ Agregar equipo</button></div>
+ <div class="sec">Diagnóstico</div>
+ <label for="c-diag">Diagnóstico N1</label><textarea id="c-diag"></textarea>
+ <div class="fg2">${I('n1','Ingeniero N1')}${I('tc','Ingeniero TC')}</div>
+ </div>
+ <div><pre class="tpl" id="tpl"></pre></div></div>
+ <div class="row" style="flex-wrap:wrap;align-items:center"><label class="tm" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">Crear y copiar</button></div>`,true);
 
-                        <div class="avances-header mt-3">
-                            <h6 class="mb-0"><i class="bi bi-list-ul"></i> Historial de Avances</h6>
-                            <span class="nuevo-avance-badge" id="nuevosAvancesBadge" style="display: none;">0
-                                avances</span>
-                        </div>
-                        <div class="avance-container" id="historialAvances">
-                            <div class="empty-state">
-                                <i class="bi bi-inbox"></i>
-                                <p>No hay avances registrados aún</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+ const v=id=>($('#c-'+id).value||'').trim();
+ const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
+ const eqs=()=>[...document.querySelectorAll('#egs .eg')].map(g=>{const q=c=>g.querySelector(c).value.trim();return `* Equipo Acceso: ${q('.g-e')}\n* IP Gestión del Acceso: ${q('.g-i')}\n* Puerto del Acceso: ${q('.g-p')}`}).join('\n\n');
+ const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map(g=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
+ const gen=()=>tplCorte(collect());
+ const upd=()=>{$('#tpl').textContent=gen()};
+ const copy=ok=>{const t=gen();const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(ok))};
+ const renum=()=>document.querySelectorAll('#egs .eg').forEach((g,i)=>g.querySelector('.gn').textContent=i+1);
 
-            <!-- Columna Derecha -->
-            <div>
-                <!-- Monitoreo SLA -->
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3"><i class="bi bi-graph-up"></i> ⏱️ Monitoreo de tiempos SLA</h5>
-                        <small class="text-muted d-block mb-3">Tiempos calculados desde la fecha y hora de afectación
-                            (GMT-5)</small>
+ $('#c-n1').value=ME;
+ $('#c-cli').value='UFINET';let prev='UFINET';
+ $('#c-cli').onchange=e=>{
+  const s=e.target;
+  if(s.value!=='__otro'){prev=s.value;return}
+  s.value=prev;
+  ask({title:'Nuevo cliente',sub:'Escribe el nombre del cliente para agregarlo a la lista.',label:'Nombre del cliente',ph:'Ej. Cliente Logística Norte',ok:'Agregar',cancel:true,
+   cb:n=>{if(!CUSTOM.includes(n)&&n.toUpperCase()!=='UFINET')CUSTOM.push(n);s.innerHTML=cliOpts();s.value=n.toUpperCase()==='UFINET'?'UFINET':n;prev=s.value;upd()},
+   onCancel:()=>{s.value=prev;upd()}});
+ };
+ $('#addEq').onclick=()=>{const n=document.querySelectorAll('#egs .eg').length+1;$('#egs').insertAdjacentHTML('beforeend',grp(n,true));renum();upd();$('#egs').lastElementChild.querySelector('input').focus()};
+ $('#egs').onclick=e=>{const b=e.target.closest('.rm');if(b){b.closest('.eg').remove();renum();upd()}};
+ $('#modal').oninput=upd;$('#modal').onchange=upd;upd();
+ $('#cp').onclick=()=>copy('Plantilla copiada');
+ $('#mk').onclick=()=>{
+  const tk=$('#c-ticket'),nd=$('#c-nodo');let bad=false;
+  [tk,nd].forEach(e=>{if(!e.value.trim()){e.style.borderColor='var(--bad)';bad=true}else e.style.borderColor=''});
+  if(bad)return;
+  T.unshift({id:v('ticket'),site:v('nodo'),type:'Corte',st:'Escalado',pr:'Alta',time:'Ahora',who:v('tc')||'Por asignar',desc:v('diag')||'Sin diagnóstico.',d:collect()});
+  copy('Corte escalado y plantilla copiada');close();buildNav();render();
+ };
+}
 
-                        <div class="time-container">
-                            <div class="time-section">
-                                <span class="time-label">Tiempo en progreso</span>
-                                <div class="time-value time-progreso" id="tiempoProgreso">00:00:00</div>
-                            </div>
-                            <div class="time-section">
-                                <span class="time-label">Tiempo suspendido</span>
-                                <div class="time-value time-suspendido" id="tiempoSuspendido">00:00:00</div>
-                            </div>
-                            <div class="time-section">
-                                <span class="time-label">Tiempo total transcurrido</span>
-                                <div class="time-value time-total" id="tiempoTotal">00:00:00</div>
-                                <div class="time-detail" id="fechaAfectacionMostrada">Sin fecha de afectación definida
-                                </div>
-                            </div>
-                            <div class="time-section">
-                                <span class="time-label">Desde último avance</span>
-                                <div class="time-value" id="tiempoUltimoAvance">--:--:--</div>
-                                <div class="time-detail" id="fechaUltimoAvance">Sin avances registrados</div>
-                            </div>
-                        </div>
+let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
 
-                        <div class="alert-gmt5">
-                            <i class="bi bi-info-circle"></i>
-                            <div>
-                                <strong>Importante:</strong> Todos los tiempos se calculan en zona horaria GMT-5
-                                (Ecuador).
-                                <br>El tiempo transcurrido se calcula exclusivamente a partir de la "Fecha y hora
-                                afectación (GMT-5)"
-                            </div>
-                        </div>
-
-                        <!-- Suspension Indicator -->
-                        <div id="suspensionIndicator" class="suspension-indicator" style="display: none;">
-                            <i class="bi bi-pause-circle"></i> Ticket Suspendido
-                        </div>
-
-                        <!-- Resuelto Indicator -->
-                        <div id="resueltoIndicator" class="resuelto-indicator" style="display: none;">
-                            <i class="bi bi-check-circle"></i> Ticket Resuelto
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Plantilla -->
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <h5 class="mb-3"><i class="bi bi-clipboard"></i> 📄 Plantilla de seguimiento</h5>
-                        <pre
-                            id="plantillaSeguimiento">Complete los campos del ticket para generar la plantilla de seguimiento...</pre>
-                        <button class="btn btn-primary w-100 mt-3" onclick="copiarPlantilla(this)">
-                            <i class="bi bi-clipboard"></i> Copiar plantilla al portapapeles
-                        </button>
-
-                        <div class="cronologia-container">
-                            <button class="btn cronologia-btn w-100 mt-2" onclick="generarCronologiaTXT()">
-                                <i class="bi bi-download"></i> Descargar cronología detallada (TXT)
-                            </button>
-                            <button class="btn copiar-cronologia-btn w-100 mt-2" onclick="copiarCronologia()">
-                                <i class="bi bi-clipboard"></i> Copiar cronología con tiempos SLA
-                            </button>
-                            <button class="btn btn-resumen-1 w-100 mt-2" onclick="copiarResumen1()">
-                                <i class="bi bi-file-earmark-text"></i> Avance Resuelto
-                            </button>
-                            <button class="btn btn-resumen-2 w-100 mt-2" onclick="copiarResumen2()">
-                                <i class="bi bi-file-earmark-text"></i> Avance resumen 5 horas
-                            </button>
-                        </div>
-
-                        <small class="text-muted d-block mt-3">
-                            <i class="bi bi-arrow-repeat"></i> La plantilla se actualiza automáticamente al modificar
-                            cualquier campo
-                        </small>
-
-                        <!-- SLA Report -->
-                        <div class="sla-report-container mt-3">
-                            <div class="sla-report-title">
-                                <i class="bi bi-bar-chart"></i> Resumen SLA del ticket
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo en progreso:</span>
-                                <span class="sla-progreso" id="slaProgreso">00:00:00</span>
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo suspendido:</span>
-                                <span class="sla-suspendido" id="slaSuspendido">00:00:00</span>
-                            </div>
-                            <div class="sla-report-item">
-                                <span>Tiempo total:</span>
-                                <span class="sla-total" id="slaTotal">00:00:00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Export/Import -->
-                <div class="export-import-container mt-4">
-                    <div class="export-import-title">
-                        <i class="bi bi-cloud-upload"></i> Respaldo y recuperación de tickets
-                    </div>
-                    <p class="mb-3">Exporta todos tus tickets para respaldarlos o impórtalos para restaurar tu trabajo.
-                    </p>
-                    <div class="export-import-buttons">
-                        <button class="btn btn-export" onclick="exportarTickets()">
-                            <i class="bi bi-download"></i> Exportar todos los tickets
-                        </button>
-                        <button class="btn btn-import" onclick="importarTickets()">
-                            <i class="bi bi-upload"></i> Importar tickets
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="text-center mt-5">
-            <p class="text-muted">
-                Sistema de gestión de incidencias v2.9 © 2026 | Todos los tiempos en zona horaria GMT-5 (Ecuador) |
-                <i class="bi bi-graph-up-arrow"></i> Monitoreo SLA integrado | Ing: Luis Alvarez
-            </p>
-        </footer>
-    </div>
-
-    <!-- Theme Toggle -->
-    <button id="themeToggle" title="Cambiar tema">
-        <i class="bi bi-moon-stars"></i>
-    </button>
-
-    <!-- Resolution Modal -->
-    <div id="resolutionModal" class="modal-resolution">
-        <div class="modal-resolution-content">
-            <div class="modal-header-resolution">
-                <h3><i class="bi bi-flag"></i> Marcar ticket como resuelto</h3>
-            </div>
-            <div class="modal-body-resolution">
-                <div class="resolution-instruction">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Importante:</strong> Ingrese la fecha y hora exacta en que se resolvió la incidencia
-                    (GMT-5).
-                    <br>Esta fecha se usará para calcular los tiempos SLA finales y aparecerá al final del historial
-                    cronológico.
-                </div>
-                <div class="input-resolution-container">
-                    <label class="form-label">Fecha y hora de resolución (GMT-5)</label>
-                    <div class="input-group-datetime">
-                        <input type="text" class="form-control input-datetime-text" id="resolutionDateTime"
-                            placeholder="2026-02-03 14:30" onclick="abrirDatePicker('resolutionDateTime')" readonly>
-                        <button type="button" class="btn btn-now" onclick="abrirDatePicker('resolutionDateTime')"
-                            title="Seleccionar fecha y hora">
-                            <i class="bi bi-clock"></i>
-                        </button>
-                    </div>
-                    <small class="format-label">Formato requerido: 2026-02-03 14:30</small>
-                    <div id="resolutionError" class="resolution-error">
-                        <i class="bi bi-exclamation-circle"></i> <span id="resolutionErrorMessage"></span>
-                    </div>
-                </div>
-                <div class="alert-gmt5 mt-3">
-                    <i class="bi bi-info-circle"></i>
-                    <div>
-                        <strong>Nota SLA:</strong> El tiempo en progreso se calculará hasta esta fecha/hora.
-                        <br>El tiempo suspendido NO contará para el cumplimiento del SLA.
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer-resolution">
-                <button class="btn btn-resolution btn-resolution-cancel" onclick="cerrarModalResolucion()">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </button>
-                <button class="btn btn-resolution btn-resolution-confirm" onclick="confirmarResolucion()">
-                    <i class="bi bi-check-circle"></i> Confirmar resolución
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Modal -->
-    <div id="modalConfirm" class="modal-confirm">
-        <div class="modal-confirm-content">
-            <div class="modal-confirm-icon">
-                <i class="bi bi-question"></i>
-            </div>
-            <h3 id="modalConfirmTitle">Confirmar Acción</h3>
-            <p id="modalConfirmMessage">¿Está seguro de realizar esta acción?</p>
-            <div class="modal-confirm-buttons">
-                <button class="btn btn-confirm-cancel" onclick="closeModalConfirm()">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </button>
-                <button class="btn btn-confirm-ok" id="btnConfirmOk">
-                    <i class="bi bi-check-circle"></i> Confirmar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Info Modal -->
-    <div id="modalInfo" class="modal-info">
-        <div class="modal-info-content">
-            <div class="modal-info-header">
-                <h3><i class="bi bi-info-circle"></i> Información</h3>
-                <button class="btn-close-modal" onclick="closeModalInfo()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="modal-info-body" id="modalInfoBody"></div>
-        </div>
-    </div>
-
-    <!-- Export Selection Modal -->
-    <div id="modalSeleccionExportar" class="modal-export-selection">
-        <div class="modal-export-content">
-            <div class="modal-export-header">
-                <h3><i class="bi bi-download"></i> Seleccionar Tickets para Exportar</h3>
-                <button class="btn-close-modal" onclick="cerrarModalExportar()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="modal-export-body">
-                <div class="export-destination-section">
-                    <label class="form-label" for="exportDestino">
-                        <i class="bi bi-folder"></i> ¿Para quién es la exportación?
-                    </label>
-                    <select class="form-select" id="exportDestino" onchange="actualizarPreviewNombreArchivo()">
-                        <option value="">-- Seleccione destino --</option>
-                        <option value="Monitoreo">Monitoreo</option>
-                        <option value="Eléctrico">Eléctrico</option>
-                        <option value="SD (Service Desk)">SD (Service Desk)</option>
-                        <option value="N1 (Nivel 1)">N1 (Nivel 1)</option>
-                        <option value="N2 (Nivel 2)">N2 (Nivel 2)</option>
-                        <option value="Cliente">Cliente</option>
-                        <option value="Gerencia">Gerencia</option>
-                        <option value="Auditoría">Auditoría</option>
-                        <option value="Otro">Otro</option>
-                    </select>
-                    <div id="otroDestinoContainer" style="display: none; margin-top: 10px;">
-                        <input type="text" class="form-control" id="otroDestinoInput"
-                            placeholder="Especifique el destino">
-                    </div>
-                </div>
-
-                <div class="export-tickets-list">
-                    <div class="export-list-header">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="selectAllTickets" onchange="toggleSelectAllTickets()">
-                            Seleccionar todos
-                        </label>
-                        <span class="selected-count" id="selectedTicketsCount">0 seleccionados</span>
-                    </div>
-                    <div class="tickets-checkbox-container" id="ticketsCheckboxContainer"></div>
-                </div>
-
-                <div class="export-preview-info">
-                    <p><strong>Nombre del archivo:</strong> <span id="exportFileNamePreview">---</span></p>
-                    <p><strong>Fecha de exportación:</strong> <span id="exportDatePreview">---</span></p>
-                </div>
-            </div>
-            <div class="modal-export-footer">
-                <button class="btn btn-export-cancel" onclick="cerrarModalExportar()">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </button>
-                <button class="btn btn-export-confirm" onclick="confirmarExportacionSeleccion()" disabled>
-                    <i class="bi bi-download"></i> Exportar Seleccionados
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Date Picker Modal -->
-    <div id="datePickerModal" class="date-picker-modal">
-        <div class="date-picker-content">
-            <div class="date-picker-header">
-                <h4><i class="bi bi-calendar-event"></i> Seleccionar Fecha y Hora</h4>
-                <button class="date-picker-close" onclick="cerrarDatePicker()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="date-picker-body">
-                <div class="date-picker-date">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" id="pickerDate">
-                </div>
-                <div class="date-picker-time">
-                    <label class="form-label">Hora (GMT-5)</label>
-                    <input type="time" id="pickerTime">
-                </div>
-                <div class="date-picker-buttons">
-                    <button class="btn btn-date-cancel" onclick="cerrarDatePicker()">
-                        <i class="bi bi-x-circle"></i> Cancelar
-                    </button>
-                    <button class="btn btn-date-confirm" onclick="confirmarDatePicker()">
-                        <i class="bi bi-check-circle"></i> Confirmar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Cuadro de Cierre -->
-    <div id="modalCuadroCierre" class="modal-cuadro-cierre">
-        <div class="modal-cuadro-cierre-content">
-            <div class="modal-cuadro-cierre-header">
-                <h3><i class="bi bi-clipboard-check"></i> Cuadro de Cierre del Ticket</h3>
-                <button class="btn-close-modal" onclick="cerrarCuadroCierre()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="modal-cuadro-cierre-body">
-                <div class="cuadro-cierre-grid">
-                    <div class="cuadro-cierre-field">
-                        <label>TT:</label>
-                        <input type="text" id="cierreTicketId" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Tiempo total del ticket:</label>
-                        <input type="text" id="cierreTiempoTotal" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Fecha de inicio:</label>
-                        <input type="text" id="cierreFechaInicio" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Causa de la falla:</label>
-                        <textarea id="cierreCausaFalla" rows="3"></textarea>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Hora de inicio:</label>
-                        <input type="text" id="cierreHoraInicio" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Solución:</label>
-                        <textarea id="cierreSolucion" rows="3"></textarea>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Fecha de final:</label>
-                        <input type="text" id="cierreFechaFinal" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Razón de Tiempo no imputable:</label>
-                        <input type="text" id="cierreRazonTiempo" placeholder="Ingrese razón">
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Hora de final:</label>
-                        <input type="text" id="cierreHoraFinal" readonly>
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Coordenadas:</label>
-                        <input type="text" id="cierreCoordenadas" placeholder="Ingrese coordenadas">
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Brigada:</label>
-                        <input type="text" id="cierreBrigada" placeholder="Ingrese brigada">
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>SLA:</label>
-                        <input type="text" id="cierreSLA" readonly value="NO">
-                    </div>
-                    <div class="cuadro-cierre-field">
-                        <label>Ámbito de la falla:</label>
-                        <select id="cierreAmbitoFalla">
-                            <option value="">Seleccione...</option>
-                            <option value="Metropolitano">Metropolitano</option>
-                            <option value="Larga distancia">Larga distancia</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-cuadro-cierre-footer">
-                <button class="btn btn-cuadro-cierre-cancel" onclick="cerrarCuadroCierre()">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </button>
-                <button class="btn btn-cuadro-cierre-generate" onclick="generarCuadroCierre()">
-                    <i class="bi bi-download"></i> Generar Cuadro
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container"></div>
-
-    <script src="script.js" defer></script>
+buildNav();render();initMe();
+</script>
 </body>
-
 </html>

@@ -154,6 +154,12 @@ label input{font-weight:500}
 .hm{display:flex;align-items:center;gap:8px}
 .hm input{width:70px;text-align:center;font-size:20px;font-weight:700}
 .hm b{font-size:22px}
+.ck{display:flex;align-items:center;gap:9px;cursor:pointer;margin:16px 0 6px;font-weight:700}
+.ck input{width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer}
+.tkh{display:flex;align-items:flex-start;gap:12px;margin-top:8px;flex-wrap:wrap}
+.tkh b{background:var(--acc);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;white-space:nowrap}
+.tkcs{display:flex;gap:6px;flex-wrap:wrap}
+.tkc{font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;animation:in .25s both}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -423,15 +429,19 @@ const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezone
 let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}catch(e){}
 const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
-const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],who:'Avance por TCE',avAt:'',avTxt:''});
+const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],who:'Avance por TCE',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
 function tplOf(t){return t.ev?tplEvento(t.ev):tplCorte(dataOf(t))}
 
+const avSorted=a=>a.slice().sort((x,y)=>(Date.parse(x.at)||0)-(Date.parse(y.at)||0));
+const tkList=s=>{const seen=new Set();return (s||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>{const k=x.toUpperCase();if(!x||seen.has(k))return false;seen.add(k);return true})};
+const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x}`)]};
+function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<span class="tkc">${esc(x)}</span>`).join('')}
 function tplEvento(w){
  const L=['EVENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
- L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min (hasta ${fdt(w.etr.end)})`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
- w.avs.forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
+ L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min (hasta ${fdt(w.etr.end)})`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
+ avSorted(w.avs).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
 
@@ -491,6 +501,9 @@ function parseEvento(txt){
  w.diag=g(/\* Diagnóstico:[ \t]*([\s\S]*?)\n\* Acciones adicionales:/);w.acc2=g(/\* Acciones adicionales:[ \t]*([\s\S]*?)\n\* ETR:/);
  const eqs=[];txt.split('\n').forEach(l=>{let m;if(m=l.match(/^\*\s*Hostname:\s*(.*)$/))eqs.push({h:m[1].trim(),p:''});else if((m=l.match(/^\*\s*Puerto:\s*(.*)$/))&&eqs.length)eqs[eqs.length-1].p=m[1].trim()});
  if(eqs.length)w.eqs=eqs;
+ const lines=txt.split('\n');
+ const tk=(c,l)=>{const i=lines.findIndex(x=>x.startsWith('* '+l+':'));if(i<0)return;w[c+'On']=true;const t=[];for(let j=i+1;j<lines.length;j++){const m=lines[j].match(/^\s+-\s+(.+)$/);if(!m)break;t.push(m[1].trim())}w[c+'Tk']=t.join('\n')};
+ tk('cd','Ticket caída total');tk('fo','Ticket fibra oscura');
  const etr=g(/\* ETR:[ \t]*(.*)/);
  if(/sin etr/i.test(etr))w.noetr=true;
  else{const m=etr.match(/(\d+)\s*h\s*(\d+)\s*min/i);if(m){w.etrH=m[1];w.etrM=m[2];const end=Date.parse(iso(etr.split('hasta')[1]||''));if(end)w.etr={end,start:end-(+m[1]*60+ +m[2])*6e4}}}
@@ -544,6 +557,7 @@ function evtView(v){
  if(!W.avAt)W.avAt=nowLocal();
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
  const D=(k,l)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-dt="${k}" readonly placeholder="Seleccionar fecha y hora" value="${esc(fdt(W[k]))}" style="cursor:pointer"></div>`;
+ const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Ej. TIK-20188018-J5S0 (separa varios con coma, espacio o salto de línea)" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
  const S=(k,l,o)=>`<div><label for="e-${k}">${l}</label><select id="e-${k}" data-k="${k}"><option value="">Seleccionar</option>${o.map(x=>`<option ${x===W[k]?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
  const WH=[['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
  v.innerHTML=`<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button></div>${t?`<span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
@@ -564,6 +578,7 @@ function evtView(v){
  <div class="fg2"><div><label for="e-prov">Proveedor Offline</label><select id="e-prov" data-k="prov">${['UFINET',...PROVS].map(x=>`<option value="${esc(x)}" ${x===W.prov?'selected':''}>${esc(x)}</option>`).join('')}<option value="__otro">Otros…</option></select></div>${F('pais','País de falla')}</div>
  <div class="sech">Impacto</div>
  <div class="fg2" style="grid-template-columns:2fr 1fr"><div><label for="e-impacto">Impacto</label><input id="e-impacto" data-k="impacto" value="${esc(W.impacto)}" placeholder="Describe el impacto"></div><div><label for="e-cap">Capacidad afectada</label><div class="cap"><input id="e-cap" data-k="cap" type="number" min="0" inputmode="numeric" value="${esc(W.cap)}" style="padding-right:36px"><span>G</span></div></div></div>
+ ${TK('cd','Ticket caída total')}${TK('fo','Ticket fibra oscura')}
  <div class="sech">Diagnóstico</div>
  <label for="e-diag">Diagnóstico</label><textarea id="e-diag" data-k="diag">${esc(W.diag)}</textarea>
  <label for="e-acc2">Acciones adicionales</label><textarea id="e-acc2" data-k="acc2">${esc(W.acc2)}</textarea>
@@ -572,13 +587,13 @@ function evtView(v){
  <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div><button type="button" class="btn ghost" id="e-stop">Detener</button></div></div><div id="etr-box"></div></div>
  <div class="sech">Avances y comentarios</div>
  <div class="wchips" style="margin-top:12px">${WH.map(([n,c])=>`<button type="button" class="wchip ${W.who===n?'on':''}" data-who="${n}" style="--c:${c}">${n}</button>`).join('')}</div>
- ${F('avAt','Fecha y hora del avance','datetime-local')}
+ ${D('avAt','Fecha y hora del avance')}
  <label for="e-avTxt">Comentario</label><textarea id="e-avTxt" data-k="avTxt">${esc(W.avTxt)}</textarea>
  <div style="margin-top:14px"><button type="button" class="btn" id="e-av">Agregar avance</button></div>
- <div class="avs">${W.avs.map(a=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}</div>`).reverse().join('')}</div>
+ <div class="avs">${avSorted(W.avs).map(a=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}</div>`).join('')}</div>
  </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
 
- const upd=()=>{$('#tpl').textContent=tplEvento(W)};upd();etrPaint();
+ const upd=()=>{$('#tpl').textContent=tplEvento(W)};upd();etrPaint();tkPaint('cd');tkPaint('fo');
  const root=$('#evw');
  const onIn=e=>{
   const el=e.target;
@@ -589,6 +604,8 @@ function evtView(v){
    if(el.value==='__otro'){el.value=W.prov;ask({title:'Nuevo proveedor',sub:'Se guardará para futuros casos.',label:'Nombre del proveedor',ph:'Ej. Telconet',ok:'Agregar',cancel:true,cb:n=>{if(n.toUpperCase()!=='UFINET'&&!PROVS.includes(n)){PROVS.push(n);try{localStorage.setItem('netops-provs',JSON.stringify(PROVS))}catch(x){}}W.prov=n.toUpperCase()==='UFINET'?'UFINET':n;render()}});return}
   }
   W[k]=el.type==='checkbox'?el.checked:el.value;
+  if(k==='cdOn'||k==='foOn'){$('#box-'+k.slice(0,2)).style.display=el.checked?'':'none'}
+  if(k==='cdTk'||k==='foTk')tkPaint(k.slice(0,2));
   if(k==='etrH'||k==='etrM'){clearTimeout(etrT);etrT=setTimeout(etrAuto,700)}
   if(k==='noetr'){$('#etr-sec').style.display=el.checked?'none':'';if(el.checked){W.etr=null;etrPaint()}}
   upd();
@@ -596,7 +613,7 @@ function evtView(v){
  root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.dt){e.preventDefault();openDT(e.target.dataset.dt)}});
  const openDT=k=>{
   if(k==='acc')pickDT({title:'Fecha y hora de afectación (GMT-5)',value:W.acc,cb:v=>{const first=!W.t0;W.acc=v;W.t0=Date.parse(v);W.avs.push({who:first?'Inicio de tiempos (afectación)':'Afectación modificada',at:v,txt:''});if((W.id||'').trim()){saveEv();toast('Tiempos iniciados desde la afectación')}else toast('Tiempos iniciados. Escribe el ID Ticket para guardarlos');render();tmPaint()}});
-  else pickDT({title:'Fecha y hora de suspensión o reanudación',value:W.sfecha,cb:v=>{W.sfecha=v;render()}});
+  else pickDT({title:k==='avAt'?'Fecha y hora del avance':'Fecha y hora de suspensión o reanudación',value:W[k],cb:v=>{W[k]=v;render()}});
  };
  root.addEventListener('input',onIn);root.addEventListener('change',onIn);
  root.addEventListener('click',e=>{

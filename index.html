@@ -203,8 +203,7 @@ const ico={
  cfg:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 115 0c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
  ok:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
- doc:'<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/>',
- trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
+ doc:'<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/>'};
 const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg>`;
 const TYPES={Corte:'#ef4444',N1:'#3b82f6',Eléctrico:'#f59e0b','Fibra Oscura':'#8b5cf6',OTN:'#10b5a4'};
 const ST={Abierto:'#ef4444','En proceso':'#f59e0b',Escalado:'#3b82f6',Resuelto:'#22c55e'};
@@ -222,7 +221,6 @@ const MENU=[
  {id:'evt',label:'Plantilla de Evento',icon:'doc'},
  {id:'esc',label:'Escalamiento',icon:'esc',sub:Object.keys(TYPES)},
  {id:'res',label:'Resueltos',icon:'ok'},
- {id:'del',label:'Eliminados',icon:'trash'},
  {id:'cfg',label:'Configuración',icon:'cfg'},
  {id:'help',label:'Ayuda',icon:'help'}];
 const $=s=>document.querySelector(s);
@@ -232,7 +230,7 @@ function buildNav(){persist();
  $('#nav').innerHTML=MENU.map(m=>m.sub?`
   <div class="grp ${cur.startsWith('esc')?'open':''}" id="g-esc">
    <button class="item ${cur.startsWith('esc')?'active':''}" data-toggle>${svg(m.icon)}${m.label}<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
-   <div class="sub"><div>${m.sub.map(s=>{const n=LV().filter(t=>t.type===s&&t.st!=='Resuelto').length;return `<button class="item ${cur==='esc:'+s?'active':''}" data-go="esc:${s}" style="--c:${TYPES[s]}"><span class="dot"></span>${s}${n?`<span class="badge" style="background:${TYPES[s]}">${n}</span>`:''}</button>`}).join('')}</div></div>
+   <div class="sub"><div>${m.sub.map(s=>{const n=T.filter(t=>t.type===s&&t.st!=='Resuelto').length;return `<button class="item ${cur==='esc:'+s?'active':''}" data-go="esc:${s}" style="--c:${TYPES[s]}"><span class="dot"></span>${s}${n?`<span class="badge" style="background:${TYPES[s]}">${n}</span>`:''}</button>`}).join('')}</div></div>
   </div>`:`<button class="item ${cur===m.id?'active':''}" data-go="${m.id}">${svg(m.icon)}${m.label}</button>`).join('');
 }
 $('#nav').addEventListener('click',e=>{
@@ -252,32 +250,28 @@ function count(el,to){let n=0;const step=Math.max(1,Math.ceil(to/20));const i=se
 function rows(list){
  if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
  return `<div class="scroll"><table><thead><tr><th>ID</th><th>Sitio o cliente</th><th>Tipo</th><th>Estado</th><th>Prioridad</th><th>Tiempo</th></tr></thead><tbody>${list.map(t=>`
- <tr data-id="${t.id}"><td><b>${t.id}</b>${t.parent?`<br><span class="tag" style="--c:#8b5cf6;margin-top:4px">Ticket hijo · ${esc(t.parent)}</span>`:''}</td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`).join('')}</tbody></table></div>`;
+ <tr data-id="${t.id}"><td><b>${t.id}</b></td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function render(){
  const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
- $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico'})[cur]||'+ Nuevo escalamiento';
+ $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='evt')?'none':'';$('#newBtn').textContent=cur==='esc:Corte'?'+ Escalar corte':'+ Nuevo escalamiento';
  if(cur==='seg'){
   $('#title').textContent='Seguimiento';$('#subtitle').textContent='Estado en vivo de todos los incidentes';
-  const open=LV().filter(t=>t.st!=='Resuelto');
-  const k=[['Incidentes activos',open.length,'#3b82f6'],['Críticos',open.filter(t=>t.pr==='Crítica').length,'#ef4444'],['Escalados',LV().filter(t=>t.st==='Escalado').length,'#f59e0b'],['Resueltos hoy',LV().filter(t=>t.st==='Resuelto').length,'#22c55e']];
+  const open=T.filter(t=>t.st!=='Resuelto');
+  const k=[['Incidentes activos',open.length,'#3b82f6'],['Críticos',open.filter(t=>t.pr==='Crítica').length,'#ef4444'],['Escalados',T.filter(t=>t.st==='Escalado').length,'#f59e0b'],['Resueltos hoy',T.filter(t=>t.st==='Resuelto').length,'#22c55e']];
   const list=filter==='Todos'?open:open.filter(t=>t.type===filter);
   v.innerHTML=`<div class="kpis">${k.map(x=>`<div class="kpi" style="--c:${x[2]}"><span>${x[0]}</span><b data-n="${x[1]}">0</b></div>`).join('')}</div>
   <div class="card"><div class="card-h"><h2>Incidentes</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
   v.querySelectorAll('[data-n]').forEach(el=>count(el,+el.dataset.n));
  }else if(isEsc){
   $('#title').textContent='Escalamiento · '+type;$('#subtitle').textContent='Incidentes de tipo '+type+' y su avance';
-  const list=LV().filter(t=>t.type===type&&t.st!=='Resuelto');
+  const list=T.filter(t=>t.type===type&&t.st!=='Resuelto');
   v.innerHTML=`<div class="card"><div class="card-h"><h2>${list.length} incidentes de ${type}</h2></div>${rows(list)}</div>`;
  }else if(cur==='evt'){evtView(v);
- }else if(cur==='del'){
-  $('#title').textContent='Eliminados';$('#subtitle').textContent='Tickets eliminados: puedes restaurarlos';
-  const dl=T.filter(t=>t.del);
-  v.innerHTML=`<div class="card"><div class="card-h"><h2>${dl.length} eliminados</h2></div>${rows(dl)}</div>`;
  }else if(cur==='res'){
   $('#title').textContent='Resueltos';$('#subtitle').textContent='Incidentes ya cerrados';
-  const done=LV().filter(t=>t.st==='Resuelto');const list=filter==='Todos'?done:done.filter(t=>t.type===filter);
+  const done=T.filter(t=>t.st==='Resuelto');const list=filter==='Todos'?done:done.filter(t=>t.type===filter);
   v.innerHTML=`<div class="card"><div class="card-h"><h2>${done.length} resueltos</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
  }else if(cur==='cfg'){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
@@ -302,117 +296,35 @@ $('#view').addEventListener('click',e=>{
 /* Modal */
 function open(html,w){$('#modal').className='modal'+(w?' wide':'');$('#modal').oninput=$('#modal').onchange=null;$('#modal').innerHTML=html;$('#ov').classList.add('show')}
 function close(){$('#ov').classList.remove('show')}
-$('#ov').addEventListener('click',e=>{if((e.target.id==='ov'&&!$('#modal').classList.contains('wide'))||e.target.closest('[data-close]'))close()});
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov'||e.target.closest('[data-close]'))close()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
 function detail(id){
- const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del);
- const B=(i,l,p,x)=>`<button class="btn${p?'':' ghost'}" id="${i}"${x?` style="${x}"`:''}>${l}</button>`;
- open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}</p>
- <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd><dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('sg','Crear ticket secundario'))+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
+ const t=T.find(x=>x.id===id),sg=t.seg||[];
+ open(`<h3>${t.id}</h3><p class="sub2">${t.site}</p>
+ <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd><dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button><button class="btn ghost" id="vt">Ver plantilla</button><button class="btn ghost" id="ct">Copiar plantilla</button><button class="btn ghost" id="sg">Crear plantilla seguimiento</button>${t.st!=='Resuelto'?`<button class="btn" id="resolve">Marcar resuelto</button>`:`<button class="btn" id="reopen">Reabrir</button>`}</div>`);
  $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplOf(t);$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
  $('#ct').onclick=()=>copyText(tplOf(t),'Plantilla copiada');
- document.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>detail(b.dataset.kid));const gm=$('#gm');if(gm)gm.onclick=()=>{if(T.find(x=>x.id===t.parent))detail(t.parent);else toast('No se encontró el ticket master')};
  document.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>copyText(sg[b.dataset.cs].text,'Seguimiento copiado'));
- if(t.del){
-  $('#rs').onclick=()=>{t.del=false;close();buildNav();render();toast(t.id+' restaurado')};
-  let sure=false;$('#hd').onclick=e=>{if(!sure){sure=true;e.target.textContent='¿Seguro? Pulsa de nuevo';return}T.splice(T.indexOf(t),1);close();buildNav();render();toast('Eliminado definitivamente')};
-  return;
- }
- $('#ed').onclick=()=>{close();if(t.parent){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else corteForm(t)};
- const sgb=$('#sg');if(sgb)sgb.onclick=()=>ask({title:'Crear ticket secundario',sub:'Se asocia al ticket master '+t.id+'. Solo escribe el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
- $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();if(EV===t.id){EV=null;W=null}close();buildNav();render();toast(t.id+' enviado a Eliminados')};
+ $('#sg').onclick=()=>ask({title:'Plantilla de seguimiento',sub:'Los datos se toman del ticket '+t.id+'. Solo falta el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
  const r=$('#resolve');if(r)r.onclick=()=>{t.st='Resuelto';if(t.ev&&!t.ev.endAt){endTimers(t.ev);(t.ev.avs=t.ev.avs||[]).push({who:'Ticket resuelto',at:nowLocal(),txt:''})}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto: ahora está en Resueltos')};
  const o=$('#reopen');if(o)o.onclick=()=>{t.st='Abierto';if(t.ev&&t.ev.endAt){t.ev.t0+=Date.now()-t.ev.endAt;t.ev.endAt=null}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' reabierto')};
 }
 
-const LV=()=>T.filter(x=>!x.del);
-const fdE=x=>{const t=new Date(x);if(!x||isNaN(t))return '';const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()}, ${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())} GMT-5`};
-const elOf=t=>t.el||{ticket:t.id,fecha:'',tipo:'UPS EN BATERIA',nodo:t.site,ups:'',upsx:[],rect:[],obs:t.desc||'',n1:ME,tc:t.who==='Por asignar'?'':(t.who||'')};
-function tplElec(d){
- const pc=x=>(x===''||x==null?'':x)+'%';
- const nm=(a,l,f)=>a.map((x,i)=>`${l}${a.length>1?' '+(i+1):''}: ${f(x)}`);
- return ['*ESCALACIÓN TORRE DE CONTROL*',`Ticket: ${d.ticket}`,`Fecha: ${fdE(d.fecha)}`,`Tipo: ${d.tipo}`,`Nodo: ${d.nodo}`,`UPS principal: ${pc(d.ups)}`,...nm(d.upsx,'UPS adicional',pc),...nm(d.rect,'Rectificador',x=>x),'Observaciones:',d.obs,`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n');
-}
-const ELPRE=[['Generador','Nodo en batería, se solicita asistencia con GENERADOR URGENTE'],['Temperatura Alta','Se visualiza temperatura alta en el nodo, asistencia *URGENTE*'],['Revision Electrica','Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*'],['General-Default','UPS con alarma *GENERAL-DEFAULT*'],['Revision en nodo','Movilizar personal para la revision del nodo contactar con Electrico de Turno']];
-function electricForm(et){
- const nowIso=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,19)};
- const dkey=et?'elec-edit-'+et.id:'elec',drf=DR.get(dkey);
- const E=JSON.parse(JSON.stringify(drf||(et?elOf(et):{ticket:'',fecha:'',tipo:'UPS EN BATERIA',nodo:'',ups:'',upsx:[],rect:[],obs:'',n1:ME,tc:''})));
- if(drf)toast('Borrador recuperado');
- if(!E.fecha)E.fecha=nowIso();
- const draw=()=>{
-  const pct=(a,v)=>`<div class="cap"><input type="number" min="0" max="100" inputmode="numeric" ${a} value="${esc(v)}" style="padding-right:36px"><span>%</span></div>`;
-  const rows=(ar,label,mk)=>E[ar].map((x,i)=>`<div class="fg2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px"><div><label>${label} ${i+1}${mk(`data-ar="${ar}" data-i="${i}"`,x)}</label></div><button type="button" class="chip" data-rm="${ar}:${i}" style="color:var(--bad);margin-bottom:4px">Quitar</button></div>`).join('');
-  open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · Eléctrico</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
-  <div class="tg"><div id="elw">
-  <div class="fg2"><div><label for="x-ticket">Ticket</label><input id="x-ticket" data-e="ticket" value="${esc(E.ticket)}"></div><div><label for="x-fecha">Fecha</label><input id="x-fecha" data-pk readonly style="cursor:pointer" value="${esc(fdE(E.fecha))}"></div></div>
-  <label for="x-tipo">Tipo</label><input id="x-tipo" data-e="tipo" list="x-tipos" value="${esc(E.tipo)}"><datalist id="x-tipos">${['UPS EN BATERIA','TEMPERATURA ALTA','REVISION ELECTRICA','UPS GENERAL-DEFAULT','REVISION EN NODO'].map(o=>`<option value="${o}">`).join('')}</datalist>
-  <label for="x-nodo">Nodo</label><input id="x-nodo" data-e="nodo" value="${esc(E.nodo)}">
-  <div class="sec">UPS</div>
-  <label>UPS principal</label>${pct('data-e="ups"',E.ups)}
-  ${rows('upsx','UPS adicional',(a,x)=>pct(a,x))}
-  <div style="margin-top:12px"><button type="button" class="btn ghost" data-add="upsx">+ Agregar UPS</button></div>
-  <div class="sec">Rectificadores</div>
-  ${rows('rect','Rectificador',(a,x)=>`<input ${a} value="${esc(x)}" placeholder="Ej. 80% / 54V">`)}
-  <div style="margin-top:12px"><button type="button" class="btn ghost" data-add="rect">+ Agregar rectificador</button></div>
-  <div class="sec">Observaciones</div>
-  <div class="wchips" style="margin-top:10px">${ELPRE.map((p,i)=>`<button type="button" class="chip" data-pre="${i}">${p[0]}</button>`).join('')}</div>
-  <label for="x-obs">Observaciones</label><textarea id="x-obs" data-e="obs">${esc(E.obs)}</textarea>
-  <div class="fg2"><div><label for="x-n1">Ingeniero N1</label><input id="x-n1" data-e="n1" value="${esc(E.n1)}"></div><div><label for="x-tc">Ingeniero TC</label><input id="x-tc" data-e="tc" value="${esc(E.tc)}"></div></div>
-  </div><div><pre class="tpl" id="tpl"></pre></div></div>
-  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="x-dis">Descartar borrador</button><button class="btn ghost" id="x-cp">Copiar plantilla</button><button class="btn" id="x-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
-  const upd=()=>{$('#tpl').textContent=tplElec(E);if(E.ticket||E.nodo||E.ups||E.upsx.length||E.rect.length||E.obs)DR.set(dkey,E);else DR.del(dkey)};upd();
-  const root=$('#elw');
-  root.addEventListener('input',e=>{const el=e.target;if(el.dataset.e)E[el.dataset.e]=el.value;else if(el.dataset.ar)E[el.dataset.ar][+el.dataset.i]=el.value;upd()});
-  root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.pk!==undefined){e.preventDefault();e.target.click()}});
-  root.addEventListener('click',e=>{
-   if(e.target.closest('[data-pk]')){pickDT({title:'Fecha y hora (GMT-5)',value:E.fecha.slice(0,16),cb:v=>{E.fecha=v+':00';draw()}});return}
-   const b=e.target.closest('button');if(!b)return;
-   if(b.dataset.add){E[b.dataset.add].push('');draw()}
-   else if(b.dataset.rm){const [a,i]=b.dataset.rm.split(':');E[a].splice(+i,1);draw()}
-   else if(b.dataset.pre!==undefined){const ta=$('#x-obs'),txt=ELPRE[+b.dataset.pre][1],cur=ta.value.trim();ta.value=!cur||ELPRE.some(p=>p[1]===cur)?txt:cur+'\n'+txt;E.obs=ta.value;upd()}
-  });
-  $('#x-cp').onclick=()=>copyText(tplElec(E),'Plantilla copiada');
-  $('#x-dis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
-  $('#x-mk').onclick=()=>{
-   let bad=false;[['x-ticket',E.ticket],['x-nodo',E.nodo]].forEach(([id,v])=>{const el=$('#'+id);el.style.borderColor=v.trim()?'':'var(--bad)';if(!v.trim())bad=true});
-   if(bad){toast('Completa ticket y nodo');return}
-   const dd={id:E.ticket.trim(),site:E.nodo.trim(),who:E.tc||'Por asignar',desc:E.obs||'Sin observaciones.',el:clone(E)};
-   if(et)Object.assign(et,dd);else T.unshift({...dd,type:'Eléctrico',st:'Escalado',pr:'Alta',time:'Ahora',created:Date.now()});
-   DR.del(dkey);copyText(tplElec(E),et?'Plantilla actualizada y copiada':'Eléctrico escalado y plantilla copiada');close();buildNav();render();
-  };
- };
- draw();
-}
-function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
-function segForm(t,num,child){
- const base=dataOf(t),d0=child?child.d.diag:base.diag;
- open(`<h3>${child?'Editar':'Crear'} ticket secundario</h3><p class="sub2">Se asocia al ticket master ${esc(t.id)}. El diagnóstico N1 viene del ticket principal y puedes ajustarlo.</p>
- <div class="tg"><div><label for="s-num">No. Ticket</label><input id="s-num" value="${esc(num)}"><label for="s-diag">Diagnóstico N1</label><textarea id="s-diag" style="min-height:170px"></textarea></div><div><pre class="tpl" id="tpl"></pre></div></div>
- <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="scp">Copiar plantilla</button><button class="btn" id="smk">${child?'Guardar cambios':'Crear ticket secundario'}</button></div>`,true);
- const dk='seg-'+t.id+'-'+(child?child.id:'nuevo'),dr=DR.get(dk);
- $('#s-diag').value=dr?dr.diag:d0;
- if(dr){$('#s-num').value=dr.num||num;toast('Borrador recuperado')}
- const gen=()=>tplSeg({...base,ticket:$('#s-num').value.trim(),master:t.id,diag:$('#s-diag').value.trim()});
- const upd=()=>{$('#tpl').textContent=gen();const n=$('#s-num').value.trim(),g=$('#s-diag').value;if(n!==num||g!==d0)DR.set(dk,{num:n,diag:g});else DR.del(dk)};
- $('#modal').oninput=upd;upd();$('#s-diag').focus();
+function segForm(t,num){
+ const base=dataOf(t);
+ open(`<h3>Seguimiento · ${esc(num)}</h3><p class="sub2">Datos tomados del ticket ${esc(t.id)}. Solo escribe el diagnóstico.</p>
+ <div class="tg"><div><label for="s-diag">Diagnóstico N1</label><textarea id="s-diag" style="min-height:200px"></textarea></div><div><pre class="tpl" id="tpl"></pre></div></div>
+ <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="scp">Copiar plantilla</button><button class="btn" id="smk">Guardar y copiar</button></div>`,true);
+ const gen=()=>tplCorte({...base,ticket:num,diag:$('#s-diag').value.trim()},'SEGUIMIENTO TORRE DE CONTROL');
+ const upd=()=>{$('#tpl').textContent=gen()};$('#modal').oninput=upd;upd();$('#s-diag').focus();
  $('#scp').onclick=()=>copyText(gen(),'Plantilla copiada');
- $('#smk').onclick=()=>{
-  const n=$('#s-num').value.trim();
-  if(!n){$('#s-num').style.borderColor='var(--bad)';toast('Escribe el número de ticket');return}
-  if(T.some(x=>x.id===n&&x!==child)){toast('Ya existe un ticket '+n);return}
-  const diag=$('#s-diag').value.trim(),d={...base,ticket:n,master:t.id,diag};
-  if(child)Object.assign(child,{id:n,desc:diag||'Sin diagnóstico.',d});
-  else T.unshift({id:n,site:t.site,type:t.type,st:'Abierto',pr:t.pr,time:'Ahora',who:t.who,desc:diag||'Sin diagnóstico.',d,parent:t.id,created:Date.now()});
-  DR.del(dk);copyText(tplSeg(d),child?'Ticket secundario actualizado y copiado':'Ticket secundario '+n+' creado y copiado');close();buildNav();render();
- };
+ $('#smk').onclick=()=>{(t.seg=t.seg||[]).push({num,text:gen()});persist();copyText(gen(),'Seguimiento '+num+' guardado y copiado');close()};
 }
 
 $('#newBtn').onclick=()=>{
- if(cur==='esc:Corte'||cur==='esc:N1')return corteForm(null,cur.slice(4));
- if(cur==='esc:Eléctrico')return electricForm();
+ if(cur==='esc:Corte')return corteForm();
  const pre=cur.startsWith('esc:')?cur.slice(4):'Corte';
  open(`<h3>Nuevo escalamiento</h3><p class="sub2">Se notificará al área responsable al guardar.</p>
  <label for="f-type">Tipo</label><select id="f-type">${Object.keys(TYPES).map(k=>`<option ${k===pre?'selected':''}>${k}</option>`).join('')}</select>
@@ -430,11 +342,9 @@ $('#newBtn').onclick=()=>{
 };
 
 const fdt=x=>{if(!x)return '';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
-const valTxt=d=>(d.eqs||[]).map((q,i)=>{const v=(q.v||d['val'+(i+1)]||'').trim();if(!v)return '';return `\n\n* Validaciones ${q.e||('Equipo '+(i+1))}:\n${v}`}).join('');
-function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* IP Gestión del Acceso: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function dataOf(t){return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
 function copyText(t,msg){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(msg))}
-const DR={get(k){try{return JSON.parse(localStorage.getItem('netops-dr-'+k)||'null')}catch(e){return null}},set(k,v){try{localStorage.setItem('netops-dr-'+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem('netops-dr-'+k)}catch(e){}}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function ask(o){
@@ -459,13 +369,12 @@ const CUSTOM=[];
 const HORARIOS=['AHORA URGENTE','DISPONIBILIDAD DE CUADRILLA','COORDINAR CON O&M','EN HORARIO DE BAJO IMPACTO'];
 const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H'];
 
-function corteForm(et,type){
- type=type||(et&&et.type)||'Corte';const dkey=et?'corte-edit-'+et.id:'corte-'+type,drf=DR.get(dkey),ed=drf||(et?dataOf(et):null);
+function corteForm(){
  const I=(id,l,t)=>`<div><label for="c-${id}">${l}</label><input id="c-${id}" type="${t||'text'}"></div>`;
  const S=(id,l,opts)=>`<div><label for="c-${id}">${l}</label><select id="c-${id}"><option value="" disabled selected>Seleccionar</option>${opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
  const cliOpts=()=>'<option value="" disabled>Seleccionar</option><option>UFINET</option>'+CUSTOM.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__otro">Otro…</option>';
- const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" style="font-weight:500"></label></div><div><label>Hostname<input class="g-i" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
- open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
+ const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" style="font-weight:500"></label></div><div><label>IP Gestión<input class="g-i" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
+ open(`<h3>Escalación Torre de Control · Corte</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
  <div class="tg"><div>
  <div class="sec">Datos cliente</div>
  <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${I('fc','Fecha de creación de ticket','datetime-local')}${I('fd','Fecha de descarte eléctrico','datetime-local')}</div>
@@ -477,36 +386,22 @@ function corteForm(et,type){
  <div style="margin-top:14px"><button type="button" class="btn ghost" id="addEq">+ Agregar equipo</button></div>
  <div class="sec">Diagnóstico</div>
  <label for="c-diag">Diagnóstico N1</label><textarea id="c-diag"></textarea>
- <div id="vals"></div>
  <div class="fg2">${I('n1','Ingeniero N1')}${I('tc','Ingeniero TC')}</div>
  </div>
  <div><pre class="tpl" id="tpl"></pre></div></div>
- <div class="row" style="flex-wrap:wrap;align-items:center"><label class="tmk" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cdis">Descartar borrador</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
+ <div class="row" style="flex-wrap:wrap;align-items:center"><label class="tm" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">Crear y copiar</button></div>`,true);
 
  const v=id=>($('#c-'+id).value||'').trim();
  const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
  const eqs=()=>[...document.querySelectorAll('#egs .eg')].map(g=>{const q=c=>g.querySelector(c).value.trim();return `* Equipo Acceso: ${q('.g-e')}\n* IP Gestión del Acceso: ${q('.g-i')}\n* Puerto del Acceso: ${q('.g-p')}`}).join('\n\n');
- const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
+ const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map(g=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
  const gen=()=>tplCorte(collect());
- const lbl=()=>{const gs=document.querySelectorAll('#egs .eg');document.querySelectorAll('#vals .lv').forEach((l,i)=>{const g=gs[i],x=g?g.querySelector('.g-e').value.trim():'';l.textContent='Validaciones · '+(x||'Equipo '+(i+1))})};
- const syncVals=()=>{const gs=[...document.querySelectorAll('#egs .eg')],box=$('#vals'),old=[...box.querySelectorAll('.g-v')].map(x=>x.value);box.innerHTML=gs.map((g,i)=>`<label for="c-v${i}" class="lv"></label><textarea id="c-v${i}" class="g-v" placeholder="Pega aquí las validaciones" style="min-height:90px;font:12px ui-monospace,Menlo,Consolas,monospace"></textarea>`).join('');box.querySelectorAll('.g-v').forEach((t,i)=>t.value=old[i]||'');lbl()};
- const saveDr=()=>{const c=collect();if(c.ticket||c.nodo||c.diag||c.fc||c.fd||c.hor||c.falla||c.tm||(c.cli&&c.cli!=='UFINET')||c.eqs.some(q=>q.e||q.i||q.p||q.v))DR.set(dkey,c);else DR.del(dkey)};
- const upd=()=>{lbl();$('#tpl').textContent=gen();saveDr()};
+ const upd=()=>{$('#tpl').textContent=gen()};
  const copy=ok=>{const t=gen();const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(ok))};
  const renum=()=>document.querySelectorAll('#egs .eg').forEach((g,i)=>g.querySelector('.gn').textContent=i+1);
 
  $('#c-n1').value=ME;
  $('#c-cli').value='UFINET';let prev='UFINET';
- const prefill=()=>{
-  ['ticket','fc','fd','hor','nodo','falla','diag','val1','val2','n1','tc'].forEach(k=>{const el=$('#c-'+k);if(!el)return;if(el.tagName==='SELECT'&&ed[k]&&![...el.options].some(o=>o.value===ed[k]))el.add(new Option(ed[k],ed[k]));el.value=ed[k]||''});
-  const cs=$('#c-cli');if(ed.cli&&ed.cli!=='UFINET'){if(!CUSTOM.includes(ed.cli))CUSTOM.push(ed.cli);cs.innerHTML=cliOpts();cs.value=ed.cli}else cs.value='UFINET';
-  prev=cs.value;$('#c-tm').checked=!!ed.tm;
-  const q=ed.eqs&&ed.eqs.length?ed.eqs:[{e:'',i:'',p:''}],box=$('#egs');
-  box.innerHTML=q.map((x,i)=>grp(i+1,i>0)).join('');
-  box.querySelectorAll('.eg').forEach((g,i)=>{g.querySelector('.g-e').value=q[i].e||'';g.querySelector('.g-i').value=q[i].i||'';g.querySelector('.g-p').value=q[i].p||''});
-  upd();
- };
- if(ed){prefill();syncVals();$('#vals').querySelectorAll('.g-v').forEach((t,i)=>{const q=(ed.eqs||[])[i]||{};t.value=q.v||ed['val'+(i+1)]||''});upd();if(drf)toast('Borrador recuperado')}else syncVals();
  $('#c-cli').onchange=e=>{
   const s=e.target;
   if(s.value!=='__otro'){prev=s.value;return}
@@ -515,17 +410,16 @@ function corteForm(et,type){
    cb:n=>{if(!CUSTOM.includes(n)&&n.toUpperCase()!=='UFINET')CUSTOM.push(n);s.innerHTML=cliOpts();s.value=n.toUpperCase()==='UFINET'?'UFINET':n;prev=s.value;upd()},
    onCancel:()=>{s.value=prev;upd()}});
  };
- $('#addEq').onclick=()=>{const n=document.querySelectorAll('#egs .eg').length+1;$('#egs').insertAdjacentHTML('beforeend',grp(n,true));renum();syncVals();upd();$('#egs').lastElementChild.querySelector('input').focus()};
- $('#egs').onclick=e=>{const b=e.target.closest('.rm');if(b){const gs=[...document.querySelectorAll('#egs .eg')],vt=$('#vals').querySelectorAll('.g-v')[gs.indexOf(b.closest('.eg'))];if(vt)vt.remove();b.closest('.eg').remove();renum();syncVals();upd()}};
+ $('#addEq').onclick=()=>{const n=document.querySelectorAll('#egs .eg').length+1;$('#egs').insertAdjacentHTML('beforeend',grp(n,true));renum();upd();$('#egs').lastElementChild.querySelector('input').focus()};
+ $('#egs').onclick=e=>{const b=e.target.closest('.rm');if(b){b.closest('.eg').remove();renum();upd()}};
  $('#modal').oninput=upd;$('#modal').onchange=upd;upd();
  $('#cp').onclick=()=>copy('Plantilla copiada');
- $('#cdis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
  $('#mk').onclick=()=>{
   const tk=$('#c-ticket'),nd=$('#c-nodo');let bad=false;
   [tk,nd].forEach(e=>{if(!e.value.trim()){e.style.borderColor='var(--bad)';bad=true}else e.style.borderColor=''});
   if(bad)return;
-  const dd={id:v('ticket'),site:v('nodo'),who:v('tc')||'Por asignar',desc:v('diag')||'Sin diagnóstico.',d:collect()};if(et)Object.assign(et,dd);else T.unshift({...dd,type,st:'Escalado',pr:'Alta',time:'Ahora',created:Date.now()});
-  DR.del(dkey);copy(et?'Plantilla actualizada y copiada':type+' escalado y plantilla copiada');close();buildNav();render();
+  T.unshift({id:v('ticket'),site:v('nodo'),type:'Corte',st:'Escalado',pr:'Alta',time:'Ahora',who:v('tc')||'Por asignar',desc:v('diag')||'Sin diagnóstico.',d:collect()});
+  copy('Corte escalado y plantilla copiada');close();buildNav();render();
  };
 }
 
@@ -535,9 +429,9 @@ const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezone
 let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}catch(e){}
 const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
-const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],who:'Avance por TCE',avAt:'',avTxt:''});
+const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],who:'Avance por TCE',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
-function tplOf(t){return t.parent?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):t.ev?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):tplCorte(dataOf(t))}
+function tplOf(t){return t.ev?tplEvento(t.ev):tplCorte(dataOf(t))}
 
 const avSorted=a=>a.slice().sort((x,y)=>(Date.parse(x.at)||0)-(Date.parse(y.at)||0));
 const tkList=s=>{const seen=new Set();return (s||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>{const k=x.toUpperCase();if(!x||seen.has(k))return false;seen.add(k);return true})};
@@ -545,7 +439,7 @@ const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return
 function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<span class="tkc">${esc(x)}</span>`).join('')}
 function tplEvento(w){
  const L=['EVENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Tramo afectado: ${w.tramo}`,''];
- w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
+ w.eqs.forEach(q=>L.push(`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
  L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min (hasta ${fdt(w.etr.end)})`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
  avSorted(w.avs).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
@@ -605,8 +499,8 @@ function parseEvento(txt){
  w.prov=g(/\* Proveedor Offline:[ \t]*(.*)/)||'UFINET';w.pais=g(/\* País de falla:[ \t]*(.*)/)||'ECUADOR';
  w.impacto=g(/\* Impacto:[ \t]*(.*)/);w.cap=g(/\* Capacidad afectada:[ \t]*(\d*)/);
  w.diag=g(/\* Diagnóstico:[ \t]*([\s\S]*?)\n\* Acciones adicionales:/);w.acc2=g(/\* Acciones adicionales:[ \t]*([\s\S]*?)\n\* ETR:/);
- const eqs=[];txt.split('\n').forEach(l=>{let m;if(m=l.match(/^\*\s*Nodo:\s*(.*)$/))eqs.push({n:m[1].trim(),h:'',p:'',hs:false});else if(m=l.match(/^\*\s*Hostname:\s*(.*)$/)){const q=eqs[eqs.length-1];if(q&&!q.hs){q.h=m[1].trim();q.hs=true}else eqs.push({n:'',h:m[1].trim(),p:'',hs:true})}else if((m=l.match(/^\*\s*Puerto:\s*(.*)$/))&&eqs.length)eqs[eqs.length-1].p=m[1].trim()});
- if(eqs.length)w.eqs=eqs.map(({n,h,p})=>({n,h,p}));
+ const eqs=[];txt.split('\n').forEach(l=>{let m;if(m=l.match(/^\*\s*Hostname:\s*(.*)$/))eqs.push({h:m[1].trim(),p:''});else if((m=l.match(/^\*\s*Puerto:\s*(.*)$/))&&eqs.length)eqs[eqs.length-1].p=m[1].trim()});
+ if(eqs.length)w.eqs=eqs;
  const lines=txt.split('\n');
  const tk=(c,l)=>{const i=lines.findIndex(x=>x.startsWith('* '+l+':'));if(i<0)return;w[c+'On']=true;const t=[];for(let j=i+1;j<lines.length;j++){const m=lines[j].match(/^\s+-\s+(.+)$/);if(!m)break;t.push(m[1].trim())}w[c+'Tk']=t.join('\n')};
  tk('cd','Ticket caída total');tk('fo','Ticket fibra oscura');
@@ -651,24 +545,15 @@ function saveEv(){
  if(!id){const e=$('#e-id');if(e){e.style.borderColor='var(--bad)';e.focus()}toast('Escribe el ID Ticket');return false}
  const t=EV?T.find(x=>x.id===EV):null;
  if(T.some(x=>x.id===id&&x!==t)){toast('Ya existe un ticket '+id);return false}
- W.id=id;W.suspAcc=W.suspAcc||0;const f={id,site:W.tramo||'Evento '+id,type:MAPT[W.red]||(t&&t.type)||'Corte',desc:W.diag||'Evento sin diagnóstico.'};
+ W.id=id;W.suspAcc=W.suspAcc||0;const f={id,site:W.tramo||'Evento '+id,type:MAPT[W.red]||'Corte',desc:W.diag||'Evento sin diagnóstico.'};
  if(t)Object.assign(t,f);else T.unshift({...f,st:W.endAt?'Resuelto':'Abierto',pr:'Alta',time:'Ahora',who:'Por asignar'});
  (t||T[0]).ev=clone(W);EV=id;WFor=id;buildNav();tmPaint();return true;
 }
 
-function saveWD(){try{localStorage.setItem('netops-WD',W&&!EV?JSON.stringify(W):'')}catch(e){}}
-const isoLocal=ms=>{const d=new Date(ms);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
-function evFromTicket(t){
- const w={...newW(),id:t.id,tramo:t.site,diag:t.desc};
- if(t.d){const d=t.d,f=d.falla==='ENLACE DE MONITOREO 72H'?'ENLACE MONITOREO 72H':d.falla;w.acc=d.fc||'';w.tramo=d.nodo||t.site;w.diag=d.diag||t.desc;if(REDES.includes(f))w.red=f;w.eqs=(d.eqs&&d.eqs.length?d.eqs:[{}]).map(q=>({n:q.e||'',h:q.i||'',p:q.p||''}))}
- else if(t.el){w.acc=(t.el.fecha||'').slice(0,16);w.tramo=t.el.nodo||t.site}
- if(!w.acc&&t.created)w.acc=isoLocal(t.created);
- return w;
-}
 function evtView(v){
  $('#title').textContent='Plantilla de Evento';$('#subtitle').textContent='Llena el evento, controla el ETR y registra avances';
  const t=EV?T.find(x=>x.id===EV):null;if(!t)EV=null;
- if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV}
+ if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):{...newW(),id:t.id,tramo:t.site,diag:t.desc}):newW();WFor=EV}
  if(!W.avAt)W.avAt=nowLocal();
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
  const D=(k,l)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-dt="${k}" readonly placeholder="Seleccionar fecha y hora" value="${esc(fdt(W[k]))}" style="cursor:pointer"></div>`;
@@ -677,16 +562,16 @@ function evtView(v){
  const WH=[['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
  v.innerHTML=`<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button></div>${t?`<span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
  <div class="tg" style="margin-top:18px"><div class="card" id="evw" style="padding:6px 20px 24px">
- <label for="ev-open">Abrir ticket existente</label><select id="ev-open"><option value="">— Ticket nuevo —</option>${LV().map(x=>`<option value="${esc(x.id)}" ${x.id===EV?'selected':''}>${esc(x.id)} · ${esc(x.site)}</option>`).join('')}</select>
+ <label for="ev-open">Abrir ticket existente</label><select id="ev-open"><option value="">— Ticket nuevo —</option>${T.map(x=>`<option value="${esc(x.id)}" ${x.id===EV?'selected':''}>${esc(x.id)} · ${esc(x.site)}</option>`).join('')}</select>
  <div class="sech">Datos del evento</div>
- <div class="fg2">${F('id','ID Ticket')}${D('acc','Fecha y hora de afectación GMT-5')}</div>${W.acc&&!W.t0?'<small style="color:var(--warn);font-weight:600">Toca la fecha y confirma para iniciar los tiempos.</small>':''}
+ <div class="fg2">${F('id','ID Ticket')}${D('acc','Fecha y hora de afectación GMT-5')}</div>
  <div class="sech">Suspensión y reanudación de tiempo</div>
  ${F('motivo','Motivo')}
  ${D('sfecha','Fecha y hora')}
  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center"><button type="button" class="btn" id="e-susp" style="background:var(--warn);box-shadow:none">Registrar suspensión</button><button type="button" class="btn ghost" id="e-res">Reanudar tiempos</button>${W.t0?`<span class="tag" style="--c:${W.endAt?'#6b7893':W.suspSince?'#f59e0b':'#22c55e'}">${W.endAt?'Resuelto':W.suspSince?'Tiempos suspendidos':'Tiempos corriendo'}</span>`:''}</div>
  <div class="sech">Tramo afectado</div>
  ${F('tramo','Tramo afectado')}
- ${W.eqs.map((q,i)=>`<div class="fg3" style="margin-top:6px"><div><label>Nodo<input data-ei="${i}" data-ef="n" value="${esc(q.n||'')}"></label></div><div><label>Hostname<input data-ei="${i}" data-ef="h" value="${esc(q.h)}"></label></div><div><label>Puerto<input data-ei="${i}" data-ef="p" value="${esc(q.p)}"></label></div>${i?`<button type="button" class="chip" data-rm="${i}" style="grid-column:1/-1;justify-self:end;margin-top:8px;color:var(--bad)">Quitar equipo ${i+1}</button>`:''}</div>`).join('')}
+ ${W.eqs.map((q,i)=>`<div class="fg2" style="margin-top:6px"><div><label>Hostname<input data-ei="${i}" data-ef="h" value="${esc(q.h)}"></label></div><div><label>Puerto<input data-ei="${i}" data-ef="p" value="${esc(q.p)}"></label></div>${i?`<button type="button" class="chip" data-rm="${i}" style="grid-column:1/-1;justify-self:end;margin-top:8px;color:var(--bad)">Quitar equipo ${i+1}</button>`:''}</div>`).join('')}
  <div style="margin-top:12px"><button type="button" class="btn ghost" id="e-add">+ Agregar equipo</button></div>
  <div class="sech">Red y proveedor</div>
  <div class="fg2">${S('red','Red afectada',REDES)}${S('onnet','Red Onnet',['Si','No'])}</div>
@@ -708,7 +593,7 @@ function evtView(v){
  <div class="avs">${avSorted(W.avs).map(a=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}</div>`).join('')}</div>
  </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
 
- const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');
+ const upd=()=>{$('#tpl').textContent=tplEvento(W)};upd();etrPaint();tkPaint('cd');tkPaint('fo');
  const root=$('#evw');
  const onIn=e=>{
   const el=e.target;
@@ -756,7 +641,7 @@ function evtView(v){
   W.suspAcc=(W.suspAcc||0)+at-W.suspSince;W.suspSince=null;W.avs.push({who:'Reanudación de tiempos',at:W.sfecha||nowLocal(),txt:''});W.sfecha='';
   if(saveEv()){render();toast('Tiempos reanudados y registrados en la plantilla')}
  };
- $('#e-add').onclick=()=>{W.eqs.push({n:'',h:'',p:''});render()};
+ $('#e-add').onclick=()=>{W.eqs.push({h:'',p:''});render()};
  $('#e-stop').onclick=()=>{W.etr=null;W.etrH='';W.etrM='';if(W.id.trim())saveEv();render();toast('Contador detenido')};
  $('#e-av').onclick=()=>{
   const txt=(W.avTxt||'').trim();if(!txt){$('#e-avTxt').style.borderColor='var(--bad)';toast('Escribe el comentario del avance');return}
@@ -776,14 +661,14 @@ function evtView(v){
  };
  $('#ev-del').onclick=()=>{
   if(!t){toast('Selecciona un ticket para eliminar');return}
-  open(`<h3>Eliminar ticket</h3><p class="sub2">¿Seguro que quieres eliminar ${esc(t.id)}? Podrás restaurarlo desde Eliminados.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dl" style="background:var(--bad);box-shadow:none">Eliminar</button></div>`);
-  $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();EV=null;W=null;close();buildNav();render();toast('Ticket enviado a Eliminados')};
+  open(`<h3>Eliminar ticket</h3><p class="sub2">¿Seguro que quieres eliminar ${esc(t.id)}? Esta acción no se puede deshacer.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dl" style="background:var(--bad);box-shadow:none">Eliminar</button></div>`);
+  $('#dl').onclick=()=>{T.splice(T.indexOf(t),1);EV=null;W=null;close();buildNav();render();toast('Ticket eliminado')};
  };
 }
 
 let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
 
-try{const x=JSON.parse(localStorage.getItem('netops-T')||'null');if(Array.isArray(x))T=x;EV=localStorage.getItem('netops-EV')||null;const wd=localStorage.getItem('netops-WD');if(wd&&!EV){W=JSON.parse(wd);WFor=EV}}catch(e){}
+try{const x=JSON.parse(localStorage.getItem('netops-T')||'null');if(Array.isArray(x))T=x;EV=localStorage.getItem('netops-EV')||null}catch(e){}
 buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint()},1000);
 </script>
 </body>

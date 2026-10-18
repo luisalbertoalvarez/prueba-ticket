@@ -554,7 +554,7 @@ function initMe(){paintMe();$('#user').onclick=()=>askMe(true);if(!ME)askMe(fals
 
 const CUSTOM=[];
 const HORARIOS=['AHORA URGENTE','DISPONIBILIDAD DE CUADRILLA','COORDINAR CON O&M','EN HORARIO DE BAJO IMPACTO'];
-const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H'];
+const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H','CORTE URBANO'];
 
 function corteForm(et,type){
  type=type||(et&&et.type)||'Corte';const dkey=et?'corte-edit-'+et.id:'corte-'+type,drf=DR.get(dkey),ed=drf||(et?dataOf(et):null);
@@ -632,7 +632,7 @@ let EV=null,W=null,WFor;
 const clone=o=>JSON.parse(JSON.stringify(o));
 const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}catch(e){}
-const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
+const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H','CORTE URBANO'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
 const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'Avance por TCE',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}

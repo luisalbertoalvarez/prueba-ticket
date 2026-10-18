@@ -202,6 +202,19 @@ tbody tr:nth-child(10){animation-delay:0.36s}
 .tmc{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 12px}
 .tmc i{font-style:normal;font-size:11px;color:var(--mut);font-weight:700}
 .tmc b{font-variant-numeric:tabular-nums}
+.modal.fx{display:flex;flex-direction:column;padding:0;overflow:hidden;max-height:92vh}
+.modal.fx>.mh{padding:22px 26px 10px;flex:none}
+.modal.fx>.mb{flex:1;min-height:0;overflow:hidden;padding:0 26px}
+.modal.fx>.mf{flex:none;margin:0;padding:14px 26px;border-top:1px solid var(--line);background:var(--surface)}
+.modal.fx .tg{padding-bottom:12px}
+.modal.fx .tg>div{max-height:calc(92vh - 190px);overflow:auto;padding-right:6px}
+@media (max-width:760px){.modal.fx>.mb{overflow:auto}.modal.fx .tg>div{max-height:none;overflow:visible}}
+.sug{position:fixed;z-index:80;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(20,33,61,.22);max-height:260px;overflow:auto;padding:6px;animation:in .18s both}
+.si{display:grid;gap:1px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.si b{font-size:13.5px}
+.si span{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--acc2)}
+.si small{color:var(--mut);font-size:11.5px}
+.si.on,.si:hover{background:var(--bg)}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -305,7 +318,7 @@ function rows(list){
 function render(){
  const sb=$('#sumBtn');if(sb)sb.style.display=cur.startsWith('esc:')?'':'none';
  const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
- $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico'})[cur]||'+ Nuevo escalamiento';
+ $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico','esc:OTN':'+ Escalar OTN','esc:Fibra Oscura':'+ Escalar fibra oscura'})[cur]||'+ Nuevo escalamiento';
  if(cur==='seg'){
   $('#title').textContent='Seguimiento';$('#subtitle').textContent='Estado en vivo de todos los incidentes';
   const open=LV().filter(t=>t.st!=='Resuelto');
@@ -330,7 +343,8 @@ function render(){
  }else if(cur==='cfg'){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
   const opts=[['Alertas sonoras','Suena un aviso cuando entra un incidente crítico',true],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
-  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>`).join('')}</div>`;
+  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>`).join('')}</div>${nodosCard()}`;
+  $('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
  }else{
   $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
   v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
@@ -348,7 +362,7 @@ $('#view').addEventListener('click',e=>{
 });
 
 /* Modal */
-function open(html,w){$('#modal').className='modal'+(w?' wide':'');$('#modal').oninput=$('#modal').onchange=null;$('#modal').innerHTML=html;$('#ov').classList.add('show')}
+function open(html,w,fx){$('#modal').className='modal'+(w?' wide':'')+(fx?' fx':'');$('#modal').oninput=$('#modal').onchange=null;$('#modal').innerHTML=html;$('#ov').classList.add('show')}
 function close(){$('#ov').classList.remove('show')}
 $('#ov').addEventListener('click',e=>{if((e.target.id==='ov'&&!$('#modal').classList.contains('wide'))||e.target.closest('[data-close]'))close()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
@@ -368,7 +382,7 @@ function detail(id){
   let sure=false;$('#hd').onclick=e=>{if(!sure){sure=true;e.target.textContent='¿Seguro? Pulsa de nuevo';return}T.splice(T.indexOf(t),1);close();buildNav();render();toast('Eliminado definitivamente')};
   return;
  }
- $('#ed').onclick=()=>{close();if(t.parent){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else corteForm(t)};
+ $('#ed').onclick=()=>{close();if(t.parent){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
  const sgb=$('#sg');if(sgb)sgb.onclick=()=>ask({title:'Crear ticket secundario',sub:'Se asocia al ticket master '+t.id+'. Solo escribe el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
  $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();if(EV===t.id){EV=null;W=null}close();buildNav();render();toast(t.id+' enviado a Eliminados')};
  const r=$('#resolve');if(r)r.onclick=()=>{t.st='Resuelto';if(t.ev&&!t.ev.endAt){endTimers(t.ev);(t.ev.avs=t.ev.avs||[]).push({who:'Ticket resuelto',at:nowLocal(),txt:''})}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto: ahora está en Resueltos')};
@@ -396,8 +410,7 @@ function electricForm(et){
   const tipos=[...ELBASE,...ELTIPOS.filter(x=>!ELBASE.includes(x))];if(E.tipo&&!tipos.includes(E.tipo))tipos.push(E.tipo);
   const pct=(a,v)=>`<div class="cap"><input type="number" min="0" max="100" inputmode="numeric" ${a} value="${esc(v)}" style="padding-right:36px"><span>%</span></div>`;
   const rows=(ar,label,mk)=>E[ar].map((x,i)=>`<div class="fg2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px"><div><label>${label} ${i+1}${mk(`data-ar="${ar}" data-i="${i}"`,x)}</label></div><button type="button" class="chip" data-rm="${ar}:${i}" style="color:var(--bad);margin-bottom:4px">Quitar</button></div>`).join('');
-  open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · Eléctrico</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
-  <div class="tg"><div id="elw">
+  open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · Eléctrico</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div id="elw">
   <div class="fg2"><div><label for="x-ticket">Ticket</label><input id="x-ticket" data-e="ticket" value="${esc(E.ticket)}"></div><div><label for="x-fecha">Fecha</label><input id="x-fecha" data-pk readonly style="cursor:pointer" value="${esc(fdE(E.fecha))}"></div></div>
   <label for="x-tipo">Tipo de reporte</label><select id="x-tipo">${tipos.map(o=>`<option value="${esc(o)}" ${o===E.tipo?'selected':''}>${esc(o)}</option>`).join('')}<option value="__otro">OTROS…</option></select>
   <label for="x-nodo">Nodo</label><input id="x-nodo" data-e="nodo" value="${esc(E.nodo)}">
@@ -412,8 +425,8 @@ function electricForm(et){
   <div class="wchips" style="margin-top:10px">${ELPRE.map((p,i)=>`<button type="button" class="chip" data-pre="${i}">${p[0]}</button>`).join('')}</div>
   <label for="x-obs">Observaciones</label><textarea id="x-obs" data-e="obs">${esc(E.obs)}</textarea>
   <div class="fg2"><div><label for="x-n1">Ingeniero N1</label><input id="x-n1" data-e="n1" value="${esc(E.n1)}"></div><div><label for="x-tc">Ingeniero TC</label><input id="x-tc" data-e="tc" value="${esc(E.tc)}"></div></div>
-  </div><div><pre class="tpl" id="tpl"></pre></div></div>
-  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="x-dis">Descartar borrador</button><button class="btn ghost" id="x-cp">Copiar plantilla</button><button class="btn" id="x-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
+  </div><div><pre class="tpl" id="tpl"></pre></div></div></div>
+  <div class="row mf"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="x-dis">Descartar borrador</button><button class="btn ghost" id="x-cp">Copiar plantilla</button><button class="btn" id="x-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
   const upd=()=>{$('#tpl').textContent=tplElec(E);if(E.ticket||E.nodo||E.ups||E.upsx.length||E.rect.length||E.obs)DR.set(dkey,E);else DR.del(dkey)};upd();
   const tp=$('#x-tipo');
   tp.onchange=()=>{
@@ -443,15 +456,15 @@ function electricForm(et){
  draw();
 }
 function evParts(t){
- const ev=t.ev,d=t.d,el=t.el;
- const fecha=ev&&ev.acc?fdt(ev.acc):d&&d.fc?fdt(d.fc):el&&el.fecha?fdE(el.fecha).replace(' GMT-5',''):t.created?fdt(t.created):'';
- const tramo=(ev&&ev.tramo)||(d&&d.nodo)||(el&&el.nodo)||t.site||'';
+ const ev=t.ev,d=t.d,el=t.el,o=t.o;
+ const fecha=ev&&ev.acc?fdt(ev.acc):d&&d.fc?fdt(d.fc):o&&o.fecha?fdt(o.fecha):el&&el.fecha?fdE(el.fecha).replace(' GMT-5',''):t.created?fdt(t.created):'';
+ const tramo=(ev&&ev.tramo)||(d&&d.nodo)||(el&&el.nodo)||(o&&o.nodo)||t.site||'';
  const tot=ev&&ev.t0?fdur((ev.endAt||Date.now())-ev.t0):'Sin iniciar';
  const kids=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
- const diag=(ev&&ev.diag)||(d&&d.diag)||(el&&el.obs)||t.desc||'';
+ const diag=(ev&&ev.diag)||(d&&d.diag)||(el&&el.obs)||(o&&o.diag)||t.desc||'';
  const av=ev?avSorted(ev.avs||[]).filter(a=>a.who.startsWith('Avance')).pop():null;
  const ult=av?`[${fdt(av.at)}] ${av.who}${av.txt?': '+av.txt:''}`:'Sin avances';
- const tc=(ev&&ev.tc)||(d&&d.tc)||(el&&el.tc)||(t.who&&t.who!=='Por asignar'?t.who:'');
+ const tc=(ev&&ev.tc)||(d&&d.tc)||(el&&el.tc)||(o&&o.tc)||(t.who&&t.who!=='Por asignar'?t.who:'');
  return {fecha,tramo,tot,kids,diag,ult,tc,ev};
 }
 function resumenEvento(t){const p=evParts(t);return [`Ticket: ${t.id}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,`Proveedor: ${(p.ev&&p.ev.prov)||''}`,`País: ${(p.ev&&p.ev.pais)||'ECUADOR'}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n')}
@@ -483,6 +496,202 @@ function resumenModal(pre){
  $('#rs-inc').onchange=e=>{inc=e.target.checked;paint()};
  $('#rs-cp').onclick=()=>copyText(gen(),'Resumen copiado');
 }
+const HOR_O=['URGENTE A HORA','COORDINACION CON EL CLIENTE','COORDINACION CON O&M','BAJO VM'];
+const FALLA_O=['CORTE','ATENUACION'];
+const otnOf=t=>t.o||{ticket:t.id,fecha:(t.d&&t.d.fc)||'',cli:(t.d&&t.d.cli)||'UFINET',hor:'',falla:(t.d&&t.d.falla)||'',enlace:t.type==='OTN'?'OTN':'FIBRA OSCURA',nodo:(t.d&&t.d.nodo)||t.site,diag:(t.d&&t.d.diag)||t.desc||'',n1:ME,tc:t.who==='Por asignar'?'':(t.who||'')};
+function tplOtn(d){return ['ESCALACIÓN TORRE DE CONTROL','','---------DATOS CLIENTE----------',`* No. Ticket: ${d.ticket}`,'--------DATOS IMPORTANTES--------',`* Fecha: ${fdt(d.fecha)}`,`* Cliente: ${d.cli}`,`* Horario: ${d.hor}`,'','--------DATOS IMPORTANTES--------',`* Tipo de falla: ${d.falla}`,`* Tipo de enlace: ${d.enlace}`,`* Nombre de Nodo: ${d.nodo}`,'----------DIAGNÓSTICO-------------',`* Diagnóstico N1: ${d.diag}`,'',`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n')}
+function otnForm(et,type){
+ type=type||(et&&et.type)||'OTN';
+ const dkey=et?'otn-edit-'+et.id:'otn-'+type,drf=DR.get(dkey);
+ const O=JSON.parse(JSON.stringify(drf||(et?otnOf(et):{ticket:'',fecha:'',cli:'UFINET',hor:'',falla:'',enlace:type==='OTN'?'OTN':'FIBRA OSCURA',nodo:'',diag:'',n1:ME,tc:''})));
+ if(drf)toast('Borrador recuperado');
+ const draw=()=>{
+  const sel=(k,l,arr)=>`<label for="o-${k}">${l}</label><select id="o-${k}" data-o="${k}"><option value="">Seleccionar</option>${arr.map(x=>`<option ${x===O[k]?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  const clis=['UFINET',...CUSTOM];if(O.cli&&!clis.includes(O.cli))clis.push(O.cli);
+  open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div id="otw">
+  <div class="fg2"><div><label for="o-ticket">No. Ticket</label><input id="o-ticket" data-o="ticket" value="${esc(O.ticket)}"></div><div><label for="o-fecha">Fecha</label><input id="o-fecha" data-pk readonly placeholder="Seleccionar fecha y hora" style="cursor:pointer" value="${esc(fdt(O.fecha))}"></div></div>
+  <label for="o-cli">Cliente</label><select id="o-cli">${clis.map(x=>`<option value="${esc(x)}" ${x===O.cli?'selected':''}>${esc(x)}</option>`).join('')}<option value="__otro">OTROS…</option></select>
+  ${sel('hor','Horario',HOR_O)}
+  ${sel('falla','Tipo de falla',FALLA_O)}
+  <label for="o-enlace">Tipo de enlace</label><input id="o-enlace" data-o="enlace" value="${esc(O.enlace)}">
+  <label for="o-nodo">Nombre de Nodo</label><input id="o-nodo" data-o="nodo" value="${esc(O.nodo)}">
+  <label for="o-diag">Diagnóstico N1</label><textarea id="o-diag" data-o="diag" style="min-height:120px">${esc(O.diag)}</textarea>
+  <div class="fg2"><div><label for="o-n1">Ingeniero N1</label><input id="o-n1" data-o="n1" value="${esc(O.n1)}"></div><div><label for="o-tc">Ingeniero TC</label><input id="o-tc" data-o="tc" value="${esc(O.tc)}"></div></div>
+  </div><div><pre class="tpl" id="tpl"></pre></div></div></div>
+  <div class="row mf"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="o-dis">Descartar borrador</button><button class="btn ghost" id="o-cp">Copiar plantilla</button><button class="btn" id="o-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
+  const upd=()=>{$('#tpl').textContent=tplOtn(O);if(O.ticket||O.nodo||O.hor||O.falla||O.diag||O.fecha||(O.cli&&O.cli!=='UFINET'))DR.set(dkey,O);else DR.del(dkey)};upd();
+  const root=$('#otw');
+  root.addEventListener('input',e=>{const k=e.target.dataset.o;if(k){O[k]=e.target.value;upd()}});
+  root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.pk!==undefined){e.preventDefault();e.target.click()}});
+  root.addEventListener('click',e=>{if(e.target.closest('[data-pk]'))pickDT({title:'Fecha y hora (GMT-5)',value:O.fecha,cb:v=>{O.fecha=v;draw()}})});
+  const cs=$('#o-cli');
+  cs.onchange=()=>{
+   if(cs.value==='__otro'){cs.value=O.cli;ask({title:'Nuevo cliente',sub:'Escribe el nombre del cliente para agregarlo a la lista.',label:'Nombre del cliente',ph:'Ej. Cliente Logística Norte',ok:'Agregar',cancel:true,cb:n=>{if(n.toUpperCase()!=='UFINET'&&!CUSTOM.includes(n)){CUSTOM.push(n);try{localStorage.setItem('netops-clientes',JSON.stringify(CUSTOM))}catch(x){}}O.cli=n.toUpperCase()==='UFINET'?'UFINET':n;draw()}});return}
+   O.cli=cs.value;upd();
+  };
+  $('#o-cp').onclick=()=>copyText(tplOtn(O),'Plantilla copiada');
+  $('#o-dis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
+  $('#o-mk').onclick=()=>{
+   let bad=false;[['o-ticket',O.ticket],['o-nodo',O.nodo]].forEach(([id,v])=>{const el=$('#'+id);el.style.borderColor=v.trim()?'':'var(--bad)';if(!v.trim())bad=true});
+   if(bad){toast('Completa ticket y nodo');return}
+   const dd={id:O.ticket.trim(),site:O.nodo.trim(),who:O.tc||'Por asignar',desc:O.diag||'Sin diagnóstico.',o:clone(O)};
+   if(et)Object.assign(et,dd);else T.unshift({...dd,type,st:'Escalado',pr:'Alta',time:'Ahora',created:Date.now()});
+   DR.del(dkey);copyText(tplOtn(O),et?'Plantilla actualizada y copiada':type+' escalado y plantilla copiada');close();buildNav();render();
+  };
+ };
+ draw();
+}
+const NODOS_BASE_TXT=`
+ALAUSI|ECCHALAALARTAUFN01|172.17.33.191|
+ALAUSI|ECCHALAALASWUFN01|10.249.32.28|
+ALOAG|ECPIMEJALGRTAUFN01|172.17.33.36|
+ALOAG|ECPIMEJALGSWAUFN01|10.249.9.144|
+ALOAG|ECPIMEJALGSWAUFN02|10.249.9.230|
+AMBATO NDTL|ECTUAMBCENRTAUFN01|172.17.33.238|
+AMBATO NDTL|ECTUAMBCENSWAUFN01|10.249.32.30|
+AMBATO NDTL|ECTUAMBCENSWAUFN02|10.249.32.31|
+AMBATO NDTL|ECTUAMBCENSWAUFN03|10.249.32.36|
+AMBATO NDTL|ECTUAMBCENSWAUFN04|10.249.32.34|
+AMBATO TN|ECTUAMBTELRTAUFN02|172.17.33.148|
+AMBATO UFI|ECTUAMBAMBRTAUFN01|172.17.33.97|
+AMBATO UFI|ECTUAMBAMBSWAUFN01|10.249.9.125|
+ARENILLAS|ECORAREARERTAUFN01|172.17.33.136|
+ARENILLAS|ECORAREARERTAUFN02|172.17.33.225|NOKIA
+ATAHUALPA|ECSEATAATARTAUFN01|172.17.33.108|
+ATAHUALPA|ECSEATAATASWAUFN01|10.249.31.76|
+ATUNTAQUI|ECIMAANATURTAUFN01|172.17.33.218|
+ATUNTAQUI|ECIMAANATUSWAUFN01|10.249.32.25|
+AZOGUES|ECCRAZOAZORTAUFN01|172.17.33.240|
+AZOGUES|ECCRAZOAZOSWAUFN01|10.249.32.16|
+BABAHOYO NDTL|ECRIBABCENSWAUFN02|10.249.31.10|
+BABAHOYO NDTL|ECRIBBHCENRTAUFN03|172.17.33.80|
+BABAHOYO NDTL|ECRIBBHCENSWAUFN01|10.249.31.12|
+BABAHOYO NDTL|ECRIBBHCENRTAUFN01|172.17.33.198|NOKIA
+BAHIA|ECMASUCBAHRTAUFN01|172.17.33.102|
+BAHIA|ECMASUCBAHRTAUFN02|172.17.33.154|
+BAHIA|ECMASUCBAHSWAUFN01|10.249.31.80|
+BAHIA|ECMASUCBAHSWAUFN02|10.249.31.85|
+BALAO|ECGUBALBALRTAUFN01|172.17.33.167|
+BALAO|ECGUBALBLLSWAUFN01|10.249.31.67|
+BALSAS|ECORBALBALRTAUFN01|172.17.33.98|
+BALZAR|ECGUBLZBALRTAUFN01|172.17.33.139|
+BALZAR|ECGUBLZBLZSWAUFN01|10.249.31.62|
+BAÑOS|ECTUBHNBHNSWAUFN01|10.249.32.29|
+BAÑOS|ECTUBNHBANRTAUFN01|172.17.33.117|
+BAÑOS|ECTUBNHBANSWAUFN02|10.249.32.48|
+BUCAY|ECGUGAEBUCRTAUFN01|172.17.33.183|
+BUCAY|ECGUGAEBUCRTAUFN02|172.17.33.53|NOKIA
+BUCAY|ECGUGAEBUCSWAUFN01|10.249.31.64|
+CALCETA|ECMABOLCALRTAUFN01|172.17.33.111|
+CALUMA|ECBOCALCALSWAUFN01|10.249.31.17|
+CALUMA|ECBOCALCALSWAUFN02|10.249.31.101|
+CALUMA|ECBOCALCALRTAUFN01|172.17.33.57|NOKIA
+CAÑAR|ECCRCARCARRTAUFN01|172.17.33.143|
+CARIAMANGA|ECLOCALCARRTAUFN01|172.17.33.244|
+CARIAMANGA|ECLOCALCARSWAUFN01|10.249.32.69|
+CATAMAYO|ECLOCATCATRTAUFN01|172.17.33.249|
+CAYAMBE|ECPICAYCAYRTAUFN01|172.17.33.155|
+CAYAMBE|ECPICAYCAYRTAUFN02|172.17.33.239|
+CHAGUARPAMBA|ECLOCHGCHARTAUFN01|172.17.33.192|
+CHAGUARPAMBA|ECLOCHGCHARTAUFN02|172.17.33.63|NOKIA
+CHONE|ECMACHOCHORTAUFN02|172.17.33.125|
+CHONE|ECMACHOCHORTAUFN01|172.17.33.179|
+CHONE|ECMACHOCHORTAUFN03|172.17.33.228|
+CHONE|ECMACHOCHOSWAUFN01|10.249.31.55|
+CHONE|ECMACHOCHOSWAUFN02|10.249.31.22|
+CHUNCHI|ECCHCHUCHURTAUFN01|172.17.33.165|
+CONCORDIA|ECSDCONCONRTAUFN01|172.17.33.51|
+CONCORDIA|ECSDCONCONSWAUFN01|10.249.20.230|
+CONDIJUA|ECNPQUICONRTAUFN01|172.17.33.227|
+CUENCA ESTADIO UFI|ECAZCUECUESWAUFN03|10.249.9.161|
+CUENCA ESTADIO UFI|ECAZCUEESTRTAUFN01|172.17.33.78|
+CUENCA ESTADIO UFI|ECAZCUEESTSWAUFN01|10.249.32.32|
+CUENCA MONAY NDTL|ECAZCUEMONRTAUFN02|172.17.33.77|
+CUENCA MONAY NDTL|ECAZCUEMONRTAUFN03|172.17.33.211|
+CUENCA MONAY NDTL|ECAZCUEMONRTAUFN04|172.17.33.213|
+CUENCA MONAY NDTL|ECAZCUEMONSWAUFN01|10.249.32.21|
+CUENCA MONAY NDTL|ECAZCUEMONSWAUFN02|10.249.32.20|
+CUENCA SUR NARANCAY|ECAZCUESURRTAUFN01|172.17.33.134|
+CUENCA SUR NARANCAY|ECAZCUESURSWAUFN01|10.249.32.65|
+CUENCA TN|ECAZCUETNTRTAUFN01|172.17.33.133|
+DAULE|ECGUDAUDAURTAUFN02|172.17.33.210|
+DAULE|ECGUDAUDAURTAUFN04|172.17.33.56|
+DAULE|ECGUDAUDAUSWAUFN01|10.249.31.29|
+DAULE|ECGUDAUDAUSWAUFN02|10.249.31.53|
+DAULE|ECGUDAUDAUSWAUFN03|10.249.31.59|
+DURAN|ECGUDURDURRTAUFN03|172.17.33.58|
+DURAN|ECGUDURDURSWAUFN01|10.249.31.11|
+DURAN|ECGUDURDURSWAUFN02|10.249.32.59|
+DURAN|ECGUDURDURSWAUFN03|10.249.31.94|
+EL ANGEL|ECCAESPANGRTAUFN01|172.17.33.107|
+EL ANGEL|ECCAESPANGSWAUFN01|10.249.32.13|
+EL CARMEN|ECMACARCARRTAUFN01|172.17.33.103|
+EL CARMEN|ECMACARCARSWAUFN01|10.249.32.43|
+EL CARMEN|ECMACARCARSWAUFN02|10.249.31.79|
+EL CHACO|ECNPECHRTAUFN01|172.17.33.174|
+EL COCA|ECORCOCCOCRTAUFN01|172.17.33.121|
+EL COCA|ECORORECOCSWAUFN01|10.249.32.56|
+EMPALME|ECGUEEMEEMSWAUFN01|10.249.31.47|
+EMPALME|ECGUEEMEMPRTAUFN01|172.17.33.44|
+EMPALME|ECGUEEMEMPSWAUFN02|10.249.31.69|
+ESMERALDAS|ECESESMCENRTAUFN01|172.17.33.106|
+ESMERALDAS|ECESESMCENSWAUFN01|10.249.31.13|
+ESMERALDAS|ECESESMCENSWAUFN02|10.249.31.82|
+FLAVIO ALFARO|ECMAFALFALRTAUFN01|172.17.33.112|
+GUABO|ECEOGUAGBBSWAUFN02|10.249.31.14|
+GUABO|ECORGUAGUARTAUFN02|172.17.33.75|
+`;
+const nrm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+const mkNodos=a=>{const seen=new Set();return a.filter(r=>r.h||r.n).filter(r=>{const k=(r.n+'|'+r.h).toUpperCase();if(seen.has(k))return false;seen.add(k);return true}).map(r=>({...r,k:nrm(r.n+' '+r.h+' '+r.ip)}))};
+let NODOS=mkNodos(NODOS_BASE_TXT.trim().split('\n').map(l=>{const [n,h,ip,m]=l.split('|');return {n,h,ip:ip||'',m:m||''}}));
+try{const x=JSON.parse(localStorage.getItem('netops-nodos')||'null');if(Array.isArray(x)&&x.length)NODOS=mkNodos(x)}catch(e){}
+let SUG=null,SUGI=-1,SUGR=[],SUGCB=null;
+function sugEl(){if(!SUG){SUG=document.createElement('div');SUG.className='sug';SUG.style.display='none';document.body.appendChild(SUG);SUG.addEventListener('mousedown',e=>{e.preventDefault();const it=e.target.closest('.si');if(it)sugPick(+it.dataset.i)})}return SUG}
+function sugHide(){if(SUG)SUG.style.display='none';SUGR=[];SUGI=-1}
+function sugPick(i){const r=SUGR[i];if(r&&SUGCB){const inp=SUGCB.inp,cb=SUGCB.cb;sugHide();cb(inp,r)}}
+function sugShow(inp,cb){
+ const q=nrm(inp.value).split(/\s+/).filter(Boolean);
+ if(!q.length||inp.value.trim().length<2){sugHide();return}
+ SUGR=NODOS.filter(r=>q.every(t=>r.k.includes(t))).sort((a,b)=>(nrm(b.n).startsWith(q[0])|0)-(nrm(a.n).startsWith(q[0])|0)).slice(0,8);
+ if(!SUGR.length){sugHide();return}
+ SUGI=0;SUGCB={inp,cb};const el=sugEl();
+ el.innerHTML=SUGR.map((r,i)=>`<div class="si${i===0?' on':''}" data-i="${i}"><b>${esc(r.n)}</b><span>${esc(r.h)}</span><small>${esc(r.ip)}${r.m?' · '+esc(r.m):''}</small></div>`).join('');
+ const b=inp.getBoundingClientRect(),w=Math.max(b.width,320);
+ el.style.display='block';el.style.width=w+'px';el.style.left=Math.max(8,Math.min(b.left,innerWidth-w-8))+'px';
+ const h=el.offsetHeight;el.style.top=(innerHeight-b.bottom<h+16&&b.top>h+16?b.top-h-4:b.bottom+4)+'px';
+}
+function sugKey(e){
+ if(!SUG||SUG.style.display==='none')return;
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();SUGI=(SUGI+(e.key==='ArrowDown'?1:-1)+SUGR.length)%SUGR.length;SUG.querySelectorAll('.si').forEach((x,i)=>x.classList.toggle('on',i===SUGI));SUG.querySelector('.si.on').scrollIntoView({block:'nearest'})}
+ else if(e.key==='Enter'){e.preventDefault();e.stopPropagation();sugPick(SUGI)}
+ else if(e.key==='Escape'){e.stopPropagation();sugHide()}
+}
+function sugAttach(root,sel,cb){
+ root.addEventListener('input',e=>{if(e.target.matches(sel))sugShow(e.target,cb)});
+ root.addEventListener('keydown',sugKey);
+ root.addEventListener('focusout',()=>sugHide());
+}
+window.addEventListener('scroll',e=>{if(!SUG||!SUG.contains(e.target))sugHide()},true);
+function nodosCard(){return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Base de nodos</h2></div><div class="set"><div><b>${NODOS.length} equipos cargados</b><small>Se usa para buscar el nodo y rellenar el Hostname en las plantillas de Corte y N1. Columnas: NODOS, HOSTNAME, IP, MARCA.</small></div><button class="btn" id="nd-imp">Importar archivo</button></div><input type="file" id="nd-file" accept=".xlsx,.xls,.csv" hidden></div>`}
+function parseCSV(t){const rows=[],f=t.split('\n')[0],d=f.split(';').length>f.split(',').length?';':',';let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===d){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}else c+=ch}if(c!==''||r.length){r.push(c);rows.push(r)}return rows}
+function loadXLSX(){return new Promise((ok,no)=>{if(window.XLSX)return ok(window.XLSX);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>ok(window.XLSX);s.onerror=()=>no(new Error('xlsx'));document.head.appendChild(s)})}
+async function importNodos(f){
+ if(!f)return;
+ try{
+  let rows;
+  if(/\.csv$/i.test(f.name))rows=parseCSV(await f.text());
+  else{const X=await loadXLSX();const wb=X.read(await f.arrayBuffer(),{type:'array'});rows=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})}
+  const hd=rows.findIndex(r=>r.some(c=>/^hostname$/i.test(String(c).trim())));
+  const H=hd>=0?rows[hd].map(c=>String(c).trim().toUpperCase()):[];
+  const col=(names,def)=>{const i=H.findIndex(h=>names.includes(h));return i>=0?i:def};
+  const cn=col(['NODOS','NODO'],0),ch=col(['HOSTNAME'],1),ci=col(['IP'],2),cm=col(['MARCA'],3);
+  const out=rows.slice(hd>=0?hd+1:0).map(r=>({n:String(r[cn]||'').trim(),h:String(r[ch]||'').trim(),ip:String(r[ci]||'').trim(),m:String(r[cm]||'').trim()})).filter(r=>r.n||r.h);
+  if(!out.length){toast('No encontré filas con NODOS y HOSTNAME');return}
+  NODOS=mkNodos(out);
+  try{localStorage.setItem('netops-nodos',JSON.stringify(NODOS.map(({n,h,ip,m})=>({n,h,ip,m}))))}catch(e){toast('Cargado, pero no cupo para guardarlo en el navegador');return}
+  toast(NODOS.length+' equipos cargados');render();
+ }catch(e){toast('No se pudo leer el archivo')}
+}
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
  const base=dataOf(t),d0=child?child.d.diag:base.diag;
@@ -510,6 +719,7 @@ function segForm(t,num,child){
 $('#newBtn').onclick=()=>{
  if(cur==='esc:Corte'||cur==='esc:N1')return corteForm(null,cur.slice(4));
  if(cur==='esc:Eléctrico')return electricForm();
+ if(cur==='esc:OTN'||cur==='esc:Fibra Oscura')return otnForm(null,cur.slice(4));
  const pre=cur.startsWith('esc:')?cur.slice(4):'Corte';
  open(`<h3>Nuevo escalamiento</h3><p class="sub2">Se notificará al área responsable al guardar.</p>
  <label for="f-type">Tipo</label><select id="f-type">${Object.keys(TYPES).map(k=>`<option ${k===pre?'selected':''}>${k}</option>`).join('')}</select>
@@ -529,7 +739,8 @@ $('#newBtn').onclick=()=>{
 const fdt=x=>{if(!x)return '';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
 const valTxt=d=>(d.eqs||[]).map((q,i)=>{const v=(q.v||d['val'+(i+1)]||'').trim();if(!v)return '';return `\n\n* Validaciones ${q.e||('Equipo '+(i+1))}:\n${v}`}).join('');
 function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
-function dataOf(t){return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
+function dataOf(t){if(t.o){const o=t.o;return {ticket:t.id,tm:false,fc:o.fecha,fd:'',cli:o.cli,hor:o.hor,nodo:o.nodo,falla:o.falla,eqs:[{e:'',i:'',p:''}],diag:o.diag,n1:o.n1,tc:o.tc}}
+ return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
 function copyText(t,msg){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(msg))}
 const DR={get(k){try{return JSON.parse(localStorage.getItem('netops-dr-'+k)||'null')}catch(e){return null}},set(k,v){try{localStorage.setItem('netops-dr-'+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem('netops-dr-'+k)}catch(e){}}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -552,9 +763,9 @@ function setMe(n){ME=n;try{localStorage.setItem('netops-me',n)}catch(e){}paintMe
 function askMe(c){ask({title:c?'Cambiar nombre':'Bienvenido al panel',sub:'Se usará como Ingeniero N1 en tus escalamientos.',label:'Tu nombre completo',ph:'Ej. Juan Ramírez',ok:c?'Guardar':'Continuar',cancel:c,val:ME,cb:setMe})}
 function initMe(){paintMe();$('#user').onclick=()=>askMe(true);if(!ME)askMe(false)}
 
-const CUSTOM=[];
+const CUSTOM=(()=>{try{return JSON.parse(localStorage.getItem('netops-clientes')||'[]')}catch(e){return []}})();
 const HORARIOS=['AHORA URGENTE','DISPONIBILIDAD DE CUADRILLA','COORDINAR CON O&M','EN HORARIO DE BAJO IMPACTO'];
-const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H','CORTE URBANO'];
+const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUACION','CORTE IP & OTN','PACKET-LIGTH','INFINERA','FIBRA OSCURA','ENLACE DE MONITOREO 72H'];
 
 function corteForm(et,type){
  type=type||(et&&et.type)||'Corte';const dkey=et?'corte-edit-'+et.id:'corte-'+type,drf=DR.get(dkey),ed=drf||(et?dataOf(et):null);
@@ -562,15 +773,14 @@ function corteForm(et,type){
  const P=(id,l)=>`<div><label for="c-${id}">${l}</label><input id="c-${id}" data-pk readonly placeholder="Seleccionar fecha y hora" style="cursor:pointer"></div>`;
  const S=(id,l,opts)=>`<div><label for="c-${id}">${l}</label><select id="c-${id}"><option value="" disabled selected>Seleccionar</option>${opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
  const cliOpts=()=>'<option value="" disabled>Seleccionar</option><option>UFINET</option>'+CUSTOM.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__otro">Otro…</option>';
- const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" style="font-weight:500"></label></div><div><label>Hostname<input class="g-i" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
- open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
- <div class="tg"><div>
+ const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" placeholder="Busca el nodo…" autocomplete="off" style="font-weight:500"></label></div><div><label>Hostname<input class="g-i" placeholder="Hostname" autocomplete="off" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
+ open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div>
  <div class="sec">Datos cliente</div>
  <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${P('fc','Fecha de creación de ticket')}${P('fd','Fecha de descarte eléctrico')}</div>
  ${S('hor','Horario de revisión',HORARIOS)}
  <div class="sec">Datos importantes</div>
  ${I('nodo','Nombre de Nodo')}
- ${S('falla','Tipo de falla',FALLAS)}
+ ${S('falla','Tipo de falla',type==='N1'?[...FALLAS,'CORTE URBANO']:FALLAS)}
  <div id="egs">${grp(1,false)}</div>
  <div style="margin-top:14px"><button type="button" class="btn ghost" id="addEq">+ Agregar equipo</button></div>
  <div class="sec">Diagnóstico</div>
@@ -578,8 +788,8 @@ function corteForm(et,type){
  <div id="vals"></div>
  <div class="fg2">${I('n1','Ingeniero N1')}${I('tc','Ingeniero TC')}</div>
  </div>
- <div><pre class="tpl" id="tpl"></pre></div></div>
- <div class="row" style="flex-wrap:wrap;align-items:center"><label class="tmk" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cdis">Descartar borrador</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
+ <div><pre class="tpl" id="tpl"></pre></div></div></div>
+ <div class="row mf" style="flex-wrap:wrap;align-items:center"><label class="tmk" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cdis">Descartar borrador</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
 
  const v=id=>{const el=$('#c-'+id);return ((el.dataset.pk!==undefined?el.dataset.iso:el.value)||'').trim()};
  const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
@@ -610,11 +820,12 @@ function corteForm(et,type){
   if(s.value!=='__otro'){prev=s.value;return}
   s.value=prev;
   ask({title:'Nuevo cliente',sub:'Escribe el nombre del cliente para agregarlo a la lista.',label:'Nombre del cliente',ph:'Ej. Cliente Logística Norte',ok:'Agregar',cancel:true,
-   cb:n=>{if(!CUSTOM.includes(n)&&n.toUpperCase()!=='UFINET')CUSTOM.push(n);s.innerHTML=cliOpts();s.value=n.toUpperCase()==='UFINET'?'UFINET':n;prev=s.value;upd()},
+   cb:n=>{if(!CUSTOM.includes(n)&&n.toUpperCase()!=='UFINET'){CUSTOM.push(n);try{localStorage.setItem('netops-clientes',JSON.stringify(CUSTOM))}catch(x){}}s.innerHTML=cliOpts();s.value=n.toUpperCase()==='UFINET'?'UFINET':n;prev=s.value;upd()},
    onCancel:()=>{s.value=prev;upd()}});
  };
  $('#addEq').onclick=()=>{const n=document.querySelectorAll('#egs .eg').length+1;$('#egs').insertAdjacentHTML('beforeend',grp(n,true));renum();syncVals();upd();$('#egs').lastElementChild.querySelector('input').focus()};
  $('#egs').onclick=e=>{const b=e.target.closest('.rm');if(b){const gs=[...document.querySelectorAll('#egs .eg')],vt=$('#vals').querySelectorAll('.g-v')[gs.indexOf(b.closest('.eg'))];if(vt)vt.remove();b.closest('.eg').remove();renum();syncVals();upd()}};
+ sugAttach($('#egs'),'.g-e,.g-i',(inp,r)=>{const g=inp.closest('.eg');g.querySelector('.g-e').value=r.n;g.querySelector('.g-i').value=r.h;const nd=$('#c-nodo');if(nd&&!nd.value.trim())nd.value=r.n;upd();g.querySelector('.g-p').focus()});
  $('#modal').oninput=upd;$('#modal').onchange=upd;upd();
  $('#cp').onclick=()=>copy('Plantilla copiada');
  $('#cdis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
@@ -632,11 +843,11 @@ let EV=null,W=null,WFor;
 const clone=o=>JSON.parse(JSON.stringify(o));
 const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}catch(e){}
-const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H','CORTE URBANO'];
+const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
 const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'Avance por TCE',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
-function tplOf(t){return t.parent?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):tplCorte(dataOf(t))}
+function tplOf(t){return t.parent?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
 
 const MANW=['Avance por TCE','Avance proveedor','Avance O&M'];
 const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(p.a.at)||0)-(Date.parse(q.a.at)||0));return ix?r:r.map(p=>p.a)};
@@ -774,6 +985,7 @@ function evFromTicket(t){
  const w={...newW(),id:t.id,tramo:t.site,diag:t.desc};
  if(t.d){const d=t.d,f=d.falla==='ENLACE DE MONITOREO 72H'?'ENLACE MONITOREO 72H':d.falla;w.acc=d.fc||'';w.tramo=d.nodo||t.site;w.diag=d.diag||t.desc;if(REDES.includes(f))w.red=f;w.eqs=(d.eqs&&d.eqs.length?d.eqs:[{}]).map(q=>({n:q.e||'',h:q.i||'',p:q.p||''}))}
  else if(t.el){w.acc=(t.el.fecha||'').slice(0,16);w.tramo=t.el.nodo||t.site}
+ else if(t.o){w.acc=t.o.fecha||'';w.tramo=t.o.nodo||t.site;w.diag=t.o.diag||t.desc;w.red=t.type==='OTN'?'CORTE OTN':'FIBRA OSCURA'}
  if(!w.acc&&t.created)w.acc=isoLocal(t.created);
  return w;
 }

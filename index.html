@@ -197,6 +197,11 @@ tbody tr:nth-child(7){animation-delay:0.24s}
 tbody tr:nth-child(8){animation-delay:0.28s}
 tbody tr:nth-child(9){animation-delay:0.32s}
 tbody tr:nth-child(10){animation-delay:0.36s}
+.evtm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.evtm:empty{display:none}
+.tmc{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 12px}
+.tmc i{font-style:normal;font-size:11px;color:var(--mut);font-weight:700}
+.tmc b{font-variant-numeric:tabular-nums}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -256,7 +261,7 @@ let T=[
  {id:'INC-4795',site:'Sitio Salinas 01',type:'Eléctrico',st:'En proceso',pr:'Media',time:'6 h 30 min',who:'Energía y planta',desc:'Revisión de transferencia automática.'}];
 const MENU=[
  {id:'seg',label:'Seguimiento',icon:'seg'},
- {id:'evt',label:'Plantilla de Evento',icon:'doc'},
+ {id:'evt',label:'Plantilla de Seguimiento',icon:'doc'},
  {id:'esc',label:'Escalamiento',icon:'esc',sub:Object.keys(TYPES)},
  {id:'res',label:'Resueltos',icon:'ok'},
  {id:'del',label:'Eliminados',icon:'trash'},
@@ -286,10 +291,15 @@ $('#scrim').onclick=closeSide;
 
 function count(el,to){let n=0;const step=Math.max(1,Math.ceil(to/20));const i=setInterval(()=>{n=Math.min(to,n+step);el.textContent=n;if(n>=to)clearInterval(i)},30)}
 
+function idCell(t){
+ if(t.parent)return `<b>${t.id}</b><br><span class="tag" style="--c:#8b5cf6;margin-top:4px">Ticket hijo · ${esc(t.parent)}</span>`;
+ const k=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
+ return `<b>${t.id}</b><br><span class="tag" style="--c:#0ea5e9;margin-top:4px">Ticket master</span>${k.length?`<br><small style="color:var(--mut);font-weight:600">Asociados: ${k.map(esc).join(', ')}</small>`:''}`;
+}
 function rows(list){
  if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
  return `<div class="scroll"><table><thead><tr><th>ID</th><th>Sitio o cliente</th><th>Tipo</th><th>Estado</th><th>Prioridad</th><th>Tiempo</th></tr></thead><tbody>${list.map(t=>`
- <tr data-id="${t.id}"><td><b>${t.id}</b>${t.parent?`<br><span class="tag" style="--c:#8b5cf6;margin-top:4px">Ticket hijo · ${esc(t.parent)}</span>`:''}</td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`).join('')}</tbody></table></div>`;
+ <tr data-id="${t.id}"><td>${idCell(t)}</td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function render(){
@@ -373,20 +383,23 @@ function tplElec(d){
  const nm=(a,l,f)=>a.map((x,i)=>`${l}${a.length>1?' '+(i+1):''}: ${f(x)}`);
  return ['*ESCALACIÓN TORRE DE CONTROL*',`Ticket: ${d.ticket}`,`Fecha: ${fdE(d.fecha)}`,`Tipo: ${d.tipo}`,`Nodo: ${d.nodo}`,`UPS principal: ${pc(d.ups)}`,...nm(d.upsx,'UPS adicional',pc),...nm(d.rect,'Rectificador',x=>x),'Observaciones:',d.obs,`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n');
 }
+const ELBASE=['UPS EN BATERIA','REVISION DE NODO','REVISION DE EQUIPOS ELECTRICOS','ACOMPAÑAMIENTO','TEMPERATURA ALTA'];
+let ELTIPOS=[];try{ELTIPOS=JSON.parse(localStorage.getItem('netops-eltipos')||'[]')}catch(e){}
 const ELPRE=[['Generador','Nodo en batería, se solicita asistencia con GENERADOR URGENTE'],['Temperatura Alta','Se visualiza temperatura alta en el nodo, asistencia *URGENTE*'],['Revision Electrica','Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*'],['General-Default','UPS con alarma *GENERAL-DEFAULT*'],['Revision en nodo','Movilizar personal para la revision del nodo contactar con Electrico de Turno']];
 function electricForm(et){
  const nowIso=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,19)};
  const dkey=et?'elec-edit-'+et.id:'elec',drf=DR.get(dkey);
  const E=JSON.parse(JSON.stringify(drf||(et?elOf(et):{ticket:'',fecha:'',tipo:'UPS EN BATERIA',nodo:'',ups:'',upsx:[],rect:[],obs:'',n1:ME,tc:''})));
  if(drf)toast('Borrador recuperado');
- if(!E.fecha)E.fecha=nowIso();
+ if(!E.fecha)E.fecha=nowIso();if(!E.tipo)E.tipo='UPS EN BATERIA';
  const draw=()=>{
+  const tipos=[...ELBASE,...ELTIPOS.filter(x=>!ELBASE.includes(x))];if(E.tipo&&!tipos.includes(E.tipo))tipos.push(E.tipo);
   const pct=(a,v)=>`<div class="cap"><input type="number" min="0" max="100" inputmode="numeric" ${a} value="${esc(v)}" style="padding-right:36px"><span>%</span></div>`;
   const rows=(ar,label,mk)=>E[ar].map((x,i)=>`<div class="fg2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px"><div><label>${label} ${i+1}${mk(`data-ar="${ar}" data-i="${i}"`,x)}</label></div><button type="button" class="chip" data-rm="${ar}:${i}" style="color:var(--bad);margin-bottom:4px">Quitar</button></div>`).join('');
   open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · Eléctrico</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
   <div class="tg"><div id="elw">
   <div class="fg2"><div><label for="x-ticket">Ticket</label><input id="x-ticket" data-e="ticket" value="${esc(E.ticket)}"></div><div><label for="x-fecha">Fecha</label><input id="x-fecha" data-pk readonly style="cursor:pointer" value="${esc(fdE(E.fecha))}"></div></div>
-  <label for="x-tipo">Tipo</label><input id="x-tipo" data-e="tipo" list="x-tipos" value="${esc(E.tipo)}"><datalist id="x-tipos">${['UPS EN BATERIA','TEMPERATURA ALTA','REVISION ELECTRICA','UPS GENERAL-DEFAULT','REVISION EN NODO'].map(o=>`<option value="${o}">`).join('')}</datalist>
+  <label for="x-tipo">Tipo de reporte</label><select id="x-tipo">${tipos.map(o=>`<option value="${esc(o)}" ${o===E.tipo?'selected':''}>${esc(o)}</option>`).join('')}<option value="__otro">OTROS…</option></select>
   <label for="x-nodo">Nodo</label><input id="x-nodo" data-e="nodo" value="${esc(E.nodo)}">
   <div class="sec">UPS</div>
   <label>UPS principal</label>${pct('data-e="ups"',E.ups)}
@@ -402,6 +415,11 @@ function electricForm(et){
   </div><div><pre class="tpl" id="tpl"></pre></div></div>
   <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="x-dis">Descartar borrador</button><button class="btn ghost" id="x-cp">Copiar plantilla</button><button class="btn" id="x-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
   const upd=()=>{$('#tpl').textContent=tplElec(E);if(E.ticket||E.nodo||E.ups||E.upsx.length||E.rect.length||E.obs)DR.set(dkey,E);else DR.del(dkey)};upd();
+  const tp=$('#x-tipo');
+  tp.onchange=()=>{
+   if(tp.value==='__otro'){tp.value=E.tipo;ask({title:'Otro tipo de reporte',sub:'Escribe el nombre de la revisión. Quedará guardado para próximos reportes.',label:'Nombre de la revisión',ph:'Ej. REVISION DE AIRE ACONDICIONADO',ok:'Agregar',cancel:true,cb:n=>{n=n.toUpperCase();if(!ELBASE.includes(n)&&!ELTIPOS.includes(n)){ELTIPOS.push(n);try{localStorage.setItem('netops-eltipos',JSON.stringify(ELTIPOS))}catch(x){}}E.tipo=n;draw()}});return}
+   E.tipo=tp.value;upd();
+  };
   const root=$('#elw');
   root.addEventListener('input',e=>{const el=e.target;if(el.dataset.e)E[el.dataset.e]=el.value;else if(el.dataset.ar)E[el.dataset.ar][+el.dataset.i]=el.value;upd()});
   root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.pk!==undefined){e.preventDefault();e.target.click()}});
@@ -424,7 +442,7 @@ function electricForm(et){
  };
  draw();
 }
-function resumenEvento(t){
+function evParts(t){
  const ev=t.ev,d=t.d,el=t.el;
  const fecha=ev&&ev.acc?fdt(ev.acc):d&&d.fc?fdt(d.fc):el&&el.fecha?fdE(el.fecha).replace(' GMT-5',''):t.created?fdt(t.created):'';
  const tramo=(ev&&ev.tramo)||(d&&d.nodo)||(el&&el.nodo)||t.site||'';
@@ -432,20 +450,29 @@ function resumenEvento(t){
  const kids=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
  const diag=(ev&&ev.diag)||(d&&d.diag)||(el&&el.obs)||t.desc||'';
  const av=ev?avSorted(ev.avs||[]).filter(a=>a.who.startsWith('Avance')).pop():null;
+ const ult=av?`[${fdt(av.at)}] ${av.who}${av.txt?': '+av.txt:''}`:'Sin avances';
  const tc=(ev&&ev.tc)||(d&&d.tc)||(el&&el.tc)||(t.who&&t.who!=='Por asignar'?t.who:'');
- return [`Ticket: ${t.id}`,`Fecha y hora: ${fecha}`,`Tramo afectado: ${tramo}`,`Tiempo total: ${tot}`,`Proveedor: ${(ev&&ev.prov)||''}`,`País: ${(ev&&ev.pais)||'ECUADOR'}`,`Tickets secundarios: ${kids.length?kids.join(', '):'Ninguno'}`,`Diagnóstico: ${diag}`,`Último avance: ${av?`[${fdt(av.at)}] ${av.who}${av.txt?': '+av.txt:''}`:'Sin avances'}`,'',`Cto: @${tc}`].join('\n');
+ return {fecha,tramo,tot,kids,diag,ult,tc,ev};
 }
-function resumenLista(types,inc,general){
- const sec=types.map(ty=>({ty,L:T.filter(t=>!t.del&&!t.parent&&t.type===ty&&(inc||t.st!=='Resuelto'))}));
- const n=sec.reduce((a,x)=>a+x.L.length,0);
- if(!n)return general?'No hay eventos para resumir.':`No hay eventos de ${types[0]} para resumir.`;
- const body=sec.filter(x=>x.L.length).map(x=>`${general?'■ '+x.ty.toUpperCase()+' ('+x.L.length+')\n\n':''}${x.L.map(resumenEvento).join('\n\n--------------------\n\n')}`).join('\n\n====================\n\n');
- return `${general?'RESUMEN GENERAL DE EVENTOS':'RESUMEN DE EVENTOS · '+types[0].toUpperCase()} (${n})\nGenerado: ${fdt(Date.now())}\n\n${body}`;
+function resumenEvento(t){const p=evParts(t);return [`Ticket: ${t.id}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,`Proveedor: ${(p.ev&&p.ev.prov)||''}`,`País: ${(p.ev&&p.ev.pais)||'ECUADOR'}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n')}
+const evBloque=t=>{const p=evParts(t);return [`Ticket: ${t.id}`,`Tramo afectado: ${p.tramo}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Último Avance: ${p.ult}`].join('\n')};
+const RES_ORDER=['Corte','Eléctrico','N1','Fibra Oscura','OTN'];
+const RES_FR={Corte:['Actualmente no se tiene afectación en las troncales.','las troncales'],'Eléctrico':['Actualmente no se tiene eventos en los nodos de batería.','los nodos de batería'],N1:['Actualmente no se tiene eventos de N1.','los eventos de N1'],'Fibra Oscura':['Actualmente no se tiene eventos de fibra oscura.','los eventos de fibra oscura'],OTN:['Actualmente no se tiene eventos de OTN.','los eventos de OTN']};
+const saludo=()=>{const h=new Date().getHours();return h>=5&&h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'};
+function resumenLista(types,inc){
+ const L=[`${saludo()} estimados, se comparte el resumen de eventos hasta el momento,`,''];
+ types.forEach((ty,i)=>{
+  const ev=T.filter(t=>!t.del&&!t.parent&&t.type===ty&&(inc||t.st!=='Resuelto')),f=RES_FR[ty]||['Actualmente no se tiene eventos de '+ty+'.','los eventos de '+ty];
+  if(!ev.length){L.push(`${i+1}. ${f[0]}`);return}
+  L.push(`${i+1}. Para ${f[1]}, se tiene lo siguiente (${ev.length} ${ev.length===1?'evento':'eventos'}):`,'');
+  ev.forEach(t=>L.push(evBloque(t),''));
+ });
+ return L.join('\n').trim();
 }
 function resumenModal(pre){
  const opts=[['Resumen general','all','#3b82f6'],...Object.keys(TYPES).map(k=>[k,k,TYPES[k]])];
  let sel=opts.some(o=>o[1]===pre)?pre:'all',inc=false;
- const gen=()=>resumenLista(sel==='all'?Object.keys(TYPES):[sel],inc,sel==='all');
+ const gen=()=>resumenLista(sel==='all'?RES_ORDER:[sel],inc);
  open(`<h3>Resumen de eventos</h3><p class="sub2">Elige qué resumen quieres generar.</p>
  <div class="wchips" id="rs-ch">${opts.map(o=>`<button type="button" class="wchip ${o[1]===sel?'on':''}" data-s="${o[1]}" style="--c:${o[2]}">${o[0]}</button>`).join('')}</div>
  <label class="ck"><input type="checkbox" id="rs-inc">Incluir resueltos</label>
@@ -532,13 +559,14 @@ const FALLAS=['CORTE IP','PUERTO DOWN','FLAPEO','PLAN DE CALIDAD','CRC','ATENUAC
 function corteForm(et,type){
  type=type||(et&&et.type)||'Corte';const dkey=et?'corte-edit-'+et.id:'corte-'+type,drf=DR.get(dkey),ed=drf||(et?dataOf(et):null);
  const I=(id,l,t)=>`<div><label for="c-${id}">${l}</label><input id="c-${id}" type="${t||'text'}"></div>`;
+ const P=(id,l)=>`<div><label for="c-${id}">${l}</label><input id="c-${id}" data-pk readonly placeholder="Seleccionar fecha y hora" style="cursor:pointer"></div>`;
  const S=(id,l,opts)=>`<div><label for="c-${id}">${l}</label><select id="c-${id}"><option value="" disabled selected>Seleccionar</option>${opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
  const cliOpts=()=>'<option value="" disabled>Seleccionar</option><option>UFINET</option>'+CUSTOM.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__otro">Otro…</option>';
  const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" style="font-weight:500"></label></div><div><label>Hostname<input class="g-i" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
  open(`<h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p>
  <div class="tg"><div>
  <div class="sec">Datos cliente</div>
- <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${I('fc','Fecha de creación de ticket','datetime-local')}${I('fd','Fecha de descarte eléctrico','datetime-local')}</div>
+ <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${P('fc','Fecha de creación de ticket')}${P('fd','Fecha de descarte eléctrico')}</div>
  ${S('hor','Horario de revisión',HORARIOS)}
  <div class="sec">Datos importantes</div>
  ${I('nodo','Nombre de Nodo')}
@@ -553,7 +581,7 @@ function corteForm(et,type){
  <div><pre class="tpl" id="tpl"></pre></div></div>
  <div class="row" style="flex-wrap:wrap;align-items:center"><label class="tmk" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cdis">Descartar borrador</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true);
 
- const v=id=>($('#c-'+id).value||'').trim();
+ const v=id=>{const el=$('#c-'+id);return ((el.dataset.pk!==undefined?el.dataset.iso:el.value)||'').trim()};
  const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
  const eqs=()=>[...document.querySelectorAll('#egs .eg')].map(g=>{const q=c=>g.querySelector(c).value.trim();return `* Equipo Acceso: ${q('.g-e')}\n* IP Gestión del Acceso: ${q('.g-i')}\n* Puerto del Acceso: ${q('.g-p')}`}).join('\n\n');
  const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
@@ -568,7 +596,7 @@ function corteForm(et,type){
  $('#c-n1').value=ME;
  $('#c-cli').value='UFINET';let prev='UFINET';
  const prefill=()=>{
-  ['ticket','fc','fd','hor','nodo','falla','diag','val1','val2','n1','tc'].forEach(k=>{const el=$('#c-'+k);if(!el)return;if(el.tagName==='SELECT'&&ed[k]&&![...el.options].some(o=>o.value===ed[k]))el.add(new Option(ed[k],ed[k]));el.value=ed[k]||''});
+  ['ticket','fc','fd','hor','nodo','falla','diag','val1','val2','n1','tc'].forEach(k=>{const el=$('#c-'+k);if(!el)return;if(el.tagName==='SELECT'&&ed[k]&&![...el.options].some(o=>o.value===ed[k]))el.add(new Option(ed[k],ed[k]));if(el.dataset.pk!==undefined){el.dataset.iso=ed[k]||'';el.value=fdt(ed[k])}else el.value=ed[k]||''});
   const cs=$('#c-cli');if(ed.cli&&ed.cli!=='UFINET'){if(!CUSTOM.includes(ed.cli))CUSTOM.push(ed.cli);cs.innerHTML=cliOpts();cs.value=ed.cli}else cs.value='UFINET';
   prev=cs.value;$('#c-tm').checked=!!ed.tm;
   const q=ed.eqs&&ed.eqs.length?ed.eqs:[{e:'',i:'',p:''}],box=$('#egs');
@@ -590,6 +618,7 @@ function corteForm(et,type){
  $('#modal').oninput=upd;$('#modal').onchange=upd;upd();
  $('#cp').onclick=()=>copy('Plantilla copiada');
  $('#cdis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
+ ['fc','fd'].forEach(k=>{const el=$('#c-'+k),go=()=>pickDT({title:k==='fc'?'Fecha y hora de creación del ticket':'Fecha y hora de descarte eléctrico',value:el.dataset.iso||'',cb:x=>{el.dataset.iso=x;el.value=fdt(x);upd()}});el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}});
  $('#mk').onclick=()=>{
   const tk=$('#c-ticket'),nd=$('#c-nodo');let bad=false;
   [tk,nd].forEach(e=>{if(!e.value.trim()){e.style.borderColor='var(--bad)';bad=true}else e.style.borderColor=''});
@@ -614,11 +643,23 @@ const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(
 const tkList=s=>{const seen=new Set();return (s||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>{const k=x.toUpperCase();if(!x||seen.has(k))return false;seen.add(k);return true})};
 const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x}`)]};
 function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<span class="tkc">${esc(x)}</span>`).join('')}
+const evTimes=w=>{if(!w||!w.t0)return null;const now=w.endAt||Date.now(),tot=Math.max(0,now-w.t0),sus=Math.min(tot,(w.suspAcc||0)+(w.suspSince?Math.max(0,now-w.suspSince):0));return {tot,sus,prog:tot-sus,st:w.endAt?'Resuelto':w.suspSince?'Suspendido':'En progreso'}};
+function evTmPaint(){
+ const b=$('#ev-tm');if(!b||!W)return;const t=evTimes(W);
+ if(!t){b.innerHTML='';return}
+ const c=t.st==='Suspendido'?'#f59e0b':t.st==='Resuelto'?'#6b7893':'#22c55e';
+ b.innerHTML=`<span class="tag" style="--c:${c}">${t.st}</span><span class="tmc"><i>En progreso</i><b>${fdur(t.prog)}</b></span><span class="tmc"><i>Suspendido</i><b>${fdur(t.sus)}</b></span><span class="tmc"><i>Total transcurrido</i><b>${fdur(t.tot)}</b></span>`;
+}
+function tplLive(){
+ const p=document.querySelector('#tpl[data-ev]');if(!p||!W)return;
+ if(window.getSelection&&String(window.getSelection()).length)return;
+ const t=tplEvento(W);if(p.textContent!==t)p.textContent=t;
+}
 function tplEvento(w){
- const L=['EVENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Tramo afectado: ${w.tramo}`,''];
+ const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${evTimes(w)?evTimes(w).st:'Sin iniciar'}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
  L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min (hasta ${fdt(w.etr.end)})`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
- avSorted(w.avs).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
+ avSorted(w.avs).filter(a=>!a.who.startsWith('Inicio de tiempos')).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
 
@@ -662,7 +703,7 @@ function pickDT(o){
   else if(b.dataset.ok!==undefined)ok();
  });
  el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();end()}else if(e.key==='Enter'&&!e.target.closest('[data-x]')){e.preventDefault();ok()}});
- [hh,mm].forEach(i=>i.addEventListener('input',()=>{i.value=i.value.replace(/\D/g,'')}));
+ [hh,mm].forEach(i=>{i.addEventListener('focus',()=>i.select());i.addEventListener('input',()=>{let v=i.value.replace(/\D/g,'');const mx=i===hh?23:59,first=i===hh?2:5;if(v.length===1&&+v>first)v='0'+v;if(+v>mx)v=String(mx);i.value=v;if(i===hh&&v.length===2){mm.focus();mm.select()}})});
  hh.focus();hh.select();
 }
 
@@ -737,7 +778,7 @@ function evFromTicket(t){
  return w;
 }
 function evtView(v){
- $('#title').textContent='Plantilla de Evento';$('#subtitle').textContent='Llena el evento, controla el ETR y registra avances';
+ $('#title').textContent='Plantilla de Seguimiento';$('#subtitle').textContent='Llena el evento, controla el ETR y registra avances';
  let t=EV?T.find(x=>x.id===EV):null;if(t&&t.parent)t=null;if(!t)EV=null;
  if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV}
  if(!W.avAt)W.avAt=nowLocal();
@@ -754,7 +795,7 @@ function evtView(v){
  <div class="sech">Suspensión y reanudación de tiempo</div>
  ${F('motivo','Motivo')}
  ${D('sfecha','Fecha y hora')}
- <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center"><button type="button" class="btn" id="e-susp" style="background:var(--warn);box-shadow:none">Registrar suspensión</button><button type="button" class="btn ghost" id="e-res">Reanudar tiempos</button>${W.t0?`<span class="tag" style="--c:${W.endAt?'#6b7893':W.suspSince?'#f59e0b':'#22c55e'}">${W.endAt?'Resuelto':W.suspSince?'Tiempos suspendidos':'Tiempos corriendo'}</span>`:''}</div>
+ <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center"><button type="button" class="btn" id="e-susp" style="background:var(--warn);box-shadow:none">Registrar suspensión</button><button type="button" class="btn" id="e-res" style="background:var(--ok);box-shadow:none">Reanudar tiempos</button>${W.t0?`<span class="tag" style="--c:${W.endAt?'#6b7893':W.suspSince?'#f59e0b':'#22c55e'}">${W.endAt?'Resuelto':W.suspSince?'Tiempos suspendidos':'Tiempos corriendo'}</span>`:''}</div>
  <div class="sech">Tramo afectado</div>
  ${F('tramo','Tramo afectado')}
  ${W.eqs.map((q,i)=>`<div class="fg3" style="margin-top:6px"><div><label>Nodo<input data-ei="${i}" data-ef="n" value="${esc(q.n||'')}"></label></div><div><label>Hostname<input data-ei="${i}" data-ef="h" value="${esc(q.h)}"></label></div><div><label>Puerto<input data-ei="${i}" data-ef="p" value="${esc(q.p)}"></label></div>${i?`<button type="button" class="chip" data-rm="${i}" style="grid-column:1/-1;justify-self:end;margin-top:8px;color:var(--bad)">Quitar equipo ${i+1}</button>`:''}</div>`).join('')}
@@ -776,10 +817,10 @@ function evtView(v){
  ${D('avAt','Fecha y hora del avance')}
  <label for="e-avTxt">Comentario</label><textarea id="e-avTxt" data-k="avTxt">${esc(W.avTxt)}</textarea>
  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">${W.avEdit!=null?'<span class="tag" style="--c:#f59e0b">Editando avance</span>':''}<button type="button" class="btn" id="e-av">${W.avEdit!=null?'Guardar cambios':'Agregar avance'}</button>${W.avEdit!=null?'<button type="button" class="btn ghost" id="e-avc">Cancelar edición</button>':''}</div>
- <div class="avs">${avSorted(W.avs,1).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:''}</div>`).join('')}</div>
- </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
+ <div class="avs">${avSorted(W.avs,1).filter(({a})=>!a.who.startsWith('Inicio de tiempos')).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:''}</div>`).join('')}</div>
+ </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
 
- const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');
+ const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');evTmPaint();
  const root=$('#evw');
  const onIn=e=>{
   const el=e.target;
@@ -798,7 +839,7 @@ function evtView(v){
  };
  root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.dt){e.preventDefault();openDT(e.target.dataset.dt)}});
  const openDT=k=>{
-  if(k==='acc')pickDT({title:'Fecha y hora de afectación (GMT-5)',value:W.acc,cb:v=>{const first=!W.t0;W.acc=v;W.t0=Date.parse(v);W.avs.push({who:first?'Inicio de tiempos (afectación)':'Afectación modificada',at:v,txt:''});if((W.id||'').trim()){saveEv();toast('Tiempos iniciados desde la afectación')}else toast('Tiempos iniciados. Escribe el ID Ticket para guardarlos');render();tmPaint()}});
+  if(k==='acc')pickDT({title:'Fecha y hora de afectación (GMT-5)',value:W.acc,cb:v=>{const first=!W.t0;W.acc=v;W.t0=Date.parse(v);if(!first)W.avs.push({who:'Afectación modificada',at:v,txt:''});if((W.id||'').trim()){saveEv();toast('Tiempos iniciados desde la afectación')}else toast('Tiempos iniciados. Escribe el ID Ticket para guardarlos');render();tmPaint()}});
   else pickDT({title:k==='avAt'?'Fecha y hora del avance':'Fecha y hora de suspensión o reanudación',value:W[k],cb:v=>{W[k]=v;render()}});
  };
  root.addEventListener('input',onIn);root.addEventListener('change',onIn);
@@ -871,7 +912,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('netops-theme')=
 document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),1500);
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*1.6,x=document.createElement('span');x.className='rip';x.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;b.appendChild(x);setTimeout(()=>x.remove(),650)});
 $('#sumBtn').onclick=()=>resumenModal(cur.startsWith('esc:')?cur.slice(4):'all');
-buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint()},1000);
+buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive()},1000);
 </script>
 </body>
 </html>

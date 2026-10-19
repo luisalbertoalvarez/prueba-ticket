@@ -241,6 +241,10 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .alb{margin:6px 0 10px;color:var(--mut)}
 @keyframes alIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:none}}
 @keyframes alOut{to{opacity:0;transform:translateX(40px)}}
+.syn{margin-left:auto;width:9px;height:9px;border-radius:50%;background:#9aa6bd;box-shadow:0 0 0 3px rgba(154,166,189,.2);transition:background .3s}
+.syn.on{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.25);animation:dot 1.8s ease-in-out infinite}
+.wchips.err{outline:2px solid var(--bad);outline-offset:4px;border-radius:12px;animation:shk .4s}
+@keyframes shk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -254,7 +258,7 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 </head>
 <body>
 <aside class="side" id="side">
- <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>NetOps</div>
+ <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>NetOps<span class="syn" id="syn"></span></div>
  <nav class="nav" id="nav"></nav>
  <div class="tm" id="tmw"><div class="tm-h"><span>Cronómetros</span><em id="tm-st">Sin ticket</em></div><div class="tm-id" id="tm-id">—</div>
  <div class="tm-r" id="tm-p" style="--c:#22c55e"><span>Tiempo progreso</span><b>00:00:00</b></div>
@@ -388,8 +392,8 @@ function render(){
  }else if(cur==='cfg'){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
   const opts=[['Alertas sonoras','Alarmas por tiempo o por hora, con sonido y notificación del navegador',AL.on],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
-  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${nodosCard()}${dataCard()}`;
-  $('#dt-clean').onclick=cleanData;$('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
+  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${shareCard()}${nodosCard()}${dataCard()}`;
+  $('#dt-clean').onclick=cleanData;$('#bk-exp').onclick=exportBackup;$('#bk-imp').onclick=()=>$('#bk-file').click();$('#bk-file').onchange=e=>importBackup(e.target.files[0]);$('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
  }else{
   $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
   v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
@@ -419,8 +423,8 @@ function detail(id){
  const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del),isOtn=(t.type==='OTN'||t.type==='Fibra Oscura'),isSec=!!(t.parent&&!t.o);
  const B=(i,l,p,x)=>`<button class="btn${p?'':' ghost'}" id="${i}"${x?` style="${x}"`:''}>${l}</button>`;
  open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}</p>
- <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd><dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&t.parent?B('un','Quitar asociación'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
+ <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd>${t.el&&t.el.utility?`<dt>Nodo Utility</dt><dd>${fdt(t.el.utility)}</dd>`:''}${t._u?`<dt>Última edición</dt><dd>${esc(t._by||'')}${t._by?' · ':''}${fdt(t._u)}</dd>`:''}<dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&t.parent?B('un','Quitar asociación'):'')+(t.type==='Eléctrico'?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'')+(t.type==='Eléctrico'&&t.el&&t.el.utility?B('uq','Quitar Nodo Utility'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
  $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplOf(t);$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
  $('#ct').onclick=()=>copyText(tplOf(t),'Plantilla copiada');
  document.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>detail(b.dataset.kid));const gev=$('#gev');if(gev)gev.onclick=()=>{close();EV=t.id;W=null;go('evt')};const cev=$('#cev');if(cev)cev.onclick=()=>copyText(tplEvento(t.ev),'Plantilla de evento copiada');const gm=$('#gm');if(gm)gm.onclick=()=>{if(T.find(x=>x.id===t.parent))detail(t.parent);else toast('No se encontró el ticket master')};
@@ -430,6 +434,8 @@ function detail(id){
   let sure=false;$('#hd').onclick=e=>{if(!sure){sure=true;e.target.textContent='¿Seguro? Pulsa de nuevo';return}T.splice(T.indexOf(t),1);close();buildNav();render();toast('Eliminado definitivamente')};
   return;
  }
+ const utb=$('#ut');if(utb)utb.onclick=()=>pickDT({title:'Nodo Utility · hora en que retornó la luz',value:(t.el&&t.el.utility)||'',cb:v=>{t.el=t.el||elOf(t);t.el.utility=v;buildNav();toast('Nodo Utility registrado: '+fdt(v));detail(t.id)}});
+ const uqb=$('#uq');if(uqb)uqb.onclick=()=>{if(t.el)delete t.el.utility;buildNav();toast('Nodo Utility quitado');detail(t.id)};
  const asb=$('#as');if(asb)asb.onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar el ticket '+t.id+'.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:t.parent||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,t.id);if(er){toast(er);return}t.o=t.o||otnOf(t);t.o.master=n;t.parent=n;close();buildNav();render();toast(t.id+' asociado al ticket master '+n+(T.some(x=>x.id===n&&!x.del)?'':' (no está registrado aquí)'))}});
  const unb=$('#un');if(unb)unb.onclick=()=>{delete t.parent;if(t.o)delete t.o.master;close();buildNav();render();toast('Asociación quitada')};
  $('#ed').onclick=()=>{close();if(t.parent&&!t.o){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
@@ -445,7 +451,7 @@ const elOf=t=>t.el||{ticket:t.id,fecha:'',tipo:'UPS EN BATERIA',nodo:t.site,ups:
 function tplElec(d){
  const pc=x=>(x===''||x==null?'':x)+'%';
  const nm=(a,l,f)=>a.map((x,i)=>`${l}${a.length>1?' '+(i+1):''}: ${f(x)}`);
- return ['*ESCALACIÓN TORRE DE CONTROL*',`Ticket: ${d.ticket}`,`Fecha: ${fdE(d.fecha)}`,`Tipo: ${d.tipo}`,`Nodo: ${d.nodo}`,`UPS principal: ${pc(d.ups)}`,...nm(d.upsx,'UPS adicional',pc),...nm(d.rect,'Rectificador',x=>x),'Observaciones:',d.obs,`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n');
+ return ['*ESCALACIÓN TORRE DE CONTROL*',`Ticket: ${d.ticket}`,`Fecha: ${fdE(d.fecha)}`,`Tipo: ${d.tipo}`,`Nodo: ${d.nodo}`,`UPS principal: ${pc(d.ups)}`,...nm(d.upsx,'UPS adicional',pc),...nm(d.rect,'Rectificador',x=>x),...(d.utility?[`Nodo Utility: ${fdE(d.utility)}`]:[]),'Observaciones:',d.obs,`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n');
 }
 const ELBASE=['UPS EN BATERIA','REVISION DE NODO','REVISION DE EQUIPOS ELECTRICOS','ACOMPAÑAMIENTO','TEMPERATURA ALTA'];
 let ELTIPOS=[];try{ELTIPOS=JSON.parse(localStorage.getItem('netops-eltipos')||'[]')}catch(e){}
@@ -513,7 +519,7 @@ function evParts(t){
  const tot=ev&&ev.t0?fdur((ev.endAt||Date.now())-ev.t0):'Sin iniciar';
  const kids=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
  const diag=(ev&&ev.diag)||(d&&d.diag)||(el&&el.obs)||(o&&o.diag)||t.desc||'';
- const av=ev?avSorted(ev.avs||[]).filter(a=>a.who.startsWith('Avance')).pop():null;
+ const av=ev?avSorted(ev.avs||[]).filter(a=>MANW.includes(a.who)).pop():null;
  const ult=av?`[${fdt(av.at)}] ${av.who}${av.txt?': '+av.txt:''}`:'Sin avances';
  const tc=(ev&&ev.tc)||(d&&d.tc)||(el&&el.tc)||(o&&o.tc)||(t.who&&t.who!=='Por asignar'?t.who:'');
  return {fecha,tramo,tot,kids,diag,ult,tc,ev};
@@ -859,8 +865,110 @@ function wipeData(){
  try{['netops-T','netops-EV','netops-WD'].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>k.startsWith('netops-dr-')).forEach(k=>localStorage.removeItem(k));saveAL()}catch(e){}
 }
 function cleanData(){
- open(`<h3>Borrar todos los datos</h3><p class="sub2">Se eliminarán todos los tickets, seguimientos, borradores y avances. Esta acción no se puede deshacer.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dt-ok" style="background:var(--bad);box-shadow:none">Sí, borrar todo</button></div>`);
+ open(`<h3>Borrar todos los datos</h3><p class="sub2">Se eliminarán todos los tickets, seguimientos, borradores y avances. Esta acción no se puede deshacer.${DBLIVE?' Como los datos están compartidos en vivo, también se borrarán para tus compañeros.':''}</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dt-ok" style="background:var(--bad);box-shadow:none">Sí, borrar todo</button></div>`);
  $('#dt-ok').onclick=()=>{wipeData();close();buildNav();render();toast('Página limpia, lista para usar')};
+}
+let DBX=null,DBLIVE=false,DBRO=false,DBERR='',DBBUSY=false,DBAGAIN=false,DBTM=null,DBINIT=false,DBKEY='';
+const PUSHED={};
+const dbk=id=>String(id).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,190);
+const sigOf=t=>JSON.stringify(t,(k,v)=>k==='_u'||k==='_by'?undefined:v);
+function paintSync(){
+ const e=document.getElementById('syn');
+ if(e){e.className='syn'+(DBLIVE&&!DBRO?' on':'');e.title=DBLIVE?(DBRO?'Conectado, solo lectura':'En vivo con tu equipo'):'Solo en este equipo'}
+ const k=[DBLIVE,DBRO,DBERR].join('|');
+ if(k!==DBKEY){DBKEY=k;if(cur==='cfg')render()}
+}
+function dbSync(){if(!DBX||DBRO)return;if(DBBUSY){DBAGAIN=true;return}clearTimeout(DBTM);DBTM=setTimeout(dbPush,700)}
+async function dbPush(){
+ if(!DBX||DBRO||DBBUSY)return;
+ DBBUSY=true;
+ try{
+  const col=DBX.collection('tickets');
+  for(const t of [...T]){
+   const sg=sigOf(t);if(PUSHED[t.id]===sg)continue;
+   t._u=Date.now();t._by=ME||'';
+   await col.doc(dbk(t.id)).set({id:t.id,u:t._u,d:JSON.stringify(t)});
+   PUSHED[t.id]=sg;
+  }
+  const have=new Set(T.map(t=>t.id));
+  for(const id of Object.keys(PUSHED)){if(!have.has(id)){await col.doc(dbk(id)).delete();delete PUSHED[id]}}
+  DBERR='';
+ }catch(e){
+  DBERR=(e&&e.code)||'error';
+  if(DBERR==='invalid_argument'){DBRO=true;toast('No tienes permiso para guardar en los datos compartidos')}
+  else if(DBERR==='quota_exceeded')toast('Se llenó el espacio de los datos compartidos');
+ }
+ DBBUSY=false;paintSync();
+ if(DBAGAIN){DBAGAIN=false;dbSync()}
+}
+function dbApply(snap){
+ let ch=false;
+ snap.docChanges().forEach(c=>{
+  const d=c.doc.data();
+  if(c.type==='removed'){
+   const id=d&&d.id,i=id?T.findIndex(x=>x.id===id):-1;
+   if(id&&PUSHED[id]!==undefined){if(i>=0){T.splice(i,1);ch=true}delete PUSHED[id];if(EV===id){EV=null;W=null}}
+   return;
+  }
+  if(!d)return;
+  let t;try{t=JSON.parse(d.d)}catch(e){return}
+  const i=T.findIndex(x=>x.id===t.id),sg=sigOf(t);
+  if(i<0){T.push(t);PUSHED[t.id]=sg;ch=true;return}
+  const loc=T[i];
+  if(sigOf(loc)===sg){PUSHED[t.id]=sg;loc._u=d.u;loc._by=t._by;return}
+  const unsent=PUSHED[t.id]!==undefined&&sigOf(loc)!==PUSHED[t.id];
+  if(unsent)return;
+  if(PUSHED[t.id]===undefined&&(d.u||0)<(loc._u||0))return;
+  T[i]=t;PUSHED[t.id]=sg;ch=true;
+  if(EV===t.id){if(cur==='evt')toast('Un compañero actualizó el ticket '+t.id);else W=null}
+ });
+ if(ch){T.sort((a,b)=>(b.created||b._u||0)-(a.created||a._u||0));buildNav();if(cur!=='evt')render()}
+}
+async function dbInit(){
+ try{
+  const db=window.claude&&claude.use?await claude.use('db'):null;
+  if(!db){paintSync();return}
+  DBX=db;
+  db.collection('tickets').onSnapshot(s=>{DBLIVE=true;DBERR='';dbApply(s);paintSync();if(!DBINIT){DBINIT=true;dbSync()}},e=>{DBLIVE=false;DBERR=(e&&e.code)||'error';paintSync()});
+ }catch(e){DBX=null;paintSync()}
+}
+function shareCard(){
+ const st=DBLIVE?(DBRO?['Solo lectura','#f59e0b']:['Conectado','#22c55e']):(DBX?['Conectando…','#6b7893']:['Solo en este equipo','#6b7893']);
+ const msg=DBLIVE?(DBRO?'Puedes ver los tickets de tu equipo, pero no tienes permiso para editarlos. Pide que te compartan la página con permiso de colaborador o editor.':'Los tickets se guardan en la nube y se sincronizan al instante con quienes abran este mismo enlace. Para que tus compañeros también puedan editar, comparte la página con ellos desde el botón Compartir de Claude.'):'Tus tickets solo se guardan en este navegador. Abre la página desde Claude con tu sesión iniciada para activar los datos compartidos.';
+ return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Compartir con el equipo</h2></div>
+ <div class="set"><div><b>Datos compartidos en vivo <span class="tag" style="--c:${st[1]}">${st[0]}</span></b><small>${msg}</small></div></div>
+ <div class="set"><div><b>Respaldo en archivo</b><small>Exporta todo a un archivo .json, guárdalo en una carpeta compartida de Google Drive o OneDrive, y tu compañero lo importa para continuar donde lo dejaste.</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="bk-exp">Exportar respaldo</button><button class="btn" id="bk-imp">Importar respaldo</button></div></div>
+ <input type="file" id="bk-file" accept=".json,application/json" hidden></div>`;
+}
+function backupObj(){
+ let nodos=null;try{nodos=JSON.parse(localStorage.getItem('netops-nodos')||'null')}catch(e){}
+ return {app:'netops',v:1,at:Date.now(),by:ME,tickets:JSON.parse(JSON.stringify(T)),alarms:AL.alarms,clientes:CUSTOM,proveedores:PROVS,tiposElec:ELTIPOS,nodosElec:ELNODOS,nodos};
+}
+async function exportBackup(){
+ const dl=window.claude&&claude.use?await claude.use('downloads'):null;
+ if(!dl){toast('La descarga no está disponible en esta vista');return}
+ const d=new Date(),p=n=>String(n).padStart(2,'0'),name=`respaldo-seguimiento-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+ try{await dl.save({filename:name,data:JSON.stringify(backupObj(),null,1)});toast('Respaldo listo: '+name)}
+ catch(e){if(!e||e.code!=='declined')toast('No se pudo crear el respaldo')}
+}
+async function importBackup(f){
+ if(!f)return;
+ let o;try{o=JSON.parse(await f.text())}catch(e){toast('El archivo no es un respaldo válido');return}
+ if(!o||o.app!=='netops'||!Array.isArray(o.tickets)){toast('El archivo no es un respaldo de esta página');return}
+ const n=o.tickets.length;
+ open(`<h3>Importar respaldo</h3><p class="sub2">El archivo trae ${n} ${n===1?'ticket':'tickets'}${o.by?' · de '+esc(o.by):''}${o.at?' · '+fdt(o.at):''}. ¿Cómo quieres cargarlo?</p>
+ <small style="color:var(--mut)"><b>Combinar</b> agrega los tickets nuevos y actualiza los que tienen el mismo número, sin quitar los tuyos. <b>Reemplazar todo</b> deja solo lo del archivo.${DBLIVE?' Como los datos están compartidos en vivo, reemplazar también cambia lo de tus compañeros.':''}</small>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="bk-rep">Reemplazar todo</button><button class="btn" id="bk-mer">Combinar</button></div>`);
+ const merge=(arr,inc,key)=>{(inc||[]).forEach(x=>{if(x&&!arr.includes(x))arr.push(x)});try{localStorage.setItem(key,JSON.stringify(arr))}catch(e){}};
+ const apply=rep=>{
+  if(rep)T=o.tickets;else o.tickets.forEach(t=>{const i=T.findIndex(x=>x.id===t.id);if(i>=0)T[i]=t;else T.push(t)});
+  T.sort((a,b)=>(b.created||b._u||0)-(a.created||a._u||0));
+  merge(CUSTOM,o.clientes,'netops-clientes');merge(PROVS,o.proveedores,'netops-provs');merge(ELTIPOS,o.tiposElec,'netops-eltipos');merge(ELNODOS,o.nodosElec,'netops-elnodos');
+  (o.alarms||[]).forEach(a=>{if(a&&a.id&&!AL.alarms.some(x=>x.id===a.id))AL.alarms.push(a)});
+  if(Array.isArray(o.nodos)&&o.nodos.length){NODOS=mkNodos(o.nodos);try{localStorage.setItem('netops-nodos',JSON.stringify(o.nodos))}catch(e){}}
+  EV=null;W=null;WFor=undefined;AVE=null;saveAL();close();buildNav();render();toast(n+(n===1?' ticket cargado':' tickets cargados'));
+ };
+ $('#bk-mer').onclick=()=>apply(false);$('#bk-rep').onclick=()=>apply(true);
 }
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
@@ -1015,11 +1123,11 @@ const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezone
 let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}catch(e){}
 const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
-const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'Avance por TCE',avAt:'',avTxt:''});
-function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
+const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'',avAt:'',avTxt:''});
+function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}dbSync()}
 function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
 
-const MANW=['Avance por TCE','Avance proveedor','Avance O&M'];
+const MANW=['Validaciones Noc','Avance por TCE','Avance proveedor','Avance O&M'];
 const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(p.a.at)||0)-(Date.parse(q.a.at)||0));return ix?r:r.map(p=>p.a)};
 const tkList=s=>{const seen=new Set();return (s||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>{const k=x.toUpperCase();if(!x||seen.has(k))return false;seen.add(k);return true})};
 const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x}`)]};
@@ -1162,13 +1270,13 @@ function evFromTicket(t){
 function evtView(v){
  $('#title').textContent='Plantilla de Seguimiento';$('#subtitle').textContent='Llena el evento, controla el ETR y registra avances';
  let t=EV?T.find(x=>x.id===EV):null;if(t&&t.parent)t=null;if(!t)EV=null;
- if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV}
+ if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV;W.who=''}
  if(!W.avAt)W.avAt=nowLocal();
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
  const D=(k,l)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-dt="${k}" readonly placeholder="Seleccionar fecha y hora" value="${esc(fdt(W[k]))}" style="cursor:pointer"></div>`;
  const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Ej. TIK-20188018-J5S0 (separa varios con coma, espacio o salto de línea)" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
  const S=(k,l,o)=>`<div><label for="e-${k}">${l}</label><select id="e-${k}" data-k="${k}"><option value="">Seleccionar</option>${o.map(x=>`<option ${x===W[k]?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
- const WH=[['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
+ const WH=[['Validaciones Noc','#ec4899'],['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
  v.innerHTML=`<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button>${t?'<button class="btn ghost" id="ev-av">Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> <span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
  <div class="tg" style="margin-top:18px"><div class="card" id="evw" style="padding:6px 20px 24px">
  <label for="ev-open">Abrir ticket existente</label><select id="ev-open"><option value="">— Ticket nuevo —</option>${LV().filter(x=>!x.parent).map(x=>`<option value="${esc(x.id)}" ${x.id===EV?'selected':''}>${esc(x.type)} · ${esc(x.id)} · ${esc(x.site)}</option>`).join('')}</select>
@@ -1229,7 +1337,7 @@ function evtView(v){
   const dt=e.target.closest('[data-dt]');if(dt){openDT(dt.dataset.dt);return}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.rm){W.eqs.splice(+b.dataset.rm,1);render()}
-  if(b.dataset.who){W.who=b.dataset.who;root.querySelectorAll('.wchip').forEach(x=>x.classList.toggle('on',x===b))}
+  if(b.dataset.who){W.who=b.dataset.who;root.querySelectorAll('.wchip').forEach(x=>x.classList.toggle('on',x===b));root.querySelectorAll('.wchips').forEach(x=>x.classList.remove('err'))}
   if(b.dataset.ae!==undefined){const a=W.avs[+b.dataset.ae];W.avEdit=+b.dataset.ae;W.who=a.who;W.avAt=a.at;W.avTxt=a.txt;render();const ta=$('#e-avTxt');if(ta){ta.scrollIntoView({block:'center'});ta.focus()}}
   if(b.dataset.ad!==undefined){const i=+b.dataset.ad,a=W.avs[i];open(`<h3>Eliminar avance</h3><p class="sub2">${esc(a.who)} · ${fdt(a.at)}${a.txt?'<br>'+esc(a.txt):''}</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="avdel" style="background:var(--bad);box-shadow:none">Eliminar</button></div>`);$('#avdel').onclick=()=>{W.avs.splice(i,1);if(W.avEdit===i)W.avEdit=null;else if(W.avEdit>i)W.avEdit--;if((W.id||'').trim())saveEv();close();render();toast('Avance eliminado')}}
  });
@@ -1256,13 +1364,14 @@ function evtView(v){
  $('#e-stop').onclick=()=>{W.etr=null;W.etrH='';W.etrM='';if(W.id.trim())saveEv();render();toast('Contador detenido')};
  $('#e-av').onclick=()=>{
   const txt=(W.avTxt||'').trim();if(!txt){$('#e-avTxt').style.borderColor='var(--bad)';toast('Escribe el comentario del avance');return}
+  if(!WH.some(x=>x[0]===W.who)){const c=document.querySelector('#evw .wchips');if(c){c.classList.remove('err');void c.offsetWidth;c.classList.add('err')}toast('Elige quién da el avance: Validaciones Noc, TCE, proveedor u O&M');return}
   const ed=W.avEdit!=null?W.avs[W.avEdit]:null,prev=ed?{...ed}:null,was=W.avEdit;
   if(ed){ed.who=W.who;ed.at=W.avAt||ed.at;ed.txt=txt}else W.avs.push({who:W.who,at:W.avAt||nowLocal(),txt});
   W.avEdit=null;
   if(!saveEv()){if(ed)Object.assign(ed,prev);else W.avs.pop();W.avEdit=was;return}
-  W.avTxt='';W.avAt='';(T.find(x=>x.id===EV)).ev=clone(W);persist();render();toast(ed?'Avance actualizado':'Avance agregado y plantilla actualizada');
+  W.avTxt='';W.avAt='';W.who='';(T.find(x=>x.id===EV)).ev=clone(W);persist();render();toast(ed?'Avance actualizado':'Avance agregado y plantilla actualizada');
  };
- const avc=$('#e-avc');if(avc)avc.onclick=()=>{W.avEdit=null;W.avTxt='';W.avAt='';render()};
+ const avc=$('#e-avc');if(avc)avc.onclick=()=>{W.avEdit=null;W.avTxt='';W.avAt='';W.who='';render()};
  $('#e-copy').onclick=()=>copyText(tplEvento(W),'Plantilla copiada');
  $('#e-paste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()}catch(e){}if(t&&/ID Ticket:/.test(t)){pasteFill(t);return}pasteModal(t)};
  $('#ev-open').onchange=e=>{EV=e.target.value||null;W=null;render()};
@@ -1295,7 +1404,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('netops-theme')=
 document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),1500);
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*1.6,x=document.createElement('span');x.className='rip';x.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;b.appendChild(x);setTimeout(()=>x.remove(),650)});
 $('#sumBtn').onclick=()=>resumenModal(cur.startsWith('esc:')?cur.slice(4):'all');
-buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive();alarmTick()},1000);
+buildNav();render();initMe();dbInit();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive();alarmTick()},1000);
 </script>
 </body>
 </html>

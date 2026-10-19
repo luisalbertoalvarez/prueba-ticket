@@ -215,6 +215,32 @@ tbody tr:nth-child(10){animation-delay:0.36s}
 .si span{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--acc2)}
 .si small{color:var(--mut);font-size:11.5px}
 .si.on,.si:hover{background:var(--bg)}
+.tgl{display:inline-flex;align-items:center;gap:6px;margin-top:6px;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:3px 11px 3px 7px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;transition:background .2s}
+.tgl svg{width:14px;height:14px;transition:transform .25s}
+.tgl.open svg{transform:rotate(90deg)}
+.tgl:hover{background:var(--line)}
+tr.kid{background:color-mix(in srgb,var(--bg) 55%,transparent)}
+tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
+.alp{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.3,.8,.3,1)}
+.alp.open{grid-template-rows:1fr}
+.alp>div{overflow:hidden}
+.alin{padding:6px 20px 18px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--bg) 50%,transparent)}
+.alo{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.alo>div:first-child{flex:1}
+.alo small,.alr small{display:block;color:var(--mut);margin-top:2px}
+.alh2{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 8px}
+.alh2>div{display:flex;gap:8px;align-items:center}
+.alr{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;animation:in .3s both}
+.alr.off{opacity:.55}
+.alr>div:first-child{flex:1;min-width:0}
+.alempty{padding:14px;color:var(--mut);text-align:center;border:1px dashed var(--line);border-radius:12px}
+#alerts{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));right:16px;display:flex;flex-direction:column;gap:10px;z-index:95;max-width:min(360px,calc(100vw - 32px))}
+.alc{background:var(--surface);border:1px solid var(--warn);border-left:5px solid var(--warn);border-radius:14px;padding:14px 16px;box-shadow:0 16px 40px rgba(0,0,0,.25);animation:alIn .45s cubic-bezier(.3,1.4,.5,1) both}
+.alc.out{animation:alOut .3s forwards}
+.alh{font-weight:800}
+.alb{margin:6px 0 10px;color:var(--mut)}
+@keyframes alIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes alOut{to{opacity:0;transform:translateX(40px)}}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -304,10 +330,37 @@ $('#scrim').onclick=closeSide;
 
 function count(el,to){let n=0;const step=Math.max(1,Math.ceil(to/20));const i=setInterval(()=>{n=Math.min(to,n+step);el.textContent=n;if(n>=to)clearInterval(i)},30)}
 
-function idCell(t){
+const EXP=new Set();
+function toggleKids(id){
+ const open=!EXP.has(id);open?EXP.add(id):EXP.delete(id);
+ document.querySelectorAll('tr.kid').forEach(tr=>{if(tr.dataset.p===id){tr.style.display=open?'':'none';if(open){tr.style.animation='none';void tr.offsetHeight;tr.style.animation=''}}});
+ const b=[...document.querySelectorAll('[data-tg]')].find(x=>x.dataset.tg===id);if(b){b.classList.toggle('open',open);b.setAttribute('aria-expanded',open)}
+}
+function masterErr(m,self){
+ if(!m)return 'Escribe el número del ticket master';
+ if(m===self)return 'Un ticket no puede asociarse a sí mismo';
+ const x=T.find(t=>t.id===m&&!t.del);
+ if(x&&x.parent)return 'Ese ticket ya es hijo de '+x.parent+'. Escribe su ticket master';
+ return '';
+}
+function rowsG(list){
+ if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
+ const ids=new Set(list.map(t=>t.id)),kids=id=>list.filter(x=>x.parent===id);
+ const tr=(t,cls,extra,cell)=>`<tr data-id="${esc(t.id)}" class="${cls}" ${extra}><td>${cell}</td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`;
+ const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
+ let body='',any=false;
+ list.filter(t=>!t.parent||!ids.has(t.parent)).forEach(t=>{
+  const k=kids(t.id),open=EXP.has(t.id);if(k.length)any=true;
+  body+=tr(t,k.length?'mst':'','',idCell(t,1)+(k.length?`<br><button type="button" class="tgl${open?' open':''}" data-tg="${esc(t.id)}" aria-expanded="${open}">${chev}${k.length} ${k.length===1?'ticket asociado':'tickets asociados'}</button>`:''));
+  k.forEach(c=>{body+=tr(c,'kid',`data-p="${esc(t.id)}" style="${open?'':'display:none'}"`,idCell(c))});
+ });
+ const bar=any?`<div style="display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line)"><button type="button" class="chip" data-ex="1">Expandir todo</button><button type="button" class="chip" data-ex="0">Contraer todo</button></div>`:'';
+ return `<div class="scroll"><table><thead><tr><th>ID</th><th>Sitio o cliente</th><th>Tipo</th><th>Estado</th><th>Prioridad</th><th>Tiempo</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function idCell(t,nk){
  if(t.parent)return `<b>${t.id}</b><br><span class="tag" style="--c:#8b5cf6;margin-top:4px">Ticket hijo · ${esc(t.parent)}</span>`;
  const k=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
- return `<b>${t.id}</b><br><span class="tag" style="--c:#0ea5e9;margin-top:4px">Ticket master</span>${k.length?`<br><small style="color:var(--mut);font-weight:600">Asociados: ${k.map(esc).join(', ')}</small>`:''}`;
+ return `<b>${t.id}</b><br><span class="tag" style="--c:#0ea5e9;margin-top:4px">Ticket master</span>${k.length&&!nk?`<br><small style="color:var(--mut);font-weight:600">Asociados: ${k.map(esc).join(', ')}</small>`:''}`;
 }
 function rows(list){
  if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
@@ -325,7 +378,7 @@ function render(){
   const k=[['Incidentes activos',open.length,'#3b82f6'],['Críticos',open.filter(t=>t.pr==='Crítica').length,'#ef4444'],['Escalados',LV().filter(t=>t.st==='Escalado').length,'#f59e0b'],['Resueltos hoy',LV().filter(t=>t.st==='Resuelto').length,'#22c55e']];
   const list=filter==='Todos'?open:open.filter(t=>t.type===filter);
   v.innerHTML=`<div class="kpis">${k.map(x=>`<div class="kpi" style="--c:${x[2]}"><span>${x[0]}</span><b data-n="${x[1]}">0</b></div>`).join('')}</div>
-  <div class="card"><div class="card-h"><h2>Incidentes</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
+  <div class="card"><div class="card-h"><h2>Incidentes</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rowsG(list)}</div>`;
   v.querySelectorAll('[data-n]').forEach(el=>count(el,+el.dataset.n));
  }else if(isEsc){
   $('#title').textContent='Escalamiento · '+type;$('#subtitle').textContent='Incidentes de tipo '+type+' y su avance';
@@ -342,9 +395,9 @@ function render(){
   v.innerHTML=`<div class="card"><div class="card-h"><h2>${done.length} resueltos</h2><div class="chips">${['Todos',...Object.keys(TYPES)].map(c=>`<button class="chip ${c===filter?'on':''}" data-f="${c}">${c}</button>`).join('')}</div></div>${rows(list)}</div>`;
  }else if(cur==='cfg'){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
-  const opts=[['Alertas sonoras','Suena un aviso cuando entra un incidente crítico',true],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
-  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>`).join('')}</div>${nodosCard()}`;
-  $('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
+  const opts=[['Alertas sonoras','Alarmas por tiempo o por hora, con sonido y notificación del navegador',AL.on],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
+  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${nodosCard()}`;
+  $('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
  }else{
   $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
   v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
@@ -354,9 +407,12 @@ function render(){
 /* Delegated events on view */
 $('#view').addEventListener('click',e=>{
  const f=e.target.closest('[data-f]');if(f){filter=f.dataset.f;render();return}
+ const al=e.target.closest('[data-al]');if(al){alAct(al.dataset.al);return}
+ const tg=e.target.closest('[data-tg]');if(tg){toggleKids(tg.dataset.tg);return}
+ const ex=e.target.closest('[data-ex]');if(ex){if(ex.dataset.ex==='1')T.forEach(x=>{if(x.parent)EXP.add(x.parent)});else EXP.clear();render();return}
  const r=e.target.closest('tr[data-id]');if(r){detail(r.dataset.id);return}
  const s=e.target.closest('[data-sw]');
- if(s){const on=s.getAttribute('aria-checked')!=='true';s.setAttribute('aria-checked',on);
+ if(s){const on=s.getAttribute('aria-checked')!=='true';s.setAttribute('aria-checked',on);if(s.dataset.sw==='0')alMain(on);
   if(s.dataset.sw==='3'){document.documentElement.dataset.theme=on?'dark':'light';try{localStorage.setItem('netops-theme',on?'dark':'light')}catch(e){}}
   toast(on?'Opción activada':'Opción desactivada')}
 });
@@ -368,11 +424,11 @@ $('#ov').addEventListener('click',e=>{if((e.target.id==='ov'&&!$('#modal').class
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
 function detail(id){
- const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del);
+ const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del),isOtn=(t.type==='OTN'||t.type==='Fibra Oscura'),isSec=!!(t.parent&&!t.o);
  const B=(i,l,p,x)=>`<button class="btn${p?'':' ghost'}" id="${i}"${x?` style="${x}"`:''}>${l}</button>`;
  open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}</p>
  <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd><dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent?'':B('sg','Crear ticket secundario'))+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&t.parent?B('un','Quitar asociación'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
  $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplOf(t);$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
  $('#ct').onclick=()=>copyText(tplOf(t),'Plantilla copiada');
  document.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>detail(b.dataset.kid));const gev=$('#gev');if(gev)gev.onclick=()=>{close();EV=t.id;W=null;go('evt')};const cev=$('#cev');if(cev)cev.onclick=()=>copyText(tplEvento(t.ev),'Plantilla de evento copiada');const gm=$('#gm');if(gm)gm.onclick=()=>{if(T.find(x=>x.id===t.parent))detail(t.parent);else toast('No se encontró el ticket master')};
@@ -382,7 +438,9 @@ function detail(id){
   let sure=false;$('#hd').onclick=e=>{if(!sure){sure=true;e.target.textContent='¿Seguro? Pulsa de nuevo';return}T.splice(T.indexOf(t),1);close();buildNav();render();toast('Eliminado definitivamente')};
   return;
  }
- $('#ed').onclick=()=>{close();if(t.parent){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
+ const asb=$('#as');if(asb)asb.onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar el ticket '+t.id+'.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:t.parent||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,t.id);if(er){toast(er);return}t.o=t.o||otnOf(t);t.o.master=n;t.parent=n;close();buildNav();render();toast(t.id+' asociado al ticket master '+n+(T.some(x=>x.id===n&&!x.del)?'':' (no está registrado aquí)'))}});
+ const unb=$('#un');if(unb)unb.onclick=()=>{delete t.parent;if(t.o)delete t.o.master;close();buildNav();render();toast('Asociación quitada')};
+ $('#ed').onclick=()=>{close();if(t.parent&&!t.o){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
  const sgb=$('#sg');if(sgb)sgb.onclick=()=>ask({title:'Crear ticket secundario',sub:'Se asocia al ticket master '+t.id+'. Solo escribe el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
  $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();if(EV===t.id){EV=null;W=null}close();buildNav();render();toast(t.id+' enviado a Eliminados')};
  const r=$('#resolve');if(r)r.onclick=()=>{t.st='Resuelto';if(t.ev&&!t.ev.endAt){endTimers(t.ev);(t.ev.avs=t.ev.avs||[]).push({who:'Ticket resuelto',at:nowLocal(),txt:''})}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto: ahora está en Resueltos')};
@@ -499,7 +557,7 @@ function resumenModal(pre){
 const HOR_O=['URGENTE A HORA','COORDINACION CON EL CLIENTE','COORDINACION CON O&M','BAJO VM'];
 const FALLA_O=['CORTE','ATENUACION'];
 const otnOf=t=>t.o||{ticket:t.id,fecha:(t.d&&t.d.fc)||'',cli:(t.d&&t.d.cli)||'UFINET',hor:'',falla:(t.d&&t.d.falla)||'',enlace:t.type==='OTN'?'OTN':'FIBRA OSCURA',nodo:(t.d&&t.d.nodo)||t.site,diag:(t.d&&t.d.diag)||t.desc||'',n1:ME,tc:t.who==='Por asignar'?'':(t.who||'')};
-function tplOtn(d){return ['ESCALACIÓN TORRE DE CONTROL','','---------DATOS CLIENTE----------',`* No. Ticket: ${d.ticket}`,'--------DATOS IMPORTANTES--------',`* Fecha: ${fdt(d.fecha)}`,`* Cliente: ${d.cli}`,`* Horario: ${d.hor}`,'','--------DATOS IMPORTANTES--------',`* Tipo de falla: ${d.falla}`,`* Tipo de enlace: ${d.enlace}`,`* Nombre de Nodo: ${d.nodo}`,'----------DIAGNÓSTICO-------------',`* Diagnóstico N1: ${d.diag}`,'',`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n')}
+function tplOtn(d){return ['ESCALACIÓN TORRE DE CONTROL','','---------DATOS CLIENTE----------',`* No. Ticket: ${d.ticket}`,...(d.master?[`* Se asocia al ticket master: ${d.master}`]:[]),'--------DATOS IMPORTANTES--------',`* Fecha: ${fdt(d.fecha)}`,`* Cliente: ${d.cli}`,`* Horario: ${d.hor}`,'','--------DATOS IMPORTANTES--------',`* Tipo de falla: ${d.falla}`,`* Tipo de enlace: ${d.enlace}`,`* Nombre de Nodo: ${d.nodo}`,'----------DIAGNÓSTICO-------------',`* Diagnóstico N1: ${d.diag}`,'',`Ingeniero N1: ${d.n1}`,`Ingeniero TC: @${d.tc}`].join('\n')}
 function otnForm(et,type){
  type=type||(et&&et.type)||'OTN';
  const dkey=et?'otn-edit-'+et.id:'otn-'+type,drf=DR.get(dkey);
@@ -518,8 +576,8 @@ function otnForm(et,type){
   <label for="o-diag">Diagnóstico N1</label><textarea id="o-diag" data-o="diag" style="min-height:120px">${esc(O.diag)}</textarea>
   <div class="fg2"><div><label for="o-n1">Ingeniero N1</label><input id="o-n1" data-o="n1" value="${esc(O.n1)}"></div><div><label for="o-tc">Ingeniero TC</label><input id="o-tc" data-o="tc" value="${esc(O.tc)}"></div></div>
   </div><div><pre class="tpl" id="tpl"></pre></div></div></div>
-  <div class="row mf"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="o-dis">Descartar borrador</button><button class="btn ghost" id="o-cp">Copiar plantilla</button><button class="btn" id="o-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
-  const upd=()=>{$('#tpl').textContent=tplOtn(O);if(O.ticket||O.nodo||O.hor||O.falla||O.diag||O.fecha||(O.cli&&O.cli!=='UFINET'))DR.set(dkey,O);else DR.del(dkey)};upd();
+  <div class="row mf"><button class="btn ghost" id="o-as" style="margin-right:auto">${O.master?'Master: '+esc(O.master)+' (cambiar)':'Asociar a ticket master'}</button><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="o-dis">Descartar borrador</button><button class="btn ghost" id="o-cp">Copiar plantilla</button><button class="btn" id="o-mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
+  const upd=()=>{$('#tpl').textContent=tplOtn(O);if(O.master||O.ticket||O.nodo||O.hor||O.falla||O.diag||O.fecha||(O.cli&&O.cli!=='UFINET'))DR.set(dkey,O);else DR.del(dkey)};upd();
   const root=$('#otw');
   root.addEventListener('input',e=>{const k=e.target.dataset.o;if(k){O[k]=e.target.value;upd()}});
   root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.pk!==undefined){e.preventDefault();e.target.click()}});
@@ -530,11 +588,12 @@ function otnForm(et,type){
    O.cli=cs.value;upd();
   };
   $('#o-cp').onclick=()=>copyText(tplOtn(O),'Plantilla copiada');
+  $('#o-as').onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar este ticket.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:O.master||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,O.ticket.trim());if(er){toast(er);return}O.master=n;draw()}});
   $('#o-dis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
   $('#o-mk').onclick=()=>{
    let bad=false;[['o-ticket',O.ticket],['o-nodo',O.nodo]].forEach(([id,v])=>{const el=$('#'+id);el.style.borderColor=v.trim()?'':'var(--bad)';if(!v.trim())bad=true});
    if(bad){toast('Completa ticket y nodo');return}
-   const dd={id:O.ticket.trim(),site:O.nodo.trim(),who:O.tc||'Por asignar',desc:O.diag||'Sin diagnóstico.',o:clone(O)};
+   const dd={id:O.ticket.trim(),site:O.nodo.trim(),who:O.tc||'Por asignar',desc:O.diag||'Sin diagnóstico.',o:clone(O)};if(!O.master&&et)delete et.parent;if(O.master)dd.parent=O.master;
    if(et)Object.assign(et,dd);else T.unshift({...dd,type,st:'Escalado',pr:'Alta',time:'Ahora',created:Date.now()});
    DR.del(dkey);copyText(tplOtn(O),et?'Plantilla actualizada y copiada':type+' escalado y plantilla copiada');close();buildNav();render();
   };
@@ -672,9 +731,20 @@ function sugAttach(root,sel,cb){
  root.addEventListener('focusout',()=>sugHide());
 }
 window.addEventListener('scroll',e=>{if(!SUG||!SUG.contains(e.target))sugHide()},true);
-function nodosCard(){return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Base de nodos</h2></div><div class="set"><div><b>${NODOS.length} equipos cargados</b><small>Se usa para buscar el nodo y rellenar el Hostname en las plantillas de Corte y N1. Columnas: NODOS, HOSTNAME, IP, MARCA.</small></div><button class="btn" id="nd-imp">Importar archivo</button></div><input type="file" id="nd-file" accept=".xlsx,.xls,.csv" hidden></div>`}
+function nodosCard(){return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Base de nodos</h2></div><div class="set"><div><b>${NODOS.length} equipos cargados</b><small>Se usa para buscar el nodo y rellenar el Hostname en las plantillas de Corte y N1. Columnas: NODOS, HOSTNAME, IP, MARCA. «Descargar archivo» abre tu hoja de Google para bajar el .xlsx completo y luego lo importas aquí; «Exportar copia» guarda lo que hay cargado en la página.</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" id="nd-gs" href="https://docs.google.com/spreadsheets/d/1GXamSyH5CaggJIvHKohIsUE59-KX9Lgk/export?format=xlsx&gid=742198765" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Descargar archivo</a><button class="btn ghost" id="nd-exp">Exportar copia</button><button class="btn" id="nd-imp">Importar archivo</button></div></div><input type="file" id="nd-file" accept=".xlsx,.xls,.csv" hidden></div>`}
 function parseCSV(t){const rows=[],f=t.split('\n')[0],d=f.split(';').length>f.split(',').length?';':',';let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===d){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}else c+=ch}if(c!==''||r.length){r.push(c);rows.push(r)}return rows}
 function loadXLSX(){return new Promise((ok,no)=>{if(window.XLSX)return ok(window.XLSX);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>ok(window.XLSX);s.onerror=()=>no(new Error('xlsx'));document.head.appendChild(s)})}
+async function exportNodos(){
+ const dl=window.claude&&claude.use?await claude.use('downloads'):null;
+ if(!dl){toast('La descarga no está disponible en esta vista');return}
+ const rows=[['NODOS','HOSTNAME','IP','MARCA'],...NODOS.map(r=>[r.n,r.h,r.ip,r.m])];
+ try{
+  let data,name='NODOS_ACTUALIZADOS.xlsx';
+  try{const X=await loadXLSX();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(rows),'Hoja1');data=X.write(wb,{bookType:'xlsx',type:'array'})}
+  catch(e){name='NODOS_ACTUALIZADOS.csv';data='\ufeff'+rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n')}
+  await dl.save({filename:name,data});toast('Archivo listo: '+name);
+ }catch(e){if(!e||e.code!=='declined')toast('No se pudo descargar el archivo')}
+}
 async function importNodos(f){
  if(!f)return;
  try{
@@ -691,6 +761,97 @@ async function importNodos(f){
   try{localStorage.setItem('netops-nodos',JSON.stringify(NODOS.map(({n,h,ip,m})=>({n,h,ip,m}))))}catch(e){toast('Cargado, pero no cupo para guardarlo en el navegador');return}
   toast(NODOS.length+' equipos cargados');render();
  }catch(e){toast('No se pudo leer el archivo')}
+}
+let AL={on:false,sound:true,notif:true,alarms:[],fired:{}};
+try{const x=JSON.parse(localStorage.getItem('netops-al')||'null');if(x&&typeof x==='object')AL={...AL,...x}}catch(e){}
+const saveAL=()=>{try{localStorage.setItem('netops-al',JSON.stringify(AL))}catch(e){}};
+let ACX=null;
+function alAudio(){try{if(!ACX)ACX=new (window.AudioContext||window.webkitAudioContext)();if(ACX.state==='suspended')ACX.resume()}catch(e){}}
+document.addEventListener('pointerdown',()=>{if(AL.on)alAudio()});
+function beep(n){if(!AL.sound||!ACX)return;let t=ACX.currentTime;for(let i=0;i<(n||3);i++){const o=ACX.createOscillator(),g=ACX.createGain();o.type='sine';o.frequency.value=i%2?988:880;o.connect(g);g.connect(ACX.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.start(t);o.stop(t+.3);t+=.38}}
+const durTxt=(h,m)=>[h?h+' h':'',m?m+' min':''].filter(Boolean).join(' ')||'0 min';
+function askNotif(){if('Notification' in window&&Notification.permission==='default'){try{const r=Notification.requestPermission();if(r&&r.then)r.then(()=>{if(cur==='cfg')render()})}catch(e){}}}
+function fireAlarm(a,i){
+ beep(4);
+ if(AL.notif&&'Notification' in window&&Notification.permission==='granted'){try{new Notification('⏰ '+i.title,{body:i.body,tag:a.id+i.title,requireInteraction:true})}catch(e){}}
+ let c=document.getElementById('alerts');if(!c){c=document.createElement('div');c.id='alerts';document.body.appendChild(c)}
+ const d=document.createElement('div');d.className='alc';
+ d.innerHTML=`<div class="alh">⏰ ${esc(i.title)}</div><div class="alb">${esc(i.body)}</div><button class="btn" type="button">Entendido</button>`;
+ d.querySelector('button').onclick=()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)};
+ c.appendChild(d);
+}
+const elapsed=(e,base,now)=>{const tot=now-e.t0,sus=(e.suspAcc||0)+(e.suspSince?now-e.suspSince:0);return base==='prog'?tot-sus:tot};
+function primeFired(only){
+ const now=Date.now();
+ (only?[only]:AL.alarms).forEach(a=>{if(a.kind!=='tiempo')return;const ms=(a.h*60+a.m)*6e4;T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;if(elapsed(e,a.base,now)>=ms)AL.fired[a.id+'|'+t.id]=1})});
+}
+function alarmTick(){
+ if(!AL.on)return;
+ const now=Date.now(),d=new Date(),p=n=>String(n).padStart(2,'0'),hhmm=p(d.getHours())+':'+p(d.getMinutes()),day=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+ let ch=false;
+ AL.alarms.forEach(a=>{
+  if(!a.on)return;
+  if(a.kind==='hora'){
+   if(a.at===hhmm&&a.last!==day){a.last=day;if(!a.rep)a.on=false;ch=true;fireAlarm(a,{title:'Alarma de las '+a.at,body:a.msg})}
+  }else{
+   const ms=(a.h*60+a.m)*6e4;
+   T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;const k=a.id+'|'+t.id;if(!AL.fired[k]&&elapsed(e,a.base,now)>=ms){AL.fired[k]=1;ch=true;fireAlarm(a,{title:t.id+': '+durTxt(a.h,a.m)+' cumplidas',body:a.msg+(t.site?' · '+t.site:'')})}});
+  }
+ });
+ if(ch){saveAL();if(cur==='cfg')render()}
+}
+function alMain(on){AL.on=on;if(on){primeFired();alAudio();askNotif()}saveAL();const p=$('#alp');if(p)p.classList.toggle('open',on)}
+function alarmPanel(){
+ const np='Notification' in window?Notification.permission:'na';
+ const st={granted:'Permitidas','denied':'Bloqueadas en el navegador','default':'Sin permitir',na:'No disponibles en este navegador'}[np];
+ const sw=(k,v,l)=>`<button class="sw" role="switch" aria-checked="${v}" data-al="${k}" aria-label="${l}"></button>`;
+ return `<div class="alp${AL.on?' open':''}" id="alp"><div><div class="alin">
+ <div class="alo"><div><b>Sonido</b><small>Suena un aviso cuando se cumple una alarma</small></div>${sw('sound',AL.sound,'Sonido')}</div>
+ <div class="alo"><div><b>Notificaciones del navegador</b><small>Estado: ${st}</small></div>${np==='default'?'<button class="chip" data-al="perm">Permitir</button>':''}${sw('notif',AL.notif,'Notificaciones')}</div>
+ <div class="alh2"><b>Alarmas</b><div><button class="chip" data-al="test">Probar alerta</button><button class="btn" data-al="add" style="padding:7px 14px">+ Agregar alarma</button></div></div>
+ ${AL.alarms.length?AL.alarms.map(a=>`<div class="alr${a.on?'':' off'}"><div><b>${a.kind==='hora'?'⏰ '+a.at+(a.rep?' · todos los días':' · una vez'):'⏱ '+durTxt(a.h,a.m)+' · '+(a.base==='prog'?'en progreso':'total transcurrido')}</b><small>${esc(a.msg)}</small></div>${sw('tg:'+a.id,a.on,'Activar alarma')}<button class="chip" data-al="ed:${a.id}">Editar</button><button class="chip" data-al="rm:${a.id}" style="color:var(--bad)">Eliminar</button></div>`).join(''):'<div class="alempty">Aún no tienes alarmas. Agrega una, por ejemplo: a las 4 horas → "Llamar e informar".</div>'}
+ </div></div></div>`;
+}
+function alAct(x){
+ const [k,id]=x.split(':');
+ if(k==='add')alForm();
+ else if(k==='ed')alForm(id);
+ else if(k==='rm'){AL.alarms=AL.alarms.filter(a=>a.id!==id);Object.keys(AL.fired).forEach(f=>{if(f.startsWith(id+'|'))delete AL.fired[f]});saveAL();render();toast('Alarma eliminada')}
+ else if(k==='tg'){const a=AL.alarms.find(a=>a.id===id);if(a){a.on=!a.on;if(a.on){a.last='';primeFired(a)}saveAL();render()}}
+ else if(k==='sound'){AL.sound=!AL.sound;saveAL();render()}
+ else if(k==='notif'){AL.notif=!AL.notif;if(AL.notif)askNotif();saveAL();render()}
+ else if(k==='perm')askNotif();
+ else if(k==='test'){alAudio();fireAlarm({id:'test'},{title:'Alarma de prueba',body:'Así se verán tus alertas.'})}
+}
+function hmWire(hh,mm){[hh,mm].forEach(i=>{i.addEventListener('focus',()=>i.select());i.addEventListener('input',()=>{let v=i.value.replace(/\D/g,'');const mx=i===hh?23:59,f=i===hh?2:5;if(v.length===1&&+v>f)v='0'+v;if(+v>mx)v=String(mx);i.value=v;if(i===hh&&v.length===2){mm.focus();mm.select()}})})}
+function alForm(id){
+ const a=id?AL.alarms.find(x=>x.id===id):null;
+ const at=(a&&a.at||'08:00').split(':');
+ const S={kind:a?a.kind:'tiempo',h:a?a.h||0:4,m:a?a.m||0:0,base:a?a.base||'total':'total',hh:at[0],mm:at[1],msg:a?a.msg:'Llamar e informar',rep:a?a.rep!==false:true};
+ const g=i=>document.getElementById(i);
+ const grab=()=>{if(g('al-msg'))S.msg=g('al-msg').value;if(S.kind==='tiempo'&&g('al-h')){S.h=+g('al-h').value||0;S.m=+g('al-m').value||0;S.base=g('al-base').value}else if(S.kind==='hora'&&g('al-hh')){S.hh=g('al-hh').value;S.mm=g('al-mm').value;S.rep=g('al-rep').checked}};
+ const draw=()=>{
+  open(`<h3>${a?'Editar':'Nueva'} alarma</h3><p class="sub2">Elige cuándo quieres que te avise.</p>
+  <label for="al-kind">Tipo de alarma</label><select id="al-kind"><option value="tiempo" ${S.kind==='tiempo'?'selected':''}>Cuando un evento cumpla un tiempo</option><option value="hora" ${S.kind==='hora'?'selected':''}>A una hora del día</option></select>
+  ${S.kind==='tiempo'?`<div class="fg3"><div><label for="al-h">Horas</label><input id="al-h" type="number" min="0" value="${S.h}"></div><div><label for="al-m">Minutos</label><input id="al-m" type="number" min="0" max="59" value="${S.m}"></div><div><label for="al-base">Cuenta</label><select id="al-base"><option value="total" ${S.base==='total'?'selected':''}>Total transcurrido</option><option value="prog" ${S.base==='prog'?'selected':''}>En progreso</option></select></div></div>`:`<label>Hora (formato 24 h)</label><div class="hm"><input id="al-hh" maxlength="2" inputmode="numeric" placeholder="HH" value="${esc(S.hh)}"><b>:</b><input id="al-mm" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc(S.mm)}"></div><label class="ck"><input type="checkbox" id="al-rep" ${S.rep?'checked':''}>Repetir todos los días</label>`}
+  <label for="al-msg">Mensaje de la alarma</label><input id="al-msg" value="${esc(S.msg)}" placeholder="Ej. Llamar e informar">
+  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="al-ok">Guardar alarma</button></div>`);
+  g('al-kind').onchange=()=>{grab();S.kind=g('al-kind').value;draw()};
+  if(S.kind==='hora')hmWire(g('al-hh'),g('al-mm'));
+  const ok=()=>{
+   grab();const msg=(S.msg||'').trim()||'Alarma';let o;
+   if(S.kind==='tiempo'){if(!(S.h*60+S.m>0)){toast('Escribe horas o minutos mayores a 0');return}o={kind:'tiempo',h:S.h,m:S.m,base:S.base}}
+   else{if(S.hh===''||S.mm===''||+S.hh>23||+S.mm>59){toast('Escribe la hora en formato 24 h');return}o={kind:'hora',at:String(S.hh).padStart(2,'0')+':'+String(S.mm).padStart(2,'0'),rep:S.rep}}
+   let t=a;
+   if(a){Object.keys(AL.fired).forEach(k=>{if(k.startsWith(a.id+'|'))delete AL.fired[k]});Object.assign(a,o,{msg,on:true,last:''})}
+   else{t={id:'a'+Date.now().toString(36),on:true,last:'',msg,...o};AL.alarms.push(t)}
+   primeFired(t);saveAL();close();render();toast('Alarma guardada');
+  };
+  g('al-ok').onclick=ok;
+  [...document.querySelectorAll('#modal input')].forEach(i=>{i.onkeydown=e=>{if(e.key==='Enter'&&i.type!=='checkbox'){e.preventDefault();ok()}}});
+  setTimeout(()=>{const f=g(S.kind==='tiempo'?'al-h':'al-hh');if(f){f.focus();f.select()}},60);
+ };
+ draw();
 }
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
@@ -847,7 +1008,7 @@ const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OT
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
 const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'Avance por TCE',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
-function tplOf(t){return t.parent?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
+function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
 
 const MANW=['Avance por TCE','Avance proveedor','Avance O&M'];
 const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(p.a.at)||0)-(Date.parse(q.a.at)||0));return ix?r:r.map(p=>p.a)};
@@ -1124,7 +1285,7 @@ try{document.documentElement.dataset.theme=localStorage.getItem('netops-theme')=
 document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),1500);
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*1.6,x=document.createElement('span');x.className='rip';x.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;b.appendChild(x);setTimeout(()=>x.remove(),650)});
 $('#sumBtn').onclick=()=>resumenModal(cur.startsWith('esc:')?cur.slice(4):'all');
-buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive()},1000);
+buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive();alarmTick()},1000);
 </script>
 </body>
 </html>

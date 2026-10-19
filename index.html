@@ -289,15 +289,7 @@ const ico={
 const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg>`;
 const TYPES={Corte:'#ef4444',N1:'#3b82f6',Eléctrico:'#f59e0b','Fibra Oscura':'#8b5cf6',OTN:'#10b5a4'};
 const ST={Abierto:'#ef4444','En proceso':'#f59e0b',Escalado:'#3b82f6',Resuelto:'#22c55e'};
-let T=[
- {id:'INC-4821',site:'Nodo Guayaquil Centro',type:'Corte',st:'Abierto',pr:'Crítica',time:'18 min',who:'Equipo Fibra Sur',desc:'Corte de fibra troncal detectado por pérdida de señal.'},
- {id:'INC-4820',site:'Cliente Puerto Marítimo',type:'N1',st:'En proceso',pr:'Alta',time:'42 min',who:'Soporte N1',desc:'Intermitencia reportada en enlace dedicado.'},
- {id:'INC-4817',site:'Sitio Durán 02',type:'Eléctrico',st:'Escalado',pr:'Alta',time:'1 h 10 min',who:'Energía y planta',desc:'Falla de rectificador, banco de baterías en descarga.'},
- {id:'INC-4812',site:'Tramo Daule – Samborondón',type:'Fibra Oscura',st:'En proceso',pr:'Media',time:'2 h 05 min',who:'Fibra Oscura',desc:'Atenuación elevada en hilo 12 del tramo.'},
- {id:'INC-4809',site:'Anillo OTN Costa',type:'OTN',st:'Abierto',pr:'Crítica',time:'2 h 40 min',who:'Transporte OTN',desc:'Alarma LOS en tarjeta de línea 10G.'},
- {id:'INC-4801',site:'Nodo Milagro',type:'Corte',st:'Resuelto',pr:'Media',time:'4 h 15 min',who:'Equipo Fibra Norte',desc:'Fusión realizada y enlace restablecido.'},
- {id:'INC-4798',site:'Cliente Banco Litoral',type:'N1',st:'Resuelto',pr:'Baja',time:'5 h 02 min',who:'Soporte N1',desc:'Cambio de parámetros en CPE.'},
- {id:'INC-4795',site:'Sitio Salinas 01',type:'Eléctrico',st:'En proceso',pr:'Media',time:'6 h 30 min',who:'Energía y planta',desc:'Revisión de transferencia automática.'}];
+let T=[];
 const MENU=[
  {id:'seg',label:'Seguimiento',icon:'seg'},
  {id:'evt',label:'Plantilla de Seguimiento',icon:'doc'},
@@ -344,7 +336,7 @@ function masterErr(m,self){
  return '';
 }
 function rowsG(list){
- if(!list.length)return `<div class="empty">No hay incidentes con este filtro.</div>`;
+ if(!list.length)return `<div class="empty">${filter==='Todos'?'Aún no hay incidentes. Crea el primero desde Escalamiento.':'No hay incidentes con este filtro.'}</div>`;
  const ids=new Set(list.map(t=>t.id)),kids=id=>list.filter(x=>x.parent===id);
  const tr=(t,cls,extra,cell)=>`<tr data-id="${esc(t.id)}" class="${cls}" ${extra}><td>${cell}</td><td>${t.site}</td><td><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></td><td><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></td><td>${t.pr}</td><td>${t.time}</td></tr>`;
  const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
@@ -396,8 +388,8 @@ function render(){
  }else if(cur==='cfg'){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
   const opts=[['Alertas sonoras','Alarmas por tiempo o por hora, con sonido y notificación del navegador',AL.on],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
-  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${nodosCard()}`;
-  $('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
+  v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${nodosCard()}${dataCard()}`;
+  $('#dt-clean').onclick=cleanData;$('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
  }else{
   $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
   v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
@@ -457,6 +449,7 @@ function tplElec(d){
 }
 const ELBASE=['UPS EN BATERIA','REVISION DE NODO','REVISION DE EQUIPOS ELECTRICOS','ACOMPAÑAMIENTO','TEMPERATURA ALTA'];
 let ELTIPOS=[];try{ELTIPOS=JSON.parse(localStorage.getItem('netops-eltipos')||'[]')}catch(e){}
+let ELNODOS=[];try{ELNODOS=JSON.parse(localStorage.getItem('netops-elnodos')||'[]')}catch(e){}
 const ELPRE=[['Generador','Nodo en batería, se solicita asistencia con GENERADOR URGENTE'],['Temperatura Alta','Se visualiza temperatura alta en el nodo, asistencia *URGENTE*'],['Revision Electrica','Movilizar personal para revisión de *EQUIPOS ELÉCTRICOS*'],['General-Default','UPS con alarma *GENERAL-DEFAULT*'],['Revision en nodo','Movilizar personal para la revision del nodo contactar con Electrico de Turno']];
 function electricForm(et){
  const nowIso=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,19)};
@@ -471,7 +464,7 @@ function electricForm(et){
   open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · Eléctrico</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div id="elw">
   <div class="fg2"><div><label for="x-ticket">Ticket</label><input id="x-ticket" data-e="ticket" value="${esc(E.ticket)}"></div><div><label for="x-fecha">Fecha</label><input id="x-fecha" data-pk readonly style="cursor:pointer" value="${esc(fdE(E.fecha))}"></div></div>
   <label for="x-tipo">Tipo de reporte</label><select id="x-tipo">${tipos.map(o=>`<option value="${esc(o)}" ${o===E.tipo?'selected':''}>${esc(o)}</option>`).join('')}<option value="__otro">OTROS…</option></select>
-  <label for="x-nodo">Nodo</label><input id="x-nodo" data-e="nodo" value="${esc(E.nodo)}">
+  <label for="x-nodo">Nodo</label><input id="x-nodo" data-e="nodo" list="x-nodos" autocomplete="off" placeholder="Escribe el nodo…" value="${esc(E.nodo)}"><datalist id="x-nodos">${[...new Set([...ELNODOS,...NODOS.map(r=>r.n)])].filter(Boolean).sort().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
   <div class="sec">UPS</div>
   <label>UPS principal</label>${pct('data-e="ups"',E.ups)}
   ${rows('upsx','UPS adicional',(a,x)=>pct(a,x))}
@@ -506,7 +499,7 @@ function electricForm(et){
   $('#x-mk').onclick=()=>{
    let bad=false;[['x-ticket',E.ticket],['x-nodo',E.nodo]].forEach(([id,v])=>{const el=$('#'+id);el.style.borderColor=v.trim()?'':'var(--bad)';if(!v.trim())bad=true});
    if(bad){toast('Completa ticket y nodo');return}
-   const dd={id:E.ticket.trim(),site:E.nodo.trim(),who:E.tc||'Por asignar',desc:E.obs||'Sin observaciones.',el:clone(E)};
+   const dd={id:E.ticket.trim(),site:E.nodo.trim(),who:E.tc||'Por asignar',desc:E.obs||'Sin observaciones.',el:clone(E)};const nn=E.nodo.trim();if(nn&&!ELNODOS.some(x=>x.toUpperCase()===nn.toUpperCase())){ELNODOS.push(nn);try{localStorage.setItem('netops-elnodos',JSON.stringify(ELNODOS))}catch(x){}}
    if(et)Object.assign(et,dd);else T.unshift({...dd,type:'Eléctrico',st:'Escalado',pr:'Alta',time:'Ahora',created:Date.now()});
    DR.del(dkey);copyText(tplElec(E),et?'Plantilla actualizada y copiada':'Eléctrico escalado y plantilla copiada');close();buildNav();render();
   };
@@ -783,7 +776,7 @@ function fireAlarm(a,i){
 const elapsed=(e,base,now)=>{const tot=now-e.t0,sus=(e.suspAcc||0)+(e.suspSince?now-e.suspSince:0);return base==='prog'?tot-sus:tot};
 function primeFired(only){
  const now=Date.now();
- (only?[only]:AL.alarms).forEach(a=>{if(a.kind!=='tiempo')return;const ms=(a.h*60+a.m)*6e4;T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;if(elapsed(e,a.base,now)>=ms)AL.fired[a.id+'|'+t.id]=1})});
+ (only?[only]:AL.alarms).forEach(a=>{if(a.kind!=='tiempo')return;const ms=(a.h*60+a.m)*6e4,pre=(a.pre||0)*6e4;T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;const n=Math.floor((elapsed(e,a.base,now)+pre)/ms);if(n>=1)AL.fired[a.id+'|'+t.id]=a.rep?n:1})});
 }
 function alarmTick(){
  if(!AL.on)return;
@@ -792,10 +785,11 @@ function alarmTick(){
  AL.alarms.forEach(a=>{
   if(!a.on)return;
   if(a.kind==='hora'){
-   if(a.at===hhmm&&a.last!==day){a.last=day;if(!a.rep)a.on=false;ch=true;fireAlarm(a,{title:'Alarma de las '+a.at,body:a.msg})}
+   if(a.at===hhmm&&a.last!==day){a.last=day;if(!a.rep)a.on=false;ch=true;fireAlarm(a,{title:(a.ticket?'Ticket '+a.ticket+' · ':'')+'alarma de las '+a.at,body:a.msg})}
   }else{
-   const ms=(a.h*60+a.m)*6e4;
-   T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;const k=a.id+'|'+t.id;if(!AL.fired[k]&&elapsed(e,a.base,now)>=ms){AL.fired[k]=1;ch=true;fireAlarm(a,{title:t.id+': '+durTxt(a.h,a.m)+' cumplidas',body:a.msg+(t.site?' · '+t.site:'')})}});
+   const ms=(a.h*60+a.m)*6e4,pre=(a.pre||0)*6e4;
+   T.forEach(t=>{const e=t.ev;if(!e||!e.t0||e.endAt||t.del)return;const key=a.id+'|'+t.id,n=Math.floor((elapsed(e,a.base,now)+pre)/ms),k=a.rep?n:Math.min(n,1);
+    if(k>=1&&(AL.fired[key]||0)<k){AL.fired[key]=k;ch=true;const tm=ms/6e4*k;fireAlarm(a,{title:'Ticket '+t.id+' · '+(a.pre?'faltan '+a.pre+' min para ':'')+durTxt(Math.floor(tm/60),tm%60)+(a.pre?'':' cumplidas'),body:a.msg+(t.site?' · '+t.site:'')})}});
   }
  });
  if(ch){saveAL();if(cur==='cfg')render()}
@@ -808,8 +802,8 @@ function alarmPanel(){
  return `<div class="alp${AL.on?' open':''}" id="alp"><div><div class="alin">
  <div class="alo"><div><b>Sonido</b><small>Suena un aviso cuando se cumple una alarma</small></div>${sw('sound',AL.sound,'Sonido')}</div>
  <div class="alo"><div><b>Notificaciones del navegador</b><small>Estado: ${st}</small></div>${np==='default'?'<button class="chip" data-al="perm">Permitir</button>':''}${sw('notif',AL.notif,'Notificaciones')}</div>
- <div class="alh2"><b>Alarmas</b><div><button class="chip" data-al="test">Probar alerta</button><button class="btn" data-al="add" style="padding:7px 14px">+ Agregar alarma</button></div></div>
- ${AL.alarms.length?AL.alarms.map(a=>`<div class="alr${a.on?'':' off'}"><div><b>${a.kind==='hora'?'⏰ '+a.at+(a.rep?' · todos los días':' · una vez'):'⏱ '+durTxt(a.h,a.m)+' · '+(a.base==='prog'?'en progreso':'total transcurrido')}</b><small>${esc(a.msg)}</small></div>${sw('tg:'+a.id,a.on,'Activar alarma')}<button class="chip" data-al="ed:${a.id}">Editar</button><button class="chip" data-al="rm:${a.id}" style="color:var(--bad)">Eliminar</button></div>`).join(''):'<div class="alempty">Aún no tienes alarmas. Agrega una, por ejemplo: a las 4 horas → "Llamar e informar".</div>'}
+ <div class="alh2"><b>Alarmas</b><div><button class="chip" data-al="preset">Agregar 3 h, 4 h y 6 h</button><button class="chip" data-al="test">Probar alerta</button><button class="btn" data-al="add" style="padding:7px 14px">+ Agregar alarma</button></div></div>
+ ${AL.alarms.length?AL.alarms.map(a=>`<div class="alr${a.on?'':' off'}"><div><b>${a.kind==='hora'?'⏰ '+a.at+(a.rep?' · todos los días':' · una vez')+(a.ticket?' · Ticket '+esc(a.ticket):''):'⏱ '+(a.rep?'cada ':'')+durTxt(a.h,a.m)+(a.pre?' (aviso '+a.pre+' min antes)':'')+' · '+(a.base==='prog'?'en progreso':'total transcurrido')}</b><small>${esc(a.msg)}</small></div>${sw('tg:'+a.id,a.on,'Activar alarma')}<button class="chip" data-al="ed:${a.id}">Editar</button><button class="chip" data-al="rm:${a.id}" style="color:var(--bad)">Eliminar</button></div>`).join(''):'<div class="alempty">Aún no tienes alarmas. Agrega una, por ejemplo: a las 4 horas → "Llamar e informar".</div>'}
  </div></div></div>`;
 }
 function alAct(x){
@@ -820,6 +814,7 @@ function alAct(x){
  else if(k==='tg'){const a=AL.alarms.find(a=>a.id===id);if(a){a.on=!a.on;if(a.on){a.last='';primeFired(a)}saveAL();render()}}
  else if(k==='sound'){AL.sound=!AL.sound;saveAL();render()}
  else if(k==='notif'){AL.notif=!AL.notif;if(AL.notif)askNotif();saveAL();render()}
+ else if(k==='preset'){let n=0;[3,4,6].forEach(h=>{if(AL.alarms.some(a=>a.kind==='tiempo'&&a.h===h&&!a.m&&a.base==='total'))return;const a={id:'a'+Date.now().toString(36)+h,on:true,last:'',msg:'Llamar e informar',kind:'tiempo',h,m:0,base:'total',rep:false,pre:0};AL.alarms.push(a);primeFired(a);n++});saveAL();render();toast(n?n+' alarmas agregadas':'Ya tienes esas alarmas')}
  else if(k==='perm')askNotif();
  else if(k==='test'){alAudio();fireAlarm({id:'test'},{title:'Alarma de prueba',body:'Así se verán tus alertas.'})}
 }
@@ -827,21 +822,26 @@ function hmWire(hh,mm){[hh,mm].forEach(i=>{i.addEventListener('focus',()=>i.sele
 function alForm(id){
  const a=id?AL.alarms.find(x=>x.id===id):null;
  const at=(a&&a.at||'08:00').split(':');
- const S={kind:a?a.kind:'tiempo',h:a?a.h||0:4,m:a?a.m||0:0,base:a?a.base||'total':'total',hh:at[0],mm:at[1],msg:a?a.msg:'Llamar e informar',rep:a?a.rep!==false:true};
+ const S={kind:a?a.kind:'tiempo',h:a&&a.kind==='tiempo'?a.h||0:4,m:a&&a.kind==='tiempo'?a.m||0:0,base:a?a.base||'total':'total',pre:a?a.pre||0:0,repT:a&&a.kind==='tiempo'?!!a.rep:false,hh:at[0],mm:at[1],rep:a&&a.kind==='hora'?a.rep!==false:true,ticket:a?a.ticket||'':'',msg:a?a.msg:'Llamar e informar'};
  const g=i=>document.getElementById(i);
- const grab=()=>{if(g('al-msg'))S.msg=g('al-msg').value;if(S.kind==='tiempo'&&g('al-h')){S.h=+g('al-h').value||0;S.m=+g('al-m').value||0;S.base=g('al-base').value}else if(S.kind==='hora'&&g('al-hh')){S.hh=g('al-hh').value;S.mm=g('al-mm').value;S.rep=g('al-rep').checked}};
+ const grab=()=>{if(g('al-msg'))S.msg=g('al-msg').value;if(S.kind==='tiempo'&&g('al-h')){S.h=+g('al-h').value||0;S.m=+g('al-m').value||0;S.base=g('al-base').value;S.pre=+g('al-pre').value||0;S.repT=g('al-rept').checked}else if(S.kind==='hora'&&g('al-hh')){S.hh=g('al-hh').value;S.mm=g('al-mm').value;S.rep=g('al-rep').checked;S.ticket=g('al-tk').value.trim()}};
  const draw=()=>{
-  open(`<h3>${a?'Editar':'Nueva'} alarma</h3><p class="sub2">Elige cuándo quieres que te avise.</p>
-  <label for="al-kind">Tipo de alarma</label><select id="al-kind"><option value="tiempo" ${S.kind==='tiempo'?'selected':''}>Cuando un evento cumpla un tiempo</option><option value="hora" ${S.kind==='hora'?'selected':''}>A una hora del día</option></select>
-  ${S.kind==='tiempo'?`<div class="fg3"><div><label for="al-h">Horas</label><input id="al-h" type="number" min="0" value="${S.h}"></div><div><label for="al-m">Minutos</label><input id="al-m" type="number" min="0" max="59" value="${S.m}"></div><div><label for="al-base">Cuenta</label><select id="al-base"><option value="total" ${S.base==='total'?'selected':''}>Total transcurrido</option><option value="prog" ${S.base==='prog'?'selected':''}>En progreso</option></select></div></div>`:`<label>Hora (formato 24 h)</label><div class="hm"><input id="al-hh" maxlength="2" inputmode="numeric" placeholder="HH" value="${esc(S.hh)}"><b>:</b><input id="al-mm" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc(S.mm)}"></div><label class="ck"><input type="checkbox" id="al-rep" ${S.rep?'checked':''}>Repetir todos los días</label>`}
+  open(`<h3>${a?'Editar':'Nueva'} alarma</h3><p class="sub2">Elige cuándo quieres que te avise. El aviso muestra el número de ticket.</p>
+  <label for="al-kind">Tipo de alarma</label><select id="al-kind"><option value="tiempo" ${S.kind==='tiempo'?'selected':''}>Cuando un seguimiento cumpla un tiempo</option><option value="hora" ${S.kind==='hora'?'selected':''}>A una hora del día</option></select>
+  ${S.kind==='tiempo'?`<div class="fg3"><div><label for="al-h">Horas</label><input id="al-h" type="number" min="0" value="${S.h}"></div><div><label for="al-m">Minutos</label><input id="al-m" type="number" min="0" max="59" value="${S.m}"></div><div><label for="al-base">Cuenta</label><select id="al-base"><option value="total" ${S.base==='total'?'selected':''}>Total transcurrido</option><option value="prog" ${S.base==='prog'?'selected':''}>En progreso</option></select></div></div>
+  <label for="al-pre">Avisar antes (minutos, opcional)</label><input id="al-pre" type="number" min="0" value="${S.pre}" placeholder="0 = avisar al cumplirse">
+  <label class="ck"><input type="checkbox" id="al-rept" ${S.repT?'checked':''}>Repetir cada vez que se cumpla (ej. cada 3 h)</label>
+  <small style="color:var(--mut)">Cada seguimiento tiene su propio reloj, así que suena a la hora que le toque a cada ticket.</small>`:`<label>Hora (formato 24 h)</label><div class="hm"><input id="al-hh" maxlength="2" inputmode="numeric" placeholder="HH" value="${esc(S.hh)}"><b>:</b><input id="al-mm" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc(S.mm)}"></div>
+  <label for="al-tk">Ticket (opcional)</label><input id="al-tk" list="al-tks" autocomplete="off" value="${esc(S.ticket)}" placeholder="Ej. TIK-20188018-J5S0"><datalist id="al-tks">${T.filter(t=>!t.del&&!t.parent&&t.st!=='Resuelto').map(t=>`<option value="${esc(t.id)}">`).join('')}</datalist>
+  <label class="ck"><input type="checkbox" id="al-rep" ${S.rep?'checked':''}>Repetir todos los días</label>`}
   <label for="al-msg">Mensaje de la alarma</label><input id="al-msg" value="${esc(S.msg)}" placeholder="Ej. Llamar e informar">
   <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="al-ok">Guardar alarma</button></div>`);
   g('al-kind').onchange=()=>{grab();S.kind=g('al-kind').value;draw()};
   if(S.kind==='hora')hmWire(g('al-hh'),g('al-mm'));
   const ok=()=>{
    grab();const msg=(S.msg||'').trim()||'Alarma';let o;
-   if(S.kind==='tiempo'){if(!(S.h*60+S.m>0)){toast('Escribe horas o minutos mayores a 0');return}o={kind:'tiempo',h:S.h,m:S.m,base:S.base}}
-   else{if(S.hh===''||S.mm===''||+S.hh>23||+S.mm>59){toast('Escribe la hora en formato 24 h');return}o={kind:'hora',at:String(S.hh).padStart(2,'0')+':'+String(S.mm).padStart(2,'0'),rep:S.rep}}
+   if(S.kind==='tiempo'){if(!(S.h*60+S.m>0)){toast('Escribe horas o minutos mayores a 0');return}if(S.pre>=S.h*60+S.m){toast('El aviso previo debe ser menor al tiempo de la alarma');return}o={kind:'tiempo',h:S.h,m:S.m,base:S.base,pre:S.pre,rep:S.repT}}
+   else{if(S.hh===''||S.mm===''||+S.hh>23||+S.mm>59){toast('Escribe la hora en formato 24 h');return}o={kind:'hora',at:String(S.hh).padStart(2,'0')+':'+String(S.mm).padStart(2,'0'),rep:S.rep,ticket:S.ticket}}
    let t=a;
    if(a){Object.keys(AL.fired).forEach(k=>{if(k.startsWith(a.id+'|'))delete AL.fired[k]});Object.assign(a,o,{msg,on:true,last:''})}
    else{t={id:'a'+Date.now().toString(36),on:true,last:'',msg,...o};AL.alarms.push(t)}
@@ -852,6 +852,15 @@ function alForm(id){
   setTimeout(()=>{const f=g(S.kind==='tiempo'?'al-h':'al-hh');if(f){f.focus();f.select()}},60);
  };
  draw();
+}
+function dataCard(){return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Datos de la página</h2></div><div class="set"><div><b>Dejar la página limpia</b><small>Borra todos los tickets, seguimientos, borradores y avances. Conserva tu nombre, la base de nodos, los clientes, las alarmas y el tema.</small></div><button class="btn" id="dt-clean" style="background:var(--bad);box-shadow:none">Borrar datos</button></div></div>`}
+function wipeData(){
+ T=[];EV=null;W=null;WFor=null;AVE=null;EXP.clear();AL.fired={};
+ try{['netops-T','netops-EV','netops-WD'].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>k.startsWith('netops-dr-')).forEach(k=>localStorage.removeItem(k));saveAL()}catch(e){}
+}
+function cleanData(){
+ open(`<h3>Borrar todos los datos</h3><p class="sub2">Se eliminarán todos los tickets, seguimientos, borradores y avances. Esta acción no se puede deshacer.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dt-ok" style="background:var(--bad);box-shadow:none">Sí, borrar todo</button></div>`);
+ $('#dt-ok').onclick=()=>{wipeData();close();buildNav();render();toast('Página limpia, lista para usar')};
 }
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
@@ -1280,6 +1289,7 @@ function evtView(v){
 
 let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
 
+try{if(localStorage.getItem('netops-clean-v1')!=='1'){wipeData();localStorage.setItem('netops-clean-v1','1')}}catch(e){}
 try{const x=JSON.parse(localStorage.getItem('netops-T')||'null');if(Array.isArray(x))T=x;EV=localStorage.getItem('netops-EV')||null;const wd=localStorage.getItem('netops-WD');if(wd&&!EV){W=JSON.parse(wd);WFor=EV}}catch(e){}
 try{document.documentElement.dataset.theme=localStorage.getItem('netops-theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}
 document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),1500);

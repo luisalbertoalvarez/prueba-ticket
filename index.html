@@ -253,6 +253,9 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .shb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .lockb{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px;border:1px solid var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));border-radius:12px;font-weight:600}
 .view input:disabled,.view select:disabled,.view textarea:disabled,.view button:disabled{opacity:.6;cursor:not-allowed}
+.bgl{font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.bgrid .btn{width:100%;padding:9px 10px;font-size:13px;white-space:normal;line-height:1.25}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -432,8 +435,8 @@ function detail(id){
  const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del),isOtn=(t.type==='OTN'||t.type==='Fibra Oscura'),isSec=!!(t.parent&&!t.o),lk=t.st==='Resuelto';
  const B=(i,l,p,x)=>`<button class="btn${p?'':' ghost'}" id="${i}"${x?` style="${x}"`:''}>${l}</button>`;
  open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}${lk&&!t.del?' · <b style="color:var(--ok)">Resuelto · plantilla bloqueada</b>':''}</p>
- <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd>${t.closedAt?`<dt>Cierre</dt><dd>${fdt(t.closedAt)}</dd>`:''}${t.el&&t.el.utility?`<dt>Nodo Utility</dt><dd>${fdt(t.el.utility)}</dd>`:''}${t._u?`<dt>Última edición</dt><dd>${esc(t._by||'')}${t._by?' · ':''}${fdt(t._u)}</dd>`:''}<dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):(lk?'':B('ed','Editar plantilla'))+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent||lk?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec&&!lk?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&!lk&&t.parent?B('un','Quitar asociación'):'')+(t.type==='Eléctrico'&&!lk?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'')+(t.type==='Eléctrico'&&!lk&&t.el&&t.el.utility?B('uq','Quitar Nodo Utility'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
+ <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd>${t.closedAt?`<dt>Cierre</dt><dd>${fdt(t.closedAt)}</dd>`:''}${t.el&&t.el.utility?`<dt>Nodo Utility</dt><dd>${fdt(t.el.utility)}</dd>`:''}${(x=>x?`<dt>Último avance</dt><dd>[${fdt(x.at)}] ${esc(x.txt)}</dd>`:'')(lastElAv(t))}${t._u?`<dt>Última edición</dt><dd>${esc(t._by||'')}${t._by?' · ':''}${fdt(t._u)}</dd>`:''}<dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
+ ${detailBtns(t,B,{isOtn,isSec,lk})}`);
  $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplOf(t);$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
  $('#ct').onclick=()=>copyText(tplOf(t),'Plantilla copiada');
  document.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>detail(b.dataset.kid));const gev=$('#gev');if(gev)gev.onclick=()=>{close();EV=t.id;W=null;go('evt')};const cev=$('#cev');if(cev)cev.onclick=()=>copyText(tplEvento(t.ev),'Plantilla de evento copiada');const gm=$('#gm');if(gm)gm.onclick=()=>{if(T.find(x=>x.id===t.parent))detail(t.parent);else toast('No se encontró el ticket master')};
@@ -443,6 +446,7 @@ function detail(id){
   let sure=false;$('#hd').onclick=e=>{if(!sure){sure=true;e.target.textContent='¿Seguro? Pulsa de nuevo';return}T.splice(T.indexOf(t),1);close();buildNav();render();toast('Eliminado definitivamente')};
   return;
  }
+ const avb=$('#av');if(avb)avb.onclick=()=>avanceElec(t);
  const utb=$('#ut');if(utb)utb.onclick=()=>pickDT({title:'Nodo Utility · hora en que retornó la luz',value:(t.el&&t.el.utility)||'',cb:v=>{t.el=t.el||elOf(t);t.el.utility=v;buildNav();toast('Nodo Utility registrado: '+fdt(v));detail(t.id)}});
  const uqb=$('#uq');if(uqb)uqb.onclick=()=>{if(t.el)delete t.el.utility;buildNav();toast('Nodo Utility quitado');detail(t.id)};
  const asb=$('#as');if(asb)asb.onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar el ticket '+t.id+'.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:t.parent||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,t.id);if(er){toast(er);return}t.o=t.o||otnOf(t);t.o.master=n;t.parent=n;close();buildNav();render();toast(t.id+' asociado al ticket master '+n+(T.some(x=>x.id===n&&!x.del)?'':' (no está registrado aquí)'))}});
@@ -528,13 +532,16 @@ function evParts(t){
  const tot=ev&&ev.t0?fdur((ev.endAt||Date.now())-ev.t0):'Sin iniciar';
  const kids=T.filter(x=>x.parent===t.id&&!x.del).map(x=>x.id);
  const diag=(ev&&ev.diag)||(d&&d.diag)||(el&&el.obs)||(o&&o.diag)||t.desc||'';
- const av=ev?avSorted(ev.avs||[]).filter(a=>MANW.includes(a.who)).pop():null;
- const ult=av?`[${fdt(av.at)}] ${av.who}${av.txt?': '+av.txt:''}`:'Sin avances';
+ const cand=[];
+ if(ev)avSorted(ev.avs||[]).filter(a=>MANW.includes(a.who)).forEach(a=>cand.push({at:a.at,s:`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`}));
+ if(el&&el.avs)el.avs.forEach(a=>cand.push({at:a.at,s:`[${fdt(a.at)}] ${a.txt}`}));
+ cand.sort((x,y)=>(Date.parse(x.at)||0)-(Date.parse(y.at)||0));
+ const ult=cand.length?cand[cand.length-1].s:'Sin avances';
  const tc=(ev&&ev.tc)||(d&&d.tc)||(el&&el.tc)||(o&&o.tc)||(t.who&&t.who!=='Por asignar'?t.who:'');
  return {fecha,tramo,tot,kids,diag,ult,tc,ev};
 }
 function resumenEvento(t){const p=evParts(t);return [`Ticket: ${t.id}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,`Proveedor: ${(p.ev&&p.ev.prov)||''}`,`País: ${(p.ev&&p.ev.pais)||'ECUADOR'}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n')}
-const evBloque=t=>{const p=evParts(t);return [`Ticket: ${t.id}`,`Tramo afectado: ${p.tramo}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Último Avance: ${p.ult}`].join('\n')};
+const evBloque=t=>{const p=evParts(t);return (t.type==='Eléctrico'?[`Ticket: ${t.id}`,`Nodo: ${p.tramo}`,`Último Avance: ${p.ult}`]:[`Ticket: ${t.id}`,`Tramo afectado: ${p.tramo}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Último Avance: ${p.ult}`]).join('\n')};
 const RES_ORDER=['Corte','Eléctrico','N1','Fibra Oscura','OTN'];
 const RES_FR={Corte:['Actualmente no se tiene afectación en las troncales.','las troncales'],'Eléctrico':['Actualmente no se tiene eventos en los nodos de batería.','los nodos de batería'],N1:['Actualmente no se tiene eventos de N1.','los eventos de N1'],'Fibra Oscura':['Actualmente no se tiene eventos de fibra oscura.','los eventos de fibra oscura'],OTN:['Actualmente no se tiene eventos de OTN.','los eventos de OTN']};
 const saludo=()=>{const h=new Date().getHours();return h>=5&&h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'};
@@ -742,16 +749,22 @@ window.addEventListener('scroll',e=>{if(!SUG||!SUG.contains(e.target))sugHide()}
 function nodosCard(){return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Base de nodos</h2></div><div class="set"><div><b>${NODOS.length} equipos cargados</b><small>Se usa para buscar el nodo y rellenar el Hostname en las plantillas de Corte y N1. Columnas: NODOS, HOSTNAME, IP, MARCA. «Descargar archivo» abre tu hoja de Google para bajar el .xlsx completo y luego lo importas aquí; «Exportar copia» guarda lo que hay cargado en la página.</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" id="nd-gs" href="https://docs.google.com/spreadsheets/d/1GXamSyH5CaggJIvHKohIsUE59-KX9Lgk/export?format=xlsx&gid=742198765" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Descargar archivo</a><button class="btn ghost" id="nd-exp">Exportar copia</button><button class="btn" id="nd-imp">Importar archivo</button></div></div><input type="file" id="nd-file" accept=".xlsx,.xls,.csv" hidden></div>`}
 function parseCSV(t){const rows=[],f=t.split('\n')[0],d=f.split(';').length>f.split(',').length?';':',';let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===d){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}else c+=ch}if(c!==''||r.length){r.push(c);rows.push(r)}return rows}
 function loadXLSX(){return new Promise((ok,no)=>{if(window.XLSX)return ok(window.XLSX);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>ok(window.XLSX);s.onerror=()=>no(new Error('xlsx'));document.head.appendChild(s)})}
+async function saveFile(name,data){
+ let dl=null;try{dl=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){}
+ if(dl){try{await dl.save({filename:name,data});return true}catch(e){if(e&&e.code==='declined')return false;throw e}}
+ const type=/\.json$/i.test(name)?'application/json':/\.xlsx$/i.test(name)?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'text/csv;charset=utf-8';
+ const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');
+ a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(u)},2000);
+ return true;
+}
 async function exportNodos(){
- const dl=window.claude&&claude.use?await claude.use('downloads'):null;
- if(!dl){toast('La descarga no está disponible en esta vista');return}
  const rows=[['NODOS','HOSTNAME','IP','MARCA'],...NODOS.map(r=>[r.n,r.h,r.ip,r.m])];
  try{
   let data,name='NODOS_ACTUALIZADOS.xlsx';
   try{const X=await loadXLSX();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(rows),'Hoja1');data=X.write(wb,{bookType:'xlsx',type:'array'})}
   catch(e){name='NODOS_ACTUALIZADOS.csv';data='\ufeff'+rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n')}
-  await dl.save({filename:name,data});toast('Archivo listo: '+name);
- }catch(e){if(!e||e.code!=='declined')toast('No se pudo descargar el archivo')}
+  if(await saveFile(name,data))toast('Archivo listo: '+name);
+ }catch(e){toast('No se pudo descargar el archivo')}
 }
 async function importNodos(f){
  if(!f)return;
@@ -903,11 +916,9 @@ function shareModal(){
   $('#sh-all').onclick=()=>{L.forEach(t=>sel.add(t.id));document.querySelectorAll('#modal [data-sh]').forEach(c=>c.checked=true);cnt()};
   $('#sh-go').onclick=async()=>{
    if(!sel.size){toast('Selecciona al menos un ticket');return}
-   const dl=window.claude&&claude.use?await claude.use('downloads'):null;
-   if(!dl){toast('La descarga no está disponible en esta vista');return}
    const d=new Date(),p=n=>String(n).padStart(2,'0'),name=`tickets-compartidos-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`,pkg=handoffPkg(sel);
-   try{await dl.save({filename:name,data:JSON.stringify(pkg,null,1)});close();toast(pkg.tickets.length+' tickets en '+name)}
-   catch(e){if(!e||e.code!=='declined')toast('No se pudo crear el archivo')}
+   try{if(await saveFile(name,JSON.stringify(pkg,null,1))){close();toast(pkg.tickets.length+' tickets en '+name)}}
+   catch(e){toast('No se pudo crear el archivo')}
   };
  };
  draw();
@@ -917,11 +928,9 @@ function backupObj(){
  return {app:'netops',v:1,at:Date.now(),by:ME,tickets:JSON.parse(JSON.stringify(T)),alarms:AL.alarms,clientes:CUSTOM,proveedores:PROVS,tiposElec:ELTIPOS,nodosElec:ELNODOS,nodos};
 }
 async function exportBackup(){
- const dl=window.claude&&claude.use?await claude.use('downloads'):null;
- if(!dl){toast('La descarga no está disponible en esta vista');return}
  const d=new Date(),p=n=>String(n).padStart(2,'0'),name=`respaldo-seguimiento-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
- try{await dl.save({filename:name,data:JSON.stringify(backupObj(),null,1)});toast('Respaldo listo: '+name)}
- catch(e){if(!e||e.code!=='declined')toast('No se pudo crear el respaldo')}
+ try{if(await saveFile(name,JSON.stringify(backupObj(),null,1)))toast('Respaldo listo: '+name)}
+ catch(e){toast('No se pudo crear el respaldo')}
 }
 async function importBackup(f){
  if(!f)return;
@@ -973,7 +982,36 @@ function cerrarModal(t,cb){
  };
  draw();
 }
-function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+const AVPRE=['Cuadrilla en movilización'];
+function lastElAv(t){const a=t.el&&t.el.avs;return a&&a.length?avSorted(a).slice(-1)[0]:null}
+function avanceElec(t){
+ let at=nowLocal(),txt='';
+ const draw=()=>{
+  open(`<h3>Dar avance · ${esc(t.id)}</h3><p class="sub2">Registra el avance del nodo ${esc(t.site)}.</p>
+  <label for="av-at">Fecha y hora</label><input id="av-at" data-pk readonly style="cursor:pointer" value="${esc(fdt(at))}">
+  <label for="av-txt">Avance</label><textarea id="av-txt" placeholder="Escribe el avance…" style="min-height:90px">${esc(txt)}</textarea>
+  <div class="wchips" style="margin-top:8px">${AVPRE.map((p,i)=>`<button type="button" class="chip" data-p="${i}">${esc(p)}</button>`).join('')}</div>
+  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="av-ok">Guardar avance</button></div>`);
+  const f=$('#av-at'),ta=$('#av-txt');
+  const pk=()=>{txt=ta.value;pickDT({title:'Fecha y hora del avance',value:at,cb:v=>{at=v;draw()}})};
+  f.onclick=pk;f.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();pk()}};
+  ta.oninput=()=>{txt=ta.value};
+  document.querySelectorAll('#modal [data-p]').forEach(b=>b.onclick=()=>{const p=AVPRE[+b.dataset.p],c=ta.value.trim();ta.value=!c||AVPRE.includes(c)?p:c+'\n'+p;txt=ta.value;ta.focus()});
+  $('#av-ok').onclick=()=>{
+   const x=ta.value.trim();if(!x){ta.style.borderColor='var(--bad)';toast('Escribe el avance');return}
+   t.el=t.el||elOf(t);(t.el.avs=t.el.avs||[]).push({at,txt:x});buildNav();close();toast('Avance registrado');detail(t.id);
+  };
+ };
+ draw();
+}
+function detailBtns(t,B,f){
+ const {isOtn,isSec,lk}=f,el=t.type==='Eléctrico'&&!lk&&!t.del;
+ const g1=[B('vt','Ver plantilla'),B('ct','Copiar plantilla'),t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):'',(!t.del&&!lk)?B('ed','Editar plantilla'):'',(!t.del&&!t.parent)?B('gev','Plantilla de evento'):''].join('');
+ const g2=t.del?'':[(t.parent||lk)?'':B('sg','Crear ticket secundario'),(isOtn&&!isSec&&!lk)?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'',(isOtn&&!isSec&&!lk&&t.parent)?B('un','Quitar asociación'):'',el?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'',(el&&t.el&&t.el.utility)?B('uq','Quitar Nodo Utility'):'',el?B('av','Dar avance'):''].join('');
+ const g3=t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1));
+ return `<div class="bgl">Plantilla</div><div class="bgrid">${g1}</div>${g2?`<div class="bgl">Acciones del ticket</div><div class="bgrid">${g2}</div>`:''}<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${g3}</div></div>`;
+}
+function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.fd?`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`:''}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
  const base=dataOf(t),d0=child?child.d.diag:base.diag;
  open(`<h3>${child?'Editar':'Crear'} ticket secundario</h3><p class="sub2">Se asocia al ticket master ${esc(t.id)}. El diagnóstico N1 viene del ticket principal y puedes ajustarlo.</p>
@@ -1017,9 +1055,9 @@ $('#newBtn').onclick=()=>{
  };
 };
 
-const fdt=x=>{if(!x)return '';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
+const fdt=x=>{if(!x)return '';if(x==='Cliente no realiza descarte eléctrico')return 'EL CLIENTE NO HA REALIZADO NI CONFIRMADO EL DESCARTE ELÉCTRICO';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
 const valTxt=d=>(d.eqs||[]).map((q,i)=>{const v=(q.v||d['val'+(i+1)]||'').trim();if(!v)return '';return `\n\n* Validaciones ${q.e||('Equipo '+(i+1))}:\n${v}`}).join('');
-function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.tp==='Corte'?'':`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function dataOf(t){if(t.o){const o=t.o;return {ticket:t.id,tm:false,fc:o.fecha,fd:'',cli:o.cli,hor:o.hor,nodo:o.nodo,falla:o.falla,eqs:[{e:'',i:'',p:''}],diag:o.diag,n1:o.n1,tc:o.tc}}
  return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
 function copyText(t,msg){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(msg))}
@@ -1057,7 +1095,7 @@ function corteForm(et,type){
  const grp=(n,rm)=>`<div class="eg"><div class="sec" style="display:flex;align-items:center">Información técnica · Equipo <span class="gn" style="margin-left:5px">${n}</span>${rm?'<button type="button" class="rm" aria-label="Quitar equipo" style="margin-left:auto;border:0;background:none;color:var(--bad);font-weight:700;font-size:12.5px">Quitar</button>':''}</div><div class="fg3"><div><label>Equipo Acceso<input class="g-e" placeholder="Busca el nodo…" autocomplete="off" style="font-weight:500"></label></div><div><label>Hostname<input class="g-i" placeholder="Hostname" autocomplete="off" style="font-weight:500"></label></div><div><label>Puerto<input class="g-p" style="font-weight:500"></label></div></div></div>`;
  open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div>
  <div class="sec">Datos cliente</div>
- <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${P('fc','Fecha de creación de ticket')}${P('fd','Fecha de descarte eléctrico')}</div>
+ <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${P('fc','Fecha de creación de ticket')}${type==='N1'?P('fd','Fecha de descarte eléctrico'):''}</div>
  ${S('hor','Horario de revisión',HORARIOS)}
  <div class="sec">Datos importantes</div>
  ${I('nodo','Nombre de Nodo')}
@@ -1072,10 +1110,10 @@ function corteForm(et,type){
  <div><pre class="tpl" id="tpl"></pre></div></div></div>
  <div class="row mf" style="flex-wrap:wrap;align-items:center"><label class="tmk" style="display:flex;align-items:center;gap:9px;margin:0 auto 0 0;padding:9px 14px;border:1px solid var(--line);border-radius:11px;cursor:pointer;font-weight:700;font-size:13.5px"><input type="checkbox" id="c-tm" style="width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer">TICKET MASTER</label><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="cdis">Descartar borrador</button><button class="btn ghost" id="cp">Copiar plantilla</button><button class="btn" id="mk">${et?'Guardar cambios':'Crear y copiar'}</button></div>`,true,true);
 
- const v=id=>{const el=$('#c-'+id);return ((el.dataset.pk!==undefined?el.dataset.iso:el.value)||'').trim()};
+ const v=id=>{const el=$('#c-'+id);if(!el)return '';return ((el.dataset.pk!==undefined?el.dataset.iso:el.value)||'').trim()};
  const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
  const eqs=()=>[...document.querySelectorAll('#egs .eg')].map(g=>{const q=c=>g.querySelector(c).value.trim();return `* Equipo Acceso: ${q('.g-e')}\n* IP Gestión del Acceso: ${q('.g-i')}\n* Puerto del Acceso: ${q('.g-p')}`}).join('\n\n');
- const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
+ const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),tp:type,cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
  const gen=()=>tplCorte(collect());
  const lbl=()=>{const gs=document.querySelectorAll('#egs .eg');document.querySelectorAll('#vals .lv').forEach((l,i)=>{const g=gs[i],x=g?g.querySelector('.g-e').value.trim():'';l.textContent='Validaciones · '+(x||'Equipo '+(i+1))})};
  const syncVals=()=>{const gs=[...document.querySelectorAll('#egs .eg')],box=$('#vals'),old=[...box.querySelectorAll('.g-v')].map(x=>x.value);box.innerHTML=gs.map((g,i)=>`<label for="c-v${i}" class="lv"></label><textarea id="c-v${i}" class="g-v" placeholder="Pega aquí las validaciones" style="min-height:90px;font:12px ui-monospace,Menlo,Consolas,monospace"></textarea>`).join('');box.querySelectorAll('.g-v').forEach((t,i)=>t.value=old[i]||'');lbl()};
@@ -1110,7 +1148,7 @@ function corteForm(et,type){
  $('#modal').oninput=upd;$('#modal').onchange=upd;upd();
  $('#cp').onclick=()=>copy('Plantilla copiada');
  $('#cdis').onclick=()=>{DR.del(dkey);close();toast('Borrador descartado')};
- ['fc','fd'].forEach(k=>{const el=$('#c-'+k),go=()=>pickDT({title:k==='fc'?'Fecha y hora de creación del ticket':'Fecha y hora de descarte eléctrico',value:el.dataset.iso||'',cb:x=>{el.dataset.iso=x;el.value=fdt(x);upd()}});el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}});
+ ['fc','fd'].forEach(k=>{const el=$('#c-'+k);if(!el)return;const go=()=>pickDT({title:k==='fc'?'Fecha y hora de creación del ticket':'Fecha y hora de descarte eléctrico',value:el.dataset.iso||'',extra:k==='fd'?{label:'EL CLIENTE NO HA REALIZADO NI CONFIRMADO EL DESCARTE ELÉCTRICO',val:'EL CLIENTE NO HA REALIZADO NI CONFIRMADO EL DESCARTE ELÉCTRICO'}:null,cb:x=>{el.dataset.iso=x;el.value=fdt(x);upd()}});el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}});
  $('#mk').onclick=()=>{
   const tk=$('#c-ticket'),nd=$('#c-nodo');let bad=false;
   [tk,nd].forEach(e=>{if(!e.value.trim()){e.style.borderColor='var(--bad)';bad=true}else e.style.borderColor=''});
@@ -1128,7 +1166,7 @@ const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OT
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
 const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'',avAt:'',avTxt:''});
 function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
-function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
+function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte({...dataOf(t),tp:t.type})}
 
 const MANW=['Validaciones Noc','Avance por TCE','Avance proveedor','Avance O&M'];
 const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(p.a.at)||0)-(Date.parse(q.a.at)||0));return ix?r:r.map(p=>p.a)};
@@ -1176,7 +1214,7 @@ function pickDT(o){
  const base=o.value&&!isNaN(new Date(o.value))?new Date(o.value):new Date();
  let vy=base.getFullYear(),vm=base.getMonth(),sd=new Date(vy,vm,base.getDate());
  const el=document.createElement('div');el.className='ov';el.style.zIndex=70;
- el.innerHTML=`<div class="modal" style="max-width:360px"><h3>${o.title}</h3><div class="cal-h"><button type="button" class="cal-b" data-m="-1" aria-label="Mes anterior">‹</button><b id="cal-t"></b><button type="button" class="cal-b" data-m="1" aria-label="Mes siguiente">›</button></div><div class="cal-w">${['L','M','X','J','V','S','D'].map(d=>`<span>${d}</span>`).join('')}</div><div class="cal-g" id="cal-g"></div><label>Hora (formato 24 h)</label><div class="hm"><input id="hh" maxlength="2" inputmode="numeric" placeholder="HH"><b>:</b><input id="mm" maxlength="2" inputmode="numeric" placeholder="MM"><button type="button" class="chip" id="cal-now" style="margin-left:auto">Ahora</button></div><div class="row"><button class="btn ghost" data-x>Cancelar</button><button class="btn" data-ok>Confirmar</button></div></div>`;
+ el.innerHTML=`<div class="modal" style="max-width:360px"><h3>${o.title}</h3><div class="cal-h"><button type="button" class="cal-b" data-m="-1" aria-label="Mes anterior">‹</button><b id="cal-t"></b><button type="button" class="cal-b" data-m="1" aria-label="Mes siguiente">›</button></div><div class="cal-w">${['L','M','X','J','V','S','D'].map(d=>`<span>${d}</span>`).join('')}</div><div class="cal-g" id="cal-g"></div><label>Hora (formato 24 h)</label><div class="hm"><input id="hh" maxlength="2" inputmode="numeric" placeholder="HH"><b>:</b><input id="mm" maxlength="2" inputmode="numeric" placeholder="MM"><button type="button" class="chip" id="cal-now" style="margin-left:auto">Ahora</button></div><div class="row" style="flex-wrap:wrap">${o.extra?`<button type="button" class="btn ghost" data-ex style="margin-right:auto;font-size:12.5px">${esc(o.extra.label)}</button>`:''}<button class="btn ghost" data-x>Cancelar</button><button class="btn" data-ok>Confirmar</button></div></div>`;
  document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
  const hh=el.querySelector('#hh'),mm=el.querySelector('#mm'),g=el.querySelector('#cal-g');
  hh.value=p2(base.getHours());mm.value=p2(base.getMinutes());
@@ -1192,9 +1230,10 @@ function pickDT(o){
   else if(b.dataset.d){sd=new Date(vy,vm,+b.dataset.d);draw()}
   else if(b.id==='cal-now'){const n=new Date();sd=new Date(n.getFullYear(),n.getMonth(),n.getDate());vy=n.getFullYear();vm=n.getMonth();hh.value=p2(n.getHours());mm.value=p2(n.getMinutes());draw()}
   else if(b.dataset.x!==undefined)end();
+  else if(b.dataset.ex!==undefined){end();o.cb(o.extra.val)}
   else if(b.dataset.ok!==undefined)ok();
  });
- el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();end()}else if(e.key==='Enter'&&!e.target.closest('[data-x]')){e.preventDefault();ok()}});
+ el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();end()}else if(e.key==='Enter'&&!e.target.closest('[data-x],[data-ex]')){e.preventDefault();ok()}});
  [hh,mm].forEach(i=>{i.addEventListener('focus',()=>i.select());i.addEventListener('input',()=>{let v=i.value.replace(/\D/g,'');const mx=i===hh?23:59,first=i===hh?2:5;if(v.length===1&&+v>first)v='0'+v;if(+v>mx)v=String(mx);i.value=v;if(i===hh&&v.length===2){mm.focus();mm.select()}})});
  hh.focus();hh.select();
 }

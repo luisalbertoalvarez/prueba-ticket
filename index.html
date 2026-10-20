@@ -245,6 +245,14 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .syn.on{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.25);animation:dot 1.8s ease-in-out infinite}
 .wchips.err{outline:2px solid var(--bad);outline-offset:4px;border-radius:12px;animation:shk .4s}
 @keyframes shk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.shl{max-height:46vh;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px}
+.shr{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;margin:0;font-weight:500;font-size:14px}
+.shr:last-child{border-bottom:0}
+.shr input{width:18px;height:18px;margin-top:3px;padding:0;accent-color:var(--acc);flex:none}
+.shr small{display:block;color:var(--mut)}
+.shb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.lockb{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px;border:1px solid var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));border-radius:12px;font-weight:600}
+.view input:disabled,.view select:disabled,.view textarea:disabled,.view button:disabled{opacity:.6;cursor:not-allowed}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -258,7 +266,7 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 </head>
 <body>
 <aside class="side" id="side">
- <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>NetOps<span class="syn" id="syn"></span></div>
+ <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>NetOps</div>
  <nav class="nav" id="nav"></nav>
  <div class="tm" id="tmw"><div class="tm-h"><span>Cronómetros</span><em id="tm-st">Sin ticket</em></div><div class="tm-id" id="tm-id">—</div>
  <div class="tm-r" id="tm-p" style="--c:#22c55e"><span>Tiempo progreso</span><b>00:00:00</b></div>
@@ -273,7 +281,7 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
   <button class="burger" id="burger" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
   <div><h1 id="title"></h1><p id="subtitle"></p></div>
   <div class="sp"></div>
-  <button class="btn ghost" id="sumBtn" style="display:none">Resumen de eventos</button><button class="btn" id="newBtn">+ Nuevo escalamiento</button>
+  <button class="btn ghost" id="shBtn" style="display:none">Compartir tickets</button><button class="btn ghost" id="sumBtn" style="display:none">Resumen de eventos</button><button class="btn" id="newBtn">+ Nuevo escalamiento</button>
 </header>
  <main class="view" id="view"></main>
 </section>
@@ -366,6 +374,7 @@ function rows(list){
 
 function render(){
  const sb=$('#sumBtn');if(sb)sb.style.display=cur.startsWith('esc:')?'':'none';
+ const hb=$('#shBtn');if(hb)hb.style.display=(cur==='seg'||cur.startsWith('esc:'))?'':'none';
  const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
  $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico','esc:OTN':'+ Escalar OTN','esc:Fibra Oscura':'+ Escalar fibra oscura'})[cur]||'+ Nuevo escalamiento';
  if(cur==='seg'){
@@ -393,7 +402,7 @@ function render(){
   $('#title').textContent='Configuración';$('#subtitle').textContent='Ajusta cómo trabaja tu panel';
   const opts=[['Alertas sonoras','Alarmas por tiempo o por hora, con sonido y notificación del navegador',AL.on],['Notificaciones por correo','Recibe un resumen al cerrar cada turno',false],['Actualización automática','Refresca los datos cada 30 segundos',true],['Modo oscuro','Cambia la apariencia del panel',document.documentElement.dataset.theme==='dark']];
   v.innerHTML=`<div class="card">${opts.map((o,i)=>`<div class="set"><div><b>${o[0]}</b><small>${o[1]}</small></div><button class="sw" role="switch" aria-checked="${o[2]}" data-sw="${i}" aria-label="${o[0]}"></button></div>${i===0?alarmPanel():''}`).join('')}</div>${shareCard()}${nodosCard()}${dataCard()}`;
-  $('#dt-clean').onclick=cleanData;$('#bk-exp').onclick=exportBackup;$('#bk-imp').onclick=()=>$('#bk-file').click();$('#bk-file').onchange=e=>importBackup(e.target.files[0]);$('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
+  $('#dt-clean').onclick=cleanData;$('#sh-open').onclick=shareModal;$('#bk-exp').onclick=exportBackup;$('#bk-imp').onclick=()=>$('#bk-file').click();$('#bk-file').onchange=e=>importBackup(e.target.files[0]);$('#nd-exp').onclick=exportNodos;$('#nd-imp').onclick=()=>$('#nd-file').click();$('#nd-file').onchange=e=>importNodos(e.target.files[0]);
  }else{
   $('#title').textContent='Ayuda';$('#subtitle').textContent='Respuestas rápidas a las dudas más comunes';
   v.innerHTML=`<div class="card"><details open><summary>¿Cómo creo un escalamiento?</summary><p>Pulsa "Nuevo escalamiento", elige el tipo, el sitio y describe la falla. El área responsable recibe el aviso al instante.</p></details><details><summary>¿Qué significa cada estado?</summary><p>Abierto: sin atender. En proceso: un técnico trabaja en él. Escalado: pasó a otra área. Resuelto: el servicio se restableció.</p></details><details><summary>¿Cómo veo el detalle de un incidente?</summary><p>Haz clic en cualquier fila de la tabla y se abrirá una ventana con toda la información.</p></details><details><summary>¿Con quién hablo si el panel falla?</summary><p>Escribe al equipo de soporte del NOC desde el botón de contacto de tu supervisor.</p></details></div>`;
@@ -420,11 +429,11 @@ $('#ov').addEventListener('click',e=>{if((e.target.id==='ov'&&!$('#modal').class
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 
 function detail(id){
- const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del),isOtn=(t.type==='OTN'||t.type==='Fibra Oscura'),isSec=!!(t.parent&&!t.o);
+ const t=T.find(x=>x.id===id),sg=t.seg||[],kids=T.filter(x=>x.parent===t.id&&!x.del),isOtn=(t.type==='OTN'||t.type==='Fibra Oscura'),isSec=!!(t.parent&&!t.o),lk=t.st==='Resuelto';
  const B=(i,l,p,x)=>`<button class="btn${p?'':' ghost'}" id="${i}"${x?` style="${x}"`:''}>${l}</button>`;
- open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}</p>
- <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd>${t.el&&t.el.utility?`<dt>Nodo Utility</dt><dd>${fdt(t.el.utility)}</dd>`:''}${t._u?`<dt>Última edición</dt><dd>${esc(t._by||'')}${t._by?' · ':''}${fdt(t._u)}</dd>`:''}<dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('ed','Editar plantilla')+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&t.parent?B('un','Quitar asociación'):'')+(t.type==='Eléctrico'?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'')+(t.type==='Eléctrico'&&t.el&&t.el.utility?B('uq','Quitar Nodo Utility'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
+ open(`<h3>${t.id}</h3><p class="sub2">${t.site}${t.del?' · <b style="color:var(--bad)">Eliminado</b>':''}${lk&&!t.del?' · <b style="color:var(--ok)">Resuelto · plantilla bloqueada</b>':''}</p>
+ <dl class="dl"><dt>Tipo</dt><dd><span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span></dd><dt>Estado</dt><dd><span class="tag" style="--c:${ST[t.st]}">${t.st}</span></dd><dt>Prioridad</dt><dd>${t.pr}</dd><dt>Abierto hace</dt><dd>${t.time}</dd><dt>Responsable</dt><dd>${t.who}</dd>${t.closedAt?`<dt>Cierre</dt><dd>${fdt(t.closedAt)}</dd>`:''}${t.el&&t.el.utility?`<dt>Nodo Utility</dt><dd>${fdt(t.el.utility)}</dd>`:''}${t._u?`<dt>Última edición</dt><dd>${esc(t._by||'')}${t._by?' · ':''}${fdt(t._u)}</dd>`:''}<dt>Descripción</dt><dd style="font-weight:500">${t.desc}</dd>${t.parent?`<dt>Ticket master</dt><dd><span class="tag" style="--c:#8b5cf6">Ticket hijo</span> <button class="chip" id="gm">${esc(t.parent)}</button></dd>`:''}${kids.length?`<dt>Tickets secundarios</dt><dd>${kids.map(k=>`<button class="chip" data-kid="${esc(k.id)}">${esc(k.id)}</button>`).join(' ')}</dd>`:''}${sg.length?`<dt>Seguimientos</dt><dd>${sg.map((x,k)=>`<button class="chip" data-cs="${k}">Copiar ${esc(x.num)}</button>`).join(' ')}</dd>`:''}</dl>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button>${B('vt','Ver plantilla')}${B('ct','Copiar plantilla')}${t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):''}${t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):(lk?'':B('ed','Editar plantilla'))+(t.parent?'':B('gev','Plantilla de evento'))+(t.parent||lk?'':B('sg','Crear ticket secundario'))+(isOtn&&!isSec&&!lk?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'')+(isOtn&&!isSec&&!lk&&t.parent?B('un','Quitar asociación'):'')+(t.type==='Eléctrico'&&!lk?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'')+(t.type==='Eléctrico'&&!lk&&t.el&&t.el.utility?B('uq','Quitar Nodo Utility'):'')+B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1))}</div>`);
  $('#vt').onclick=()=>{const o=$('#tv');if(o){o.remove();$('#vt').textContent='Ver plantilla';return}const el=document.createElement('pre');el.className='tpl';el.id='tv';el.style.cssText='position:static;margin-top:18px;max-height:42vh;overflow:auto';el.textContent=tplOf(t);$('#modal .row').before(el);$('#vt').textContent='Ocultar plantilla'};
  $('#ct').onclick=()=>copyText(tplOf(t),'Plantilla copiada');
  document.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>detail(b.dataset.kid));const gev=$('#gev');if(gev)gev.onclick=()=>{close();EV=t.id;W=null;go('evt')};const cev=$('#cev');if(cev)cev.onclick=()=>copyText(tplEvento(t.ev),'Plantilla de evento copiada');const gm=$('#gm');if(gm)gm.onclick=()=>{if(T.find(x=>x.id===t.parent))detail(t.parent);else toast('No se encontró el ticket master')};
@@ -438,11 +447,11 @@ function detail(id){
  const uqb=$('#uq');if(uqb)uqb.onclick=()=>{if(t.el)delete t.el.utility;buildNav();toast('Nodo Utility quitado');detail(t.id)};
  const asb=$('#as');if(asb)asb.onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar el ticket '+t.id+'.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:t.parent||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,t.id);if(er){toast(er);return}t.o=t.o||otnOf(t);t.o.master=n;t.parent=n;close();buildNav();render();toast(t.id+' asociado al ticket master '+n+(T.some(x=>x.id===n&&!x.del)?'':' (no está registrado aquí)'))}});
  const unb=$('#un');if(unb)unb.onclick=()=>{delete t.parent;if(t.o)delete t.o.master;close();buildNav();render();toast('Asociación quitada')};
- $('#ed').onclick=()=>{close();if(t.parent&&!t.o){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
+ const edb=$('#ed');if(edb)edb.onclick=()=>{close();if(t.parent&&!t.o){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
  const sgb=$('#sg');if(sgb)sgb.onclick=()=>ask({title:'Crear ticket secundario',sub:'Se asocia al ticket master '+t.id+'. Solo escribe el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
  $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();if(EV===t.id){EV=null;W=null}close();buildNav();render();toast(t.id+' enviado a Eliminados')};
- const r=$('#resolve');if(r)r.onclick=()=>{t.st='Resuelto';if(t.ev&&!t.ev.endAt){endTimers(t.ev);(t.ev.avs=t.ev.avs||[]).push({who:'Ticket resuelto',at:nowLocal(),txt:''})}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto: ahora está en Resueltos')};
- const o=$('#reopen');if(o)o.onclick=()=>{t.st='Abierto';if(t.ev&&t.ev.endAt){t.ev.t0+=Date.now()-t.ev.endAt;t.ev.endAt=null}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' reabierto')};
+ const r=$('#resolve');if(r)r.onclick=()=>cerrarModal(t,(at,tm)=>{const n=resolverTicket(t,at,tm);if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto'+(n?' junto con '+n+(n===1?' secundario':' secundarios'):'')+': ahora está en Resueltos')});
+ const o=$('#reopen');if(o)o.onclick=()=>{t.st='Abierto';delete t.closedAt;if(t.ev&&t.ev.endAt){t.ev.t0+=Date.now()-t.ev.endAt;t.ev.endAt=null}if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' reabierto')};
 }
 
 const LV=()=>T.filter(x=>!x.del);
@@ -865,80 +874,43 @@ function wipeData(){
  try{['netops-T','netops-EV','netops-WD'].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>k.startsWith('netops-dr-')).forEach(k=>localStorage.removeItem(k));saveAL()}catch(e){}
 }
 function cleanData(){
- open(`<h3>Borrar todos los datos</h3><p class="sub2">Se eliminarán todos los tickets, seguimientos, borradores y avances. Esta acción no se puede deshacer.${DBLIVE?' Como los datos están compartidos en vivo, también se borrarán para tus compañeros.':''}</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dt-ok" style="background:var(--bad);box-shadow:none">Sí, borrar todo</button></div>`);
+ open(`<h3>Borrar todos los datos</h3><p class="sub2">Se eliminarán todos los tickets, seguimientos, borradores y avances. Esta acción no se puede deshacer.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dt-ok" style="background:var(--bad);box-shadow:none">Sí, borrar todo</button></div>`);
  $('#dt-ok').onclick=()=>{wipeData();close();buildNav();render();toast('Página limpia, lista para usar')};
 }
-let DBX=null,DBLIVE=false,DBRO=false,DBERR='',DBBUSY=false,DBAGAIN=false,DBTM=null,DBINIT=false,DBKEY='';
-const PUSHED={};
-const dbk=id=>String(id).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,190);
-const sigOf=t=>JSON.stringify(t,(k,v)=>k==='_u'||k==='_by'?undefined:v);
-function paintSync(){
- const e=document.getElementById('syn');
- if(e){e.className='syn'+(DBLIVE&&!DBRO?' on':'');e.title=DBLIVE?(DBRO?'Conectado, solo lectura':'En vivo con tu equipo'):'Solo en este equipo'}
- const k=[DBLIVE,DBRO,DBERR].join('|');
- if(k!==DBKEY){DBKEY=k;if(cur==='cfg')render()}
-}
-function dbSync(){if(!DBX||DBRO)return;if(DBBUSY){DBAGAIN=true;return}clearTimeout(DBTM);DBTM=setTimeout(dbPush,700)}
-async function dbPush(){
- if(!DBX||DBRO||DBBUSY)return;
- DBBUSY=true;
- try{
-  const col=DBX.collection('tickets');
-  for(const t of [...T]){
-   const sg=sigOf(t);if(PUSHED[t.id]===sg)continue;
-   t._u=Date.now();t._by=ME||'';
-   await col.doc(dbk(t.id)).set({id:t.id,u:t._u,d:JSON.stringify(t)});
-   PUSHED[t.id]=sg;
-  }
-  const have=new Set(T.map(t=>t.id));
-  for(const id of Object.keys(PUSHED)){if(!have.has(id)){await col.doc(dbk(id)).delete();delete PUSHED[id]}}
-  DBERR='';
- }catch(e){
-  DBERR=(e&&e.code)||'error';
-  if(DBERR==='invalid_argument'){DBRO=true;toast('No tienes permiso para guardar en los datos compartidos')}
-  else if(DBERR==='quota_exceeded')toast('Se llenó el espacio de los datos compartidos');
- }
- DBBUSY=false;paintSync();
- if(DBAGAIN){DBAGAIN=false;dbSync()}
-}
-function dbApply(snap){
- let ch=false;
- snap.docChanges().forEach(c=>{
-  const d=c.doc.data();
-  if(c.type==='removed'){
-   const id=d&&d.id,i=id?T.findIndex(x=>x.id===id):-1;
-   if(id&&PUSHED[id]!==undefined){if(i>=0){T.splice(i,1);ch=true}delete PUSHED[id];if(EV===id){EV=null;W=null}}
-   return;
-  }
-  if(!d)return;
-  let t;try{t=JSON.parse(d.d)}catch(e){return}
-  const i=T.findIndex(x=>x.id===t.id),sg=sigOf(t);
-  if(i<0){T.push(t);PUSHED[t.id]=sg;ch=true;return}
-  const loc=T[i];
-  if(sigOf(loc)===sg){PUSHED[t.id]=sg;loc._u=d.u;loc._by=t._by;return}
-  const unsent=PUSHED[t.id]!==undefined&&sigOf(loc)!==PUSHED[t.id];
-  if(unsent)return;
-  if(PUSHED[t.id]===undefined&&(d.u||0)<(loc._u||0))return;
-  T[i]=t;PUSHED[t.id]=sg;ch=true;
-  if(EV===t.id){if(cur==='evt')toast('Un compañero actualizó el ticket '+t.id);else W=null}
- });
- if(ch){T.sort((a,b)=>(b.created||b._u||0)-(a.created||a._u||0));buildNav();if(cur!=='evt')render()}
-}
-async function dbInit(){
- try{
-  const db=window.claude&&claude.use?await claude.use('db'):null;
-  if(!db){paintSync();return}
-  DBX=db;
-  db.collection('tickets').onSnapshot(s=>{DBLIVE=true;DBERR='';dbApply(s);paintSync();if(!DBINIT){DBINIT=true;dbSync()}},e=>{DBLIVE=false;DBERR=(e&&e.code)||'error';paintSync()});
- }catch(e){DBX=null;paintSync()}
+function handoffPkg(ids){
+ const out=[];
+ T.filter(t=>ids.has(t.id)).forEach(t=>{out.push(t);T.filter(x=>x.parent===t.id&&!x.del).forEach(k=>out.push(k))});
+ return {app:'netops',v:2,kind:'handoff',at:Date.now(),by:ME,tickets:JSON.parse(JSON.stringify(out))};
 }
 function shareCard(){
- const st=DBLIVE?(DBRO?['Solo lectura','#f59e0b']:['Conectado','#22c55e']):(DBX?['Conectando…','#6b7893']:['Solo en este equipo','#6b7893']);
- const msg=DBLIVE?(DBRO?'Puedes ver los tickets de tu equipo, pero no tienes permiso para editarlos. Pide que te compartan la página con permiso de colaborador o editor.':'Los tickets se guardan en la nube y se sincronizan al instante con quienes abran este mismo enlace. Para que tus compañeros también puedan editar, comparte la página con ellos desde el botón Compartir de la Nube.'):'Tus tickets solo se guardan en este navegador. Abre la página desde Servidor con tu sesión iniciada para activar los datos compartidos.';
  return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Compartir con el equipo</h2></div>
- <div class="set"><div><b>Datos compartidos en vivo <span class="tag" style="--c:${st[1]}">${st[0]}</span></b><small>${msg}</small></div></div>
- <div class="set"><div><b>Respaldo en archivo</b><small>Exporta todo a un archivo .json, guárdalo en una carpeta compartida de Google Drive o OneDrive, y tu compañero lo importa para continuar donde lo dejaste.</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="bk-exp">Exportar respaldo</button><button class="btn" id="bk-imp">Importar respaldo</button></div></div>
+ <div class="set"><div><b>Compartir tickets</b><small>Elige los tickets que quieres pasar a tu compañero para que siga con el proceso. Se incluyen sus tickets secundarios y su plantilla de seguimiento, con avances y tiempos. Guarda el archivo en una carpeta compartida de Google Drive o OneDrive.</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="sh-open">Compartir tickets</button><button class="btn ghost" id="bk-imp">Importar archivo</button></div></div>
+ <div class="set"><div><b>Respaldo completo</b><small>Exporta todo (tickets, alarmas y listas guardadas) a un archivo .json.</small></div><button class="btn ghost" id="bk-exp">Exportar respaldo</button></div>
  <input type="file" id="bk-file" accept=".json,application/json" hidden></div>`;
+}
+function shareModal(){
+ let inc=false;const sel=new Set();
+ const prin=()=>T.filter(t=>!t.del&&(inc||t.st!=='Resuelto')&&(!t.parent||!T.some(x=>x.id===t.parent&&!x.del)));
+ const draw=()=>{
+  const L=prin();[...sel].forEach(id=>{if(!L.some(t=>t.id===id))sel.delete(id)});
+  open(`<h3>Compartir tickets</h3><p class="sub2">Marca los tickets que quieres pasar a tu compañero. Se incluyen sus tickets secundarios y su plantilla de seguimiento, con avances y tiempos.</p>
+  <label class="ck"><input type="checkbox" id="sh-inc" ${inc?'checked':''}>Incluir resueltos</label>
+  ${L.length?`<div class="shl">${L.map(t=>{const k=T.filter(x=>x.parent===t.id&&!x.del);return `<label class="shr"><input type="checkbox" data-sh="${esc(t.id)}" ${sel.has(t.id)?'checked':''}><div><b>${esc(t.id)}</b> <span class="tag" style="--c:${TYPES[t.type]}">${t.type}</span><small>${esc(t.site)}</small><div class="shb">${k.length?`<span class="tag" style="--c:#8b5cf6">${k.length} ${k.length===1?'secundario':'secundarios'}: ${k.map(x=>esc(x.id)).join(', ')}</span>`:''}${t.ev?'<span class="tag" style="--c:#22c55e">Con plantilla de seguimiento</span>':''}</div></div></label>`}).join('')}</div>`:'<div class="empty">No hay tickets para compartir.</div>'}
+  <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="sh-all">Seleccionar todos</button><button class="btn" id="sh-go">Descargar archivo (${sel.size})</button></div>`);
+  const cnt=()=>{$('#sh-go').textContent='Descargar archivo ('+sel.size+')'};
+  document.querySelectorAll('#modal [data-sh]').forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.sh):sel.delete(c.dataset.sh);cnt()});
+  $('#sh-inc').onchange=e=>{inc=e.target.checked;draw()};
+  $('#sh-all').onclick=()=>{L.forEach(t=>sel.add(t.id));document.querySelectorAll('#modal [data-sh]').forEach(c=>c.checked=true);cnt()};
+  $('#sh-go').onclick=async()=>{
+   if(!sel.size){toast('Selecciona al menos un ticket');return}
+   const dl=window.claude&&claude.use?await claude.use('downloads'):null;
+   if(!dl){toast('La descarga no está disponible en esta vista');return}
+   const d=new Date(),p=n=>String(n).padStart(2,'0'),name=`tickets-compartidos-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`,pkg=handoffPkg(sel);
+   try{await dl.save({filename:name,data:JSON.stringify(pkg,null,1)});close();toast(pkg.tickets.length+' tickets en '+name)}
+   catch(e){if(!e||e.code!=='declined')toast('No se pudo crear el archivo')}
+  };
+ };
+ draw();
 }
 function backupObj(){
  let nodos=null;try{nodos=JSON.parse(localStorage.getItem('netops-nodos')||'null')}catch(e){}
@@ -953,12 +925,13 @@ async function exportBackup(){
 }
 async function importBackup(f){
  if(!f)return;
- let o;try{o=JSON.parse(await f.text())}catch(e){toast('El archivo no es un respaldo válido');return}
- if(!o||o.app!=='netops'||!Array.isArray(o.tickets)){toast('El archivo no es un respaldo de esta página');return}
- const n=o.tickets.length;
- open(`<h3>Importar respaldo</h3><p class="sub2">El archivo trae ${n} ${n===1?'ticket':'tickets'}${o.by?' · de '+esc(o.by):''}${o.at?' · '+fdt(o.at):''}. ¿Cómo quieres cargarlo?</p>
- <small style="color:var(--mut)"><b>Combinar</b> agrega los tickets nuevos y actualiza los que tienen el mismo número, sin quitar los tuyos. <b>Reemplazar todo</b> deja solo lo del archivo.${DBLIVE?' Como los datos están compartidos en vivo, reemplazar también cambia lo de tus compañeros.':''}</small>
- <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cancelar</button><button class="btn ghost" id="bk-rep">Reemplazar todo</button><button class="btn" id="bk-mer">Combinar</button></div>`);
+ let o;try{o=JSON.parse(await f.text())}catch(e){toast('El archivo no es válido');return}
+ if(!o||o.app!=='netops'||!Array.isArray(o.tickets)){toast('El archivo no es de esta página');return}
+ const ho=o.kind==='handoff',n=o.tickets.length,kids=o.tickets.filter(t=>t.parent).length,seg=o.tickets.filter(t=>t.ev).length,upd=o.tickets.filter(t=>T.some(x=>x.id===t.id)).length,pr=n-kids;
+ const head=ho?`${esc(o.by||'Un compañero')} comparte contigo ${pr} ${pr===1?'ticket':'tickets'}${kids?` y ${kids} ${kids===1?'secundario':'secundarios'}`:''}${seg?` · ${seg} con plantilla de seguimiento`:''}${o.at?' · '+fdt(o.at):''}.`:`El archivo trae ${n} ${n===1?'ticket':'tickets'}${o.by?' · de '+esc(o.by):''}${o.at?' · '+fdt(o.at):''}.`;
+ open(`<h3>${ho?'Recibir tickets':'Importar respaldo'}</h3><p class="sub2">${head}</p>
+ <small style="color:var(--mut)">${upd?upd+' ya existen aquí y se actualizarán con lo del archivo. ':''}${ho?'Tus demás tickets no se tocan.':'<b>Combinar</b> agrega los tickets nuevos y actualiza los del mismo número. <b>Reemplazar todo</b> deja solo lo del archivo.'}</small>
+ <div class="row" style="flex-wrap:wrap"><button class="btn ghost" data-close>Cancelar</button>${ho?'':'<button class="btn ghost" id="bk-rep">Reemplazar todo</button>'}<button class="btn" id="bk-mer">${ho?'Recibir tickets':'Combinar'}</button></div>`);
  const merge=(arr,inc,key)=>{(inc||[]).forEach(x=>{if(x&&!arr.includes(x))arr.push(x)});try{localStorage.setItem(key,JSON.stringify(arr))}catch(e){}};
  const apply=rep=>{
   if(rep)T=o.tickets;else o.tickets.forEach(t=>{const i=T.findIndex(x=>x.id===t.id);if(i>=0)T[i]=t;else T.push(t)});
@@ -966,9 +939,39 @@ async function importBackup(f){
   merge(CUSTOM,o.clientes,'netops-clientes');merge(PROVS,o.proveedores,'netops-provs');merge(ELTIPOS,o.tiposElec,'netops-eltipos');merge(ELNODOS,o.nodosElec,'netops-elnodos');
   (o.alarms||[]).forEach(a=>{if(a&&a.id&&!AL.alarms.some(x=>x.id===a.id))AL.alarms.push(a)});
   if(Array.isArray(o.nodos)&&o.nodos.length){NODOS=mkNodos(o.nodos);try{localStorage.setItem('netops-nodos',JSON.stringify(o.nodos))}catch(e){}}
-  EV=null;W=null;WFor=undefined;AVE=null;saveAL();close();buildNav();render();toast(n+(n===1?' ticket cargado':' tickets cargados'));
+  EV=null;W=null;WFor=undefined;AVE=null;saveAL();close();buildNav();render();toast(ho?pr+(pr===1?' ticket recibido':' tickets recibidos'):n+(n===1?' ticket cargado':' tickets cargados'));
  };
- $('#bk-mer').onclick=()=>apply(false);$('#bk-rep').onclick=()=>apply(true);
+ $('#bk-mer').onclick=()=>apply(false);const rp=$('#bk-rep');if(rp)rp.onclick=()=>apply(true);
+}
+const evTimesAt=(w,ms)=>{if(!w||!w.t0)return null;const tot=Math.max(0,ms-w.t0),sus=Math.min(tot,(w.suspAcc||0)+(w.suspSince?Math.max(0,ms-w.suspSince):0));return {tot,sus,prog:tot-sus}};
+const sumTxt=tm=>`Total ${fdur(tm.tot)} · Suspendido ${fdur(tm.sus)} · En progreso ${fdur(tm.prog)}`;
+function resolverTicket(t,at,tm){
+ const ms=Date.parse(at);
+ const one=(x,sum,m)=>{x.st='Resuelto';x.closedAt=m;if(x.ev&&!x.ev.endAt){endTimers(x.ev,m);(x.ev.avs=x.ev.avs||[]).push({who:'Ticket resuelto',at:isoLocal(m),txt:sum||''})}};
+ one(t,tm?sumTxt(tm):'',ms);
+ const ks=T.filter(k=>k.parent===t.id&&!k.del&&k.st!=='Resuelto');
+ ks.forEach(k=>{const m=k.ev&&k.ev.t0?Math.max(ms,k.ev.t0,k.ev.suspSince||0):ms;const kt=k.ev&&k.ev.t0?evTimesAt(k.ev,m):null;one(k,kt?sumTxt(kt):'',m)});
+ return ks.length;
+}
+function cerrarModal(t,cb){
+ const ev=t.ev,ks=T.filter(k=>k.parent===t.id&&!k.del&&k.st!=='Resuelto');let at=nowLocal();
+ const draw=()=>{
+  const ms=Date.parse(at),tm=ev&&ev.t0?evTimesAt(ev,ms):null;
+  open(`<h3>Cerrar seguimiento</h3><p class="sub2">${esc(t.id)} · elige a qué hora se cierra.</p>
+  <label for="cl-at">Fecha y hora de cierre</label><input id="cl-at" data-pk readonly style="cursor:pointer" value="${esc(fdt(at))}">
+  ${tm?`<div class="evtm" style="margin-top:14px"><span class="tmc"><i>Tiempo total desde la apertura</i><b>${fdur(tm.tot)}</b></span><span class="tmc"><i>Tiempo suspendido</i><b>${fdur(tm.sus)}</b></span><span class="tmc"><i>Tiempo en progreso</i><b>${fdur(tm.prog)}</b></span></div>`:''}
+  ${ks.length?`<small style="color:var(--mut);display:block;margin-top:12px">También se cerrarán ${ks.length} ${ks.length===1?'ticket secundario':'tickets secundarios'}: ${ks.map(k=>esc(k.id)).join(', ')}.</small>`:''}
+  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="cl-ok">Cerrar seguimiento</button></div>`);
+  const f=$('#cl-at'),pk=()=>pickDT({title:'Fecha y hora de cierre del seguimiento',value:at,cb:v=>{at=v;draw()}});
+  f.onclick=pk;f.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();pk()}};
+  $('#cl-ok').onclick=()=>{
+   const m=Date.parse(at);
+   if(ev&&ev.t0&&m<ev.t0){toast('El cierre no puede ser antes de la apertura ('+fdt(ev.t0)+')');return}
+   if(ev&&ev.suspSince&&m<ev.suspSince){toast('El cierre no puede ser antes de la suspensión ('+fdt(ev.suspSince)+')');return}
+   cb(at,tm);
+  };
+ };
+ draw();
 }
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}\n* Fecha de descarte eléctrico: ${fdt(d.fd)}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
@@ -1124,7 +1127,7 @@ let PROVS=[];try{PROVS=JSON.parse(localStorage.getItem('netops-provs')||'[]')}ca
 const REDES=['CORTE IP','CORTE OTN','CORTE PACKET-LIGHT','PADTEC','CORTE IP & OTN','FIBRA OSCURA','ENLACE MONITOREO 72H'];
 const MAPT={'CORTE IP':'Corte','CORTE OTN':'OTN','CORTE PACKET-LIGHT':'Corte','PADTEC':'OTN','CORTE IP & OTN':'Corte','FIBRA OSCURA':'Fibra Oscura','ENLACE MONITOREO 72H':'Corte'};
 const newW=()=>({id:'',acc:'',motivo:'',sfecha:'',reanuda:'',tramo:'',eqs:[{n:'',h:'',p:''}],red:'',onnet:'No',prov:'UFINET',pais:'ECUADOR',cap:'',impacto:'',cdOn:false,cdTk:'',foOn:false,foTk:'',diag:'',acc2:'',noetr:false,etrH:'',etrM:'',etr:null,t0:null,suspAcc:0,suspSince:null,endAt:null,avs:[],avEdit:null,who:'',avAt:'',avTxt:''});
-function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}dbSync()}
+function persist(){try{localStorage.setItem('netops-T',JSON.stringify(T));localStorage.setItem('netops-EV',EV||'')}catch(e){}}
 function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:t.parent}):(t.ev&&!t.d&&!t.el)?tplEvento(t.ev):(t.el||t.type==='Eléctrico')?tplElec(elOf(t)):(t.o||t.type==='OTN'||t.type==='Fibra Oscura')?tplOtn(otnOf(t)):tplCorte(dataOf(t))}
 
 const MANW=['Validaciones Noc','Avance por TCE','Avance proveedor','Avance O&M'];
@@ -1272,12 +1275,13 @@ function evtView(v){
  let t=EV?T.find(x=>x.id===EV):null;if(t&&t.parent)t=null;if(!t)EV=null;
  if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV;W.who=''}
  if(!W.avAt)W.avAt=nowLocal();
+ const LK=!!(t&&t.st==='Resuelto');
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
  const D=(k,l)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-dt="${k}" readonly placeholder="Seleccionar fecha y hora" value="${esc(fdt(W[k]))}" style="cursor:pointer"></div>`;
  const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Ej. TIK-20188018-J5S0 (separa varios con coma, espacio o salto de línea)" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
  const S=(k,l,o)=>`<div><label for="e-${k}">${l}</label><select id="e-${k}" data-k="${k}"><option value="">Seleccionar</option>${o.map(x=>`<option ${x===W[k]?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
  const WH=[['Validaciones Noc','#ec4899'],['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
- v.innerHTML=`<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button>${t?'<button class="btn ghost" id="ev-av">Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> <span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
+ v.innerHTML=`${LK?'<div class="lockb"><span>🔒 Este seguimiento está resuelto: la plantilla está bloqueada. Reabre el ticket para editarla.</span><button class="btn" id="ev-reo">Reabrir ticket</button></div>':''}<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button>${t?'<button class="btn ghost" id="ev-av">Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> <span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
  <div class="tg" style="margin-top:18px"><div class="card" id="evw" style="padding:6px 20px 24px">
  <label for="ev-open">Abrir ticket existente</label><select id="ev-open"><option value="">— Ticket nuevo —</option>${LV().filter(x=>!x.parent).map(x=>`<option value="${esc(x.id)}" ${x.id===EV?'selected':''}>${esc(x.type)} · ${esc(x.id)} · ${esc(x.site)}</option>`).join('')}</select>
  <div class="sech">Datos del evento</div>
@@ -1310,6 +1314,7 @@ function evtView(v){
  <div class="avs">${avSorted(W.avs,1).filter(({a})=>!a.who.startsWith('Inicio de tiempos')).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:''}</div>`).join('')}</div>
  </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
 
+ if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
  const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');evTmPaint();
  const root=$('#evw');
  const onIn=e=>{
@@ -1385,9 +1390,12 @@ function evtView(v){
  };
  $('#ev-save').onclick=()=>{if(saveEv()){render();toast('Ticket '+EV+' guardado')}};
  $('#ev-ok').onclick=()=>{
-  const was=W.etr;W.etr=null;
-  if(!saveEv()){W.etr=was;return}
-  const x=T.find(y=>y.id===EV);x.st='Resuelto';endTimers(x.ev);x.ev.avs.push({who:'Ticket resuelto',at:nowLocal(),txt:''});W=null;buildNav();render();toast(x.id+' resuelto: ahora está en Resueltos');
+  if(!(W.id||'').trim()){const e=$('#e-id');e.style.borderColor='var(--bad)';e.focus();toast('Escribe el ID Ticket');return}
+  cerrarModal({id:W.id.trim(),ev:W},(at,tm)=>{
+   const was=W.etr;W.etr=null;
+   if(!saveEv()){W.etr=was;return}
+   const x=T.find(y=>y.id===EV),n=resolverTicket(x,at,tm);W=null;close();buildNav();render();toast(x.id+' resuelto'+(n?' junto con '+n+(n===1?' secundario':' secundarios'):'')+': ahora está en Resueltos');
+  });
  };
  $('#ev-del').onclick=()=>{
   if(!t){toast('Selecciona un ticket para eliminar');return}
@@ -1403,8 +1411,9 @@ try{const x=JSON.parse(localStorage.getItem('netops-T')||'null');if(Array.isArra
 try{document.documentElement.dataset.theme=localStorage.getItem('netops-theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}
 document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),1500);
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*1.6,x=document.createElement('span');x.className='rip';x.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;b.appendChild(x);setTimeout(()=>x.remove(),650)});
+$('#shBtn').onclick=shareModal;
 $('#sumBtn').onclick=()=>resumenModal(cur.startsWith('esc:')?cur.slice(4):'all');
-buildNav();render();initMe();dbInit();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive();alarmTick()},1000);
+buildNav();render();initMe();tmPaint();setInterval(()=>{etrPaint();tmPaint();evTmPaint();tplLive();alarmTick()},1000);
 </script>
 </body>
 </html>

@@ -302,7 +302,7 @@ const ico={
  doc:'<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/>',
  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
 const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico[k]}</svg>`;
-const TYPES={Corte:'#ef4444',N1:'#3b82f6',Eléctrico:'#f59e0b','Fibra Oscura':'#8b5cf6',OTN:'#10b5a4'};
+const TYPES={Corte:'#ef4444',N1:'#3b82f6',Eléctrico:'#f59e0b','Fibra Oscura':'#8b5cf6',OTN:'#10b5a4','Proveedor Escalamiento':'#6366f1'};
 const ST={Abierto:'#ef4444','En proceso':'#f59e0b',Escalado:'#3b82f6',Resuelto:'#22c55e'};
 let T=[];
 const MENU=[
@@ -379,7 +379,7 @@ function render(){
  const sb=$('#sumBtn');if(sb)sb.style.display=cur.startsWith('esc:')?'':'none';
  const hb=$('#shBtn');if(hb)hb.style.display=(cur==='seg'||cur.startsWith('esc:'))?'':'none';
  const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
- $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico','esc:OTN':'+ Escalar OTN','esc:Fibra Oscura':'+ Escalar fibra oscura'})[cur]||'+ Nuevo escalamiento';
+ $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico','esc:OTN':'+ Escalar OTN','esc:Fibra Oscura':'+ Escalar fibra oscura','esc:Proveedor Escalamiento':'+ Nueva plantilla de seguimiento'})[cur]||'+ Nuevo escalamiento';
  if(cur==='seg'){
   $('#title').textContent='Seguimiento';$('#subtitle').textContent='Estado en vivo de todos los incidentes';
   const open=LV().filter(t=>t.st!=='Resuelto');
@@ -452,6 +452,7 @@ function detail(id){
  const asb=$('#as');if(asb)asb.onclick=()=>ask({title:'Asociar a ticket master',sub:'Escribe el número del ticket master al que quieres asociar el ticket '+t.id+'.',label:'Ticket master',ph:'Ej. TIK-20188018-J5S0',val:t.parent||'',ok:'Asociar',cancel:true,cb:n=>{n=n.trim();const er=masterErr(n,t.id);if(er){toast(er);return}t.o=t.o||otnOf(t);t.o.master=n;t.parent=n;close();buildNav();render();toast(t.id+' asociado al ticket master '+n+(T.some(x=>x.id===n&&!x.del)?'':' (no está registrado aquí)'))}});
  const unb=$('#un');if(unb)unb.onclick=()=>{delete t.parent;if(t.o)delete t.o.master;close();buildNav();render();toast('Asociación quitada')};
  const edb=$('#ed');if(edb)edb.onclick=()=>{close();if(t.parent&&!t.o){const m=T.find(x=>x.id===t.parent);if(m)segForm(m,t.id,t);else toast('No se encontró el ticket master')}else if(t.ev&&!t.d&&!t.el){EV=t.id;W=null;go('evt')}else if(t.type==='Eléctrico')electricForm(t);else if(t.o||t.type==='OTN'||t.type==='Fibra Oscura')otnForm(t,t.type);else corteForm(t)};
+ const mpb=$('#mp');if(mpb)mpb.onclick=()=>{t.type='Proveedor Escalamiento';close();buildNav();render();toast(t.id+' movido a Proveedor Escalamiento')};
  const sgb=$('#sg');if(sgb)sgb.onclick=()=>ask({title:'Crear ticket secundario',sub:'Se asocia al ticket master '+t.id+'. Solo escribe el número del nuevo ticket.',label:'No. Ticket',ph:'Ej. 123456',ok:'Continuar',cancel:true,cb:n=>segForm(t,n)});
  $('#dl').onclick=()=>{t.del=true;t.delAt=Date.now();if(EV===t.id){EV=null;W=null}close();buildNav();render();toast(t.id+' enviado a Eliminados')};
  const r=$('#resolve');if(r)r.onclick=()=>cerrarModal(t,(at,tm)=>{const n=resolverTicket(t,at,tm);if(WFor===t.id)W=null;close();buildNav();render();toast(t.id+' resuelto'+(n?' junto con '+n+(n===1?' secundario':' secundarios'):'')+': ahora está en Resueltos')});
@@ -542,8 +543,8 @@ function evParts(t){
 }
 function resumenEvento(t){const p=evParts(t);return [`Ticket: ${t.id}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,`Proveedor: ${(p.ev&&p.ev.prov)||''}`,`País: ${(p.ev&&p.ev.pais)||'ECUADOR'}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n')}
 const evBloque=t=>{const p=evParts(t);return (t.type==='Eléctrico'?[`Ticket: ${t.id}`,`Nodo: ${p.tramo}`,`Último Avance: ${p.ult}`]:[`Ticket: ${t.id}`,`Tramo afectado: ${p.tramo}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Último Avance: ${p.ult}`]).join('\n')};
-const RES_ORDER=['Corte','Eléctrico','N1','Fibra Oscura','OTN'];
-const RES_FR={Corte:['Actualmente no se tiene afectación en las troncales.','las troncales'],'Eléctrico':['Actualmente no se tiene eventos en los nodos de batería.','los nodos de batería'],N1:['Actualmente no se tiene eventos de N1.','los eventos de N1'],'Fibra Oscura':['Actualmente no se tiene eventos de fibra oscura.','los eventos de fibra oscura'],OTN:['Actualmente no se tiene eventos de OTN.','los eventos de OTN']};
+const RES_ORDER=['Corte','Eléctrico','N1','Fibra Oscura','OTN','Proveedor Escalamiento'];
+const RES_FR={Corte:['Actualmente no se tiene afectación en las troncales.','las troncales'],'Eléctrico':['Actualmente no se tiene eventos en los nodos de batería.','los nodos de batería'],N1:['Actualmente no se tiene eventos de N1.','los eventos de N1'],'Fibra Oscura':['Actualmente no se tiene eventos de fibra oscura.','los eventos de fibra oscura'],OTN:['Actualmente no se tiene eventos de OTN.','los eventos de OTN'],'Proveedor Escalamiento':['Actualmente no se tiene eventos de proveedores.','los eventos de proveedores']};
 const saludo=()=>{const h=new Date().getHours();return h>=5&&h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'};
 function resumenLista(types,inc){
  const L=[`${saludo()} estimados, se comparte el resumen de eventos hasta el momento,`,''];
@@ -985,29 +986,29 @@ function cerrarModal(t,cb){
 const AVPRE=['Cuadrilla en movilización'];
 function lastElAv(t){const a=t.el&&t.el.avs;return a&&a.length?avSorted(a).slice(-1)[0]:null}
 function avanceElec(t){
- let at=nowLocal(),txt='';
+ let txt='';
  const draw=()=>{
-  open(`<h3>Dar avance · ${esc(t.id)}</h3><p class="sub2">Registra el avance del nodo ${esc(t.site)}.</p>
-  <label for="av-at">Fecha y hora</label><input id="av-at" data-pk readonly style="cursor:pointer" value="${esc(fdt(at))}">
-  <label for="av-txt">Avance</label><textarea id="av-txt" placeholder="Escribe el avance…" style="min-height:90px">${esc(txt)}</textarea>
+  open(`<h3>Dar avance · ${esc(t.id)}</h3><p class="sub2">Registra el avance del nodo ${esc(t.site)}. Al continuar te pediré desde qué hora es el avance.</p>
+  <label for="av-txt">Avance</label><textarea id="av-txt" placeholder="Escribe el avance…" style="min-height:100px">${esc(txt)}</textarea>
   <div class="wchips" style="margin-top:8px">${AVPRE.map((p,i)=>`<button type="button" class="chip" data-p="${i}">${esc(p)}</button>`).join('')}</div>
-  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="av-ok">Guardar avance</button></div>`);
-  const f=$('#av-at'),ta=$('#av-txt');
-  const pk=()=>{txt=ta.value;pickDT({title:'Fecha y hora del avance',value:at,cb:v=>{at=v;draw()}})};
-  f.onclick=pk;f.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();pk()}};
+  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="av-ok">Continuar</button></div>`);
+  const ta=$('#av-txt');
   ta.oninput=()=>{txt=ta.value};
   document.querySelectorAll('#modal [data-p]').forEach(b=>b.onclick=()=>{const p=AVPRE[+b.dataset.p],c=ta.value.trim();ta.value=!c||AVPRE.includes(c)?p:c+'\n'+p;txt=ta.value;ta.focus()});
   $('#av-ok').onclick=()=>{
    const x=ta.value.trim();if(!x){ta.style.borderColor='var(--bad)';toast('Escribe el avance');return}
-   t.el=t.el||elOf(t);(t.el.avs=t.el.avs||[]).push({at,txt:x});buildNav();close();toast('Avance registrado');detail(t.id);
+   txt=x;
+   pickDT({title:'¿Desde qué hora es el avance?',value:nowLocal(),cb:at=>{t.el=t.el||elOf(t);(t.el.avs=t.el.avs||[]).push({at,txt:x});buildNav();close();toast('Avance registrado · '+fdt(at));detail(t.id)}});
   };
+  setTimeout(()=>ta.focus(),60);
  };
  draw();
 }
 function detailBtns(t,B,f){
  const {isOtn,isSec,lk}=f,el=t.type==='Eléctrico'&&!lk&&!t.del;
  const g1=[B('vt','Ver plantilla'),B('ct','Copiar plantilla'),t.ev&&(t.d||t.el)?B('cev','Copiar plantilla de evento'):'',(!t.del&&!lk)?B('ed','Editar plantilla'):'',(!t.del&&!t.parent)?B('gev','Plantilla de evento'):''].join('');
- const g2=t.del?'':[(t.parent||lk)?'':B('sg','Crear ticket secundario'),(isOtn&&!isSec&&!lk)?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'',(isOtn&&!isSec&&!lk&&t.parent)?B('un','Quitar asociación'):'',el?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'',(el&&t.el&&t.el.utility)?B('uq','Quitar Nodo Utility'):'',el?B('av','Dar avance'):''].join('');
+ const mp=(!t.del&&!lk&&t.ev&&!t.d&&!t.el&&!t.o&&!t.parent&&t.type!=='Proveedor Escalamiento')?B('mp','Mover a Proveedor Escalamiento'):'';
+ const g2=t.del?'':[(t.parent||lk)?'':B('sg','Crear ticket secundario'),(isOtn&&!isSec&&!lk)?B('as',t.parent?'Cambiar ticket master':'Asociar a ticket master'):'',(isOtn&&!isSec&&!lk&&t.parent)?B('un','Quitar asociación'):'',el?B('ut',t.el&&t.el.utility?'Nodo Utility · cambiar':'Nodo Utility'):'',(el&&t.el&&t.el.utility)?B('uq','Quitar Nodo Utility'):'',el?B('av','Dar avance'):'',mp].join('');
  const g3=t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1));
  return `<div class="bgl">Plantilla</div><div class="bgrid">${g1}</div>${g2?`<div class="bgl">Acciones del ticket</div><div class="bgrid">${g2}</div>`:''}<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${g3}</div></div>`;
 }
@@ -1038,6 +1039,7 @@ function segForm(t,num,child){
 $('#newBtn').onclick=()=>{
  if(cur==='esc:Corte'||cur==='esc:N1')return corteForm(null,cur.slice(4));
  if(cur==='esc:Eléctrico')return electricForm();
+ if(cur==='esc:Proveedor Escalamiento'){EV=null;W=null;go('evt');return}
  if(cur==='esc:OTN'||cur==='esc:Fibra Oscura')return otnForm(null,cur.slice(4));
  const pre=cur.startsWith('esc:')?cur.slice(4):'Corte';
  open(`<h3>Nuevo escalamiento</h3><p class="sub2">Se notificará al área responsable al guardar.</p>
@@ -1185,10 +1187,11 @@ function tplLive(){
  if(window.getSelection&&String(window.getSelection()).length)return;
  const t=tplEvento(W);if(p.textContent!==t)p.textContent=t;
 }
+const fhm=ms=>{const t=new Date(ms),p=n=>String(n).padStart(2,'0');return `${p(t.getHours())}:${p(t.getMinutes())} ${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()}`};
 function tplEvento(w){
  const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${evTimes(w)?evTimes(w).st:'Sin iniciar'}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
- L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min (hasta ${fdt(w.etr.end)})`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
+ L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
  avSorted(w.avs).filter(a=>!a.who.startsWith('Inicio de tiempos')).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
@@ -1206,7 +1209,7 @@ function tmPaint(){
 let etrT;
 function etrAuto(){
  const h=Math.max(0,+W.etrH||0),m=Math.max(0,+W.etrM||0),ms=(h*60+m)*6e4,tp=$('#tpl');
- if(!ms){W.etr=null}else{W.etr={end:Date.now()+ms,start:Date.now()};if(W.id.trim())saveEv();else toast('Contador iniciado. Escribe el ID Ticket para guardarlo')}
+ if(!ms){W.etr=null}else{const st=W.etrS||Date.now();W.etr={end:st+ms,start:st};if(W.id.trim())saveEv();else toast('Contador iniciado. Escribe el ID Ticket para guardarlo')}
  etrPaint();if(tp)tp.textContent=tplEvento(W);
 }
 function pickDT(o){
@@ -1255,7 +1258,7 @@ function parseEvento(txt){
  tk('cd','Ticket caída total');tk('fo','Ticket fibra oscura');
  const etr=g(/\* ETR:[ \t]*(.*)/);
  if(/sin etr/i.test(etr))w.noetr=true;
- else{const m=etr.match(/(\d+)\s*h\s*(\d+)\s*min/i);if(m){w.etrH=m[1];w.etrM=m[2];const end=Date.parse(iso(etr.split('hasta')[1]||''));if(end)w.etr={end,start:end-(+m[1]*60+ +m[2])*6e4}}}
+ else{const m=etr.match(/(\d+)\s*h\s*(\d+)\s*min/i);if(m){w.etrH=m[1];w.etrM=m[2];const end=Date.parse(iso(etr.split('hasta')[1]||''));if(end){let st=end-(+m[1]*60+ +m[2])*6e4;const mi=etr.match(/inicio\s+(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(mi){const sv=new Date(+mi[5],+mi[4]-1,+mi[3],+mi[1],+mi[2]).getTime();if(sv){st=sv;w.etrS=sv}}w.etr={end,start:st}}}}
  const i=txt.indexOf('AVANCES Y COMENTARIOS');
  if(i>=0)txt.slice(i).split('\n').slice(1).forEach(l=>{const m=l.match(/^\[(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2})\]\s*([^:\n]+?)(?::\s*(.*))?$/);if(m)w.avs.push({who:m[2].trim(),at:iso(m[1]),txt:m[3]||''});else if(l.trim()&&w.avs.length)w.avs[w.avs.length-1].txt+='\n'+l.trim()});
  if(w.acc)w.t0=Date.parse(w.acc);
@@ -1294,7 +1297,7 @@ function saveEv(){
  if(!id){const e=$('#e-id');if(e){e.style.borderColor='var(--bad)';e.focus()}toast('Escribe el ID Ticket');return false}
  const t=EV?T.find(x=>x.id===EV):null;
  if(T.some(x=>x.id===id&&x!==t)){toast('Ya existe un ticket '+id);return false}
- W.id=id;W.suspAcc=W.suspAcc||0;const f={id,site:W.tramo||'Evento '+id,type:t?t.type:(MAPT[W.red]||'Corte'),desc:W.diag||'Evento sin diagnóstico.'};
+ W.id=id;W.suspAcc=W.suspAcc||0;const f={id,site:W.tramo||'Evento '+id,type:t?t.type:'Proveedor Escalamiento',desc:W.diag||'Evento sin diagnóstico.'};
  if(t)Object.assign(t,f);else T.unshift({...f,st:W.endAt?'Resuelto':'Abierto',pr:'Alta',time:'Ahora',who:'Por asignar'});
  (t||T[0]).ev=clone(W);EV=id;WFor=id;buildNav();tmPaint();return true;
 }
@@ -1344,7 +1347,7 @@ function evtView(v){
  <label for="e-acc2">Acciones adicionales</label><textarea id="e-acc2" data-k="acc2">${esc(W.acc2)}</textarea>
  <div class="sech">ETR</div>
  <label style="display:flex;align-items:center;gap:9px;cursor:pointer"><input type="checkbox" data-k="noetr" ${W.noetr?'checked':''} style="width:18px;height:18px;padding:0;accent-color:var(--acc)">Sin ETR (ocultar contador)</label>
- <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div><button type="button" class="btn ghost" id="e-stop">Detener</button></div></div><div id="etr-box"></div></div>
+ <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="e-etrs">Hora que inicia el ETR</button><button type="button" class="btn ghost" id="e-stop">Detener</button></div></div>${W.etrS?`<small style="color:var(--mut);font-weight:600;display:block;margin-top:8px">Inicio del ETR: ${fhm(W.etrS)}</small>`:''}<div id="etr-box"></div></div>
  <div class="sech" id="sec-av">Avances y comentarios</div>
  <div class="wchips" style="margin-top:12px">${WH.map(([n,c])=>`<button type="button" class="wchip ${W.who===n?'on':''}" data-who="${n}" style="--c:${c}">${n}</button>`).join('')}</div>
  ${D('avAt','Fecha y hora del avance')}
@@ -1405,7 +1408,8 @@ function evtView(v){
   if(saveEv()){render();toast('Tiempos reanudados y registrados en la plantilla')}
  };
  $('#e-add').onclick=()=>{W.eqs.push({n:'',h:'',p:''});render()};
- $('#e-stop').onclick=()=>{W.etr=null;W.etrH='';W.etrM='';if(W.id.trim())saveEv();render();toast('Contador detenido')};
+ $('#e-etrs').onclick=()=>pickDT({title:'Hora en la que inicia el ETR',value:W.etrS?isoLocal(W.etrS):nowLocal(),extra:{label:'Usar la hora actual',val:'__auto'},cb:v=>{W.etrS=v==='__auto'?null:Date.parse(v);const ms=((+W.etrH||0)*60+(+W.etrM||0))*6e4;if(ms)etrAuto();else toast('Hora de inicio guardada. Escribe las horas y minutos del ETR');render()}});
+ $('#e-stop').onclick=()=>{W.etr=null;W.etrH='';W.etrM='';W.etrS=null;if(W.id.trim())saveEv();render();toast('Contador detenido')};
  $('#e-av').onclick=()=>{
   const txt=(W.avTxt||'').trim();if(!txt){$('#e-avTxt').style.borderColor='var(--bad)';toast('Escribe el comentario del avance');return}
   if(!WH.some(x=>x[0]===W.who)){const c=document.querySelector('#evw .wchips');if(c){c.classList.remove('err');void c.offsetWidth;c.classList.add('err')}toast('Elige quién da el avance: Validaciones Noc, TCE, proveedor u O&M');return}

@@ -157,7 +157,10 @@ label input{font-weight:500}
 .ck input{width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer}
 .tkh{display:flex;align-items:flex-start;gap:12px;margin-top:8px;flex-wrap:wrap}
 .tkh b{background:var(--acc);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;white-space:nowrap}
-.tkcs{display:flex;gap:6px;flex-wrap:wrap}
+.tkcs{display:flex;flex-direction:column;gap:6px;flex:1 1 100%;min-width:0}
+.tkr{display:flex;gap:10px;align-items:baseline;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;animation:in .25s both}
+.tkr .tid{font:700 12.5px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.tkr .tdc{flex:1;min-width:0;font-size:12.5px;color:var(--mut);overflow-wrap:anywhere}
 .tkc{font:600 12px ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;animation:in .25s both}
 .avb{display:flex;gap:8px;margin-top:8px}
 .btn{position:relative;overflow:hidden}
@@ -256,6 +259,10 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .bgl{font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
 .bgrid .btn{width:100%;padding:9px 10px;font-size:13px;white-space:normal;line-height:1.25}
+.avl{display:flex;flex-direction:column;gap:8px}
+.avo{display:flex;gap:6px;align-items:stretch}
+.avo .btn{flex:1;text-align:left;justify-content:flex-start}
+#av-otro{text-align:left}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -983,24 +990,42 @@ function cerrarModal(t,cb){
  };
  draw();
 }
-const AVPRE=['Cuadrilla en movilización'];
+const AVBASE=['Se moviliza cuadrilla'];
+let AVPRE=[...AVBASE];try{const x=JSON.parse(localStorage.getItem('netops-avpre')||'null');if(Array.isArray(x))x.forEach(v=>{if(v&&v!=='Cuadrilla en movilización'&&!AVPRE.includes(v))AVPRE.push(v)})}catch(e){}
+const saveAvpre=()=>{try{localStorage.setItem('netops-avpre',JSON.stringify(AVPRE.filter(x=>!AVBASE.includes(x))))}catch(e){}};
 function lastElAv(t){const a=t.el&&t.el.avs;return a&&a.length?avSorted(a).slice(-1)[0]:null}
 function avanceElec(t){
- let txt='';
  const draw=()=>{
-  open(`<h3>Dar avance · ${esc(t.id)}</h3><p class="sub2">Registra el avance del nodo ${esc(t.site)}. Al continuar te pediré desde qué hora es el avance.</p>
-  <label for="av-txt">Avance</label><textarea id="av-txt" placeholder="Escribe el avance…" style="min-height:100px">${esc(txt)}</textarea>
-  <div class="wchips" style="margin-top:8px">${AVPRE.map((p,i)=>`<button type="button" class="chip" data-p="${i}">${esc(p)}</button>`).join('')}</div>
-  <div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="av-ok">Continuar</button></div>`);
-  const ta=$('#av-txt');
-  ta.oninput=()=>{txt=ta.value};
-  document.querySelectorAll('#modal [data-p]').forEach(b=>b.onclick=()=>{const p=AVPRE[+b.dataset.p],c=ta.value.trim();ta.value=!c||AVPRE.includes(c)?p:c+'\n'+p;txt=ta.value;ta.focus()});
-  $('#av-ok').onclick=()=>{
-   const x=ta.value.trim();if(!x){ta.style.borderColor='var(--bad)';toast('Escribe el avance');return}
-   txt=x;
-   pickDT({title:'¿Desde qué hora es el avance?',value:nowLocal(),cb:at=>{t.el=t.el||elOf(t);(t.el.avs=t.el.avs||[]).push({at,txt:x});buildNav();close();toast('Avance registrado · '+fdt(at));detail(t.id)}});
+  const d0=new Date(),p=n=>String(n).padStart(2,'0');
+  open(`<h3>Dar avance · ${esc(t.id)}</h3><p class="sub2">Nodo ${esc(t.site)}. Revisa la hora y toca el avance.</p>
+  <label>Hora del avance (formato 24 h)</label><div class="hm"><input id="av-hh" maxlength="2" inputmode="numeric" placeholder="HH" value="${p(d0.getHours())}"><b>:</b><input id="av-mm" maxlength="2" inputmode="numeric" placeholder="MM" value="${p(d0.getMinutes())}"><button type="button" class="chip" id="av-now" style="margin-left:auto">Ahora</button></div>
+  <small id="av-date" style="display:block;color:var(--mut);margin-top:8px"></small>
+  <div class="bgl">Avances</div>
+  <div class="avl">${AVPRE.map((x,i)=>`<div class="avo"><button type="button" class="btn ghost" data-o="${i}">${esc(x)}</button>${i>=AVBASE.length?`<button type="button" class="chip" data-d="${i}" title="Quitar de la lista" style="color:var(--bad)">✕</button>`:''}</div>`).join('')}<button type="button" class="btn ghost" id="av-otro">Otro…</button></div>
+  <div class="row"><button class="btn ghost" data-close>Cancelar</button></div>`);
+  const hh=$('#av-hh'),mm=$('#av-mm');
+  hmWire(hh,mm);
+  const resolveAt=()=>{const h=+hh.value,m=+mm.value;if(hh.value===''||mm.value===''||h>23||m>59)return '';const d=new Date();d.setHours(h,m,0,0);if(d.getTime()>Date.now()+5*60000)d.setDate(d.getDate()-1);return isoLocal(d.getTime())};
+  const paint=()=>{const a=resolveAt();$('#av-date').textContent=a?'Se registrará como: '+fdt(a):''};
+  paint();hh.addEventListener('input',paint);mm.addEventListener('input',paint);
+  $('#av-now').onclick=()=>{const n=new Date();hh.value=p(n.getHours());mm.value=p(n.getMinutes());paint()};
+  const reg=x=>{
+   const at=resolveAt();if(!at){toast('Escribe la hora en formato 24 h');return}
+   t.el=t.el||elOf(t);(t.el.avs=t.el.avs||[]).push({at,txt:x});buildNav();close();toast('Avance registrado · '+fdt(at));detail(t.id);
   };
-  setTimeout(()=>ta.focus(),60);
+  document.querySelectorAll('#modal [data-o]').forEach(b=>b.onclick=()=>reg(AVPRE[+b.dataset.o]));
+  document.querySelectorAll('#modal [data-d]').forEach(b=>b.onclick=()=>{AVPRE.splice(+b.dataset.d,1);saveAvpre();draw();toast('Opción quitada de la lista')});
+  $('#av-otro').onclick=()=>{
+   const el=document.createElement('div');el.className='ov';el.style.zIndex=70;
+   el.innerHTML=`<div class="modal" style="max-width:420px"><h3>Otro avance</h3><p class="sub2">Escribe el avance. Quedará guardado como opción para la próxima vez.</p><label for="ot-txt">Avance</label><textarea id="ot-txt" placeholder="Escribe el avance…" style="min-height:100px"></textarea><div class="row"><button class="btn ghost" data-x>Cancelar</button><button class="btn" data-ok>Guardar avance</button></div></div>`;
+   document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+   const ta=el.querySelector('textarea'),end=()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)};
+   setTimeout(()=>ta.focus(),60);
+   const ok=()=>{const x=ta.value.trim();if(!x){ta.style.borderColor='var(--bad)';return}end();if(!AVPRE.includes(x)){AVPRE.push(x);saveAvpre()}reg(x)};
+   el.querySelector('[data-ok]').onclick=ok;el.querySelector('[data-x]').onclick=end;
+   el.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();end()}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();ok()}};
+   el.addEventListener('click',e=>{if(e.target===el)end()});
+  };
  };
  draw();
 }
@@ -1172,9 +1197,22 @@ function tplOf(t){return t.parent&&!t.o?tplSeg({...dataOf(t),ticket:t.id,master:
 
 const MANW=['Validaciones Noc','Avance por TCE','Avance proveedor','Avance O&M'];
 const avSorted=(a,ix)=>{const r=a.map((x,i)=>({a:x,i})).sort((p,q)=>(Date.parse(p.a.at)||0)-(Date.parse(q.a.at)||0));return ix?r:r.map(p=>p.a)};
-const tkList=s=>{const seen=new Set();return (s||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>{const k=x.toUpperCase();if(!x||seen.has(k))return false;seen.add(k);return true})};
-const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x}`)]};
-function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<span class="tkc">${esc(x)}</span>`).join('')}
+const TKRE=/TIK-[A-Z0-9]+-[A-Z0-9]+/gi;
+const tkList=s=>{
+ const seen=new Set(),out=[];
+ const push=(id,desc)=>{const k=String(id||'').toUpperCase();if(!k||seen.has(k))return;seen.add(k);desc=(desc||'').trim();out.push({id,desc,raw:desc?id+'  '+desc:id})};
+ String(s||'').split(/\r?\n/).forEach(line=>{
+  const raw=line.replace(/\t+/g,'  ').trim();if(!raw)return;
+  const ids=raw.match(TKRE)||[];
+  if(ids.length>1){ids.forEach(i=>push(i,''));return}
+  if(ids.length===1){const id=ids[0],i=raw.toUpperCase().indexOf(id.toUpperCase());push(id,(raw.slice(0,i)+raw.slice(i+id.length)).replace(/^[\s\-–|:,;]+/,''));return}
+  const parts=raw.split(/[;,]/).map(x=>x.trim()).filter(Boolean);
+  (parts.length>1?parts:[raw]).forEach(x=>{const m=x.match(/^(\S+)\s*(.*)$/);if(m)push(m[1],m[2])});
+ });
+ return out;
+};
+const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x.raw}`)]};
+function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<div class="tkr"><span class="tid">${esc(x.id)}</span>${x.desc?`<span class="tdc">${esc(x.desc)}</span>`:''}</div>`).join('')}
 const evTimes=w=>{if(!w||!w.t0)return null;const now=w.endAt||Date.now(),tot=Math.max(0,now-w.t0),sus=Math.min(tot,(w.suspAcc||0)+(w.suspSince?Math.max(0,now-w.suspSince):0));return {tot,sus,prog:tot-sus,st:w.endAt?'Resuelto':w.suspSince?'Suspendido':'En progreso'}};
 function evTmPaint(){
  const b=$('#ev-tm');if(!b||!W)return;const t=evTimes(W);
@@ -1320,7 +1358,7 @@ function evtView(v){
  const LK=!!(t&&t.st==='Resuelto');
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
  const D=(k,l)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-dt="${k}" readonly placeholder="Seleccionar fecha y hora" value="${esc(fdt(W[k]))}" style="cursor:pointer"></div>`;
- const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Ej. TIK-20188018-J5S0 (separa varios con coma, espacio o salto de línea)" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
+ const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Un ticket por línea. Puedes pegar el ticket con su descripción. Ej. TIK-20188018-J5S0  CORTE DE TRAMO …" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
  const S=(k,l,o)=>`<div><label for="e-${k}">${l}</label><select id="e-${k}" data-k="${k}"><option value="">Seleccionar</option>${o.map(x=>`<option ${x===W[k]?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
  const WH=[['Validaciones Noc','#ec4899'],['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
  v.innerHTML=`${LK?'<div class="lockb"><span>🔒 Este seguimiento está resuelto: la plantilla está bloqueada. Reabre el ticket para editarla.</span><button class="btn" id="ev-reo">Reabrir ticket</button></div>':''}<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button>${t?'<button class="btn ghost" id="ev-av">Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> <span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>

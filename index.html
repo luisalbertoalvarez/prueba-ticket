@@ -263,6 +263,10 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .avo{display:flex;gap:6px;align-items:stretch}
 .avo .btn{flex:1;text-align:left;justify-content:flex-start}
 #av-otro{text-align:left}
+.aso{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.asr{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--ink);transition:background .2s}
+.asr:hover{background:var(--line)}
+.asr small{color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -1037,7 +1041,8 @@ function detailBtns(t,B,f){
  const g3=t.del?B('rs','Restaurar',1)+B('hd','Eliminar definitivamente',0,'color:var(--bad)'):B('dl','Eliminar',0,'color:var(--bad)')+(t.st!=='Resuelto'?B('resolve','Marcar resuelto',1):B('reopen','Reabrir',1));
  return `<div class="bgl">Plantilla</div><div class="bgrid">${g1}</div>${g2?`<div class="bgl">Acciones del ticket</div><div class="bgrid">${g2}</div>`:''}<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><button class="btn ghost" data-close>Cerrar</button><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${g3}</div></div>`;
 }
-function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.fd?`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`:''}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+const tecTxt=d=>{const q=(d.eqs||[]).filter(x=>x.e||x.i||x.p);return q.length?`\n\n--------INFORMACIÓN TÉCNICA-------\n${q.map(x=>`* Equipo Acceso: ${x.e}\n* Hostname: ${x.i}\n* Puerto del Acceso: ${x.p}`).join('\n\n')}`:''};
+function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.fd?`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`:''}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}${tecTxt(d)}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
  const base=dataOf(t),d0=child?child.d.diag:base.diag;
  open(`<h3>${child?'Editar':'Crear'} ticket secundario</h3><p class="sub2">Se asocia al ticket master ${esc(t.id)}. El diagnóstico N1 viene del ticket principal y puedes ajustarlo.</p>
@@ -1211,6 +1216,7 @@ const tkList=s=>{
  });
  return out;
 };
+const asocLines=w=>{const id=(w.id||'').trim(),k=id?T.filter(x=>x.parent===id&&!x.del):[];return k.length?[`* Tickets asociados: ${k.length}`,...k.map(x=>`   - ${x.id}  (${x.o?x.type:'Secundario'})`)]:[]};
 const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x.raw}`)]};
 function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<div class="tkr"><span class="tid">${esc(x.id)}</span>${x.desc?`<span class="tdc">${esc(x.desc)}</span>`:''}</div>`).join('')}
 const evTimes=w=>{if(!w||!w.t0)return null;const now=w.endAt||Date.now(),tot=Math.max(0,now-w.t0),sus=Math.min(tot,(w.suspAcc||0)+(w.suspSince?Math.max(0,now-w.suspSince):0));return {tot,sus,prog:tot-sus,st:w.endAt?'Resuelto':w.suspSince?'Suspendido':'En progreso'}};
@@ -1229,7 +1235,7 @@ const fhm=ms=>{const t=new Date(ms),p=n=>String(n).padStart(2,'0');return `${p(t
 function tplEvento(w){
  const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${evTimes(w)?evTimes(w).st:'Sin iniciar'}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
- L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
+ L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),...asocLines(w),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
  avSorted(w.avs).filter(a=>!a.who.startsWith('Inicio de tiempos')).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
@@ -1374,6 +1380,7 @@ function evtView(v){
  ${F('tramo','Tramo afectado')}
  ${W.eqs.map((q,i)=>`<div class="fg3" style="margin-top:6px"><div><label>Nodo<input data-ei="${i}" data-ef="n" value="${esc(q.n||'')}"></label></div><div><label>Hostname<input data-ei="${i}" data-ef="h" value="${esc(q.h)}"></label></div><div><label>Puerto<input data-ei="${i}" data-ef="p" value="${esc(q.p)}"></label></div>${i?`<button type="button" class="chip" data-rm="${i}" style="grid-column:1/-1;justify-self:end;margin-top:8px;color:var(--bad)">Quitar equipo ${i+1}</button>`:''}</div>`).join('')}
  <div style="margin-top:12px"><button type="button" class="btn ghost" id="e-add">+ Agregar equipo</button></div>
+ ${(()=>{const k=W.id?T.filter(x=>x.parent===W.id.trim()&&!x.del):[];return k.length?`<div class="sech">Tickets asociados</div><div class="aso">${k.map(x=>`<button type="button" class="asr" data-kd="${esc(x.id)}"><span class="tag" style="--c:${x.o?TYPES[x.type]:'#8b5cf6'}">${x.o?esc(x.type):'Secundario'}</span><b>${esc(x.id)}</b><small>${esc(x.site)}</small></button>`).join('')}</div>`:''})()}
  <div class="sech">Red y proveedor</div>
  <div class="fg2">${S('red','Red afectada',REDES)}${S('onnet','Red Onnet',['Si','No'])}</div>
  <div class="fg2"><div><label for="e-prov">Proveedor Offline</label><select id="e-prov" data-k="prov">${['UFINET',...PROVS].map(x=>`<option value="${esc(x)}" ${x===W.prov?'selected':''}>${esc(x)}</option>`).join('')}<option value="__otro">Otros…</option></select></div>${F('pais','País de falla')}</div>
@@ -1394,7 +1401,7 @@ function evtView(v){
  <div class="avs">${avSorted(W.avs,1).filter(({a})=>!a.who.startsWith('Inicio de tiempos')).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:''}</div>`).join('')}</div>
  </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
 
- if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
+ if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id)&&!el.classList.contains('asr'))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
  const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');evTmPaint();
  const root=$('#evw');
  const onIn=e=>{
@@ -1462,6 +1469,7 @@ function evtView(v){
  $('#e-paste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()}catch(e){}if(t&&/ID Ticket:/.test(t)){pasteFill(t);return}pasteModal(t)};
  $('#ev-open').onchange=e=>{EV=e.target.value||null;W=null;render()};
  $('#ev-new').onclick=()=>{EV=null;W=null;render();toast('Formulario nuevo')};
+ v.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>detail(b.dataset.kd));
  const ea=$('#ev-av');if(ea)ea.onclick=()=>{const x=$('#sec-av');if(x)x.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const t=$('#e-avTxt');if(t)t.focus()},500)};
  $('#ev-sum').onclick=()=>{
   if(!(W.id||'').trim()){const e=$('#e-id');e.style.borderColor='var(--bad)';e.focus();toast('Escribe el ID Ticket');return}

@@ -104,7 +104,7 @@ textarea{resize:vertical;min-height:80px}
 .sec{margin:20px 0 -4px;padding-top:14px;border-top:1px dashed var(--line);font-size:13px;font-weight:800;color:var(--acc2)}
 .sec:first-of-type{border-top:0;margin-top:6px;padding-top:0}
 pre.tpl{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;font:12.5px/1.65 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0;position:sticky;top:0}
-@media (max-width:760px){.tg{grid-template-columns:1fr}.fg3{grid-template-columns:1fr}}
+@media (max-width:760px){.view.evtv{display:block;overflow:auto}.view.evtv .abar{position:sticky;box-shadow:0 8px 22px rgba(20,33,61,.1)}.view.evtv>.tg>div,.view.evtv>.tg>div:last-child{overflow:visible;display:block}.view.evtv>.tg>div:last-child pre{max-height:60vh!important}.tg{grid-template-columns:1fr}.fg3{grid-template-columns:1fr}}
 .dl dt{color:var(--mut)}.dl dd{margin:0;font-weight:600}
 .toast{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:14px 20px;border-radius:12px;font-weight:600;transform:translateY(100px);opacity:0;transition:.4s cubic-bezier(.3,1.3,.5,1);z-index:60}
 .toast.show{transform:none;opacity:1}
@@ -267,6 +267,15 @@ tr.kid td:first-child{padding-left:34px;box-shadow:inset 3px 0 0 #8b5cf6}
 .asr{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--ink);transition:background .2s}
 .asr:hover{background:var(--line)}
 .asr small{color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.abar{position:sticky;top:0;z-index:8;box-shadow:0 8px 22px rgba(20,33,61,.1)}
+.view.evtv{display:flex;flex-direction:column;overflow:hidden;padding-bottom:16px}
+.view.evtv>*{flex:none}
+.view.evtv .abar{position:static;box-shadow:none}
+.view.evtv>.tg{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1fr);align-items:stretch;overflow:hidden}
+.view.evtv>.tg>div{min-height:0;height:100%;overflow:auto;overscroll-behavior:contain}
+.view.evtv>.tg>div:last-child{display:flex;flex-direction:column;overflow:hidden;position:static!important}
+.view.evtv>.tg>div:last-child pre{flex:1 1 auto;min-height:0;max-height:none!important}
+@media (max-width:760px){.view.evtv{display:block;overflow:auto}.view.evtv .abar{position:sticky;box-shadow:0 8px 22px rgba(20,33,61,.1)}.view.evtv>.tg>div,.view.evtv>.tg>div:last-child{overflow:visible;display:block;max-height:none}.view.evtv>.tg>div:last-child pre{max-height:60vh!important}}
 @media (max-width:860px){
  .side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%)}
  .side.show{transform:none}
@@ -389,7 +398,7 @@ function rows(list){
 function render(){
  const sb=$('#sumBtn');if(sb)sb.style.display=cur.startsWith('esc:')?'':'none';
  const hb=$('#shBtn');if(hb)hb.style.display=(cur==='seg'||cur.startsWith('esc:'))?'':'none';
- const v=$('#view');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
+ const v=$('#view');v.classList.toggle('evtv',cur==='evt');const isEsc=cur.startsWith('esc:');const type=isEsc?cur.slice(4):null;
  $('#newBtn').style.display=(cur==='cfg'||cur==='help'||cur==='res'||cur==='del'||cur==='evt')?'none':'';$('#newBtn').textContent=({'esc:Corte':'+ Escalar corte','esc:N1':'+ Escalar N1','esc:Eléctrico':'+ Escalar eléctrico','esc:OTN':'+ Escalar OTN','esc:Fibra Oscura':'+ Escalar fibra oscura','esc:Proveedor Escalamiento':'+ Nueva plantilla de seguimiento'})[cur]||'+ Nuevo escalamiento';
  if(cur==='seg'){
   $('#title').textContent='Seguimiento';$('#subtitle').textContent='Estado en vivo de todos los incidentes';
@@ -1089,7 +1098,7 @@ $('#newBtn').onclick=()=>{
 
 const fdt=x=>{if(!x)return '';if(x==='Cliente no realiza descarte eléctrico')return 'EL CLIENTE NO HA REALIZADO NI CONFIRMADO EL DESCARTE ELÉCTRICO';const t=new Date(x);if(isNaN(t))return x;const p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
 const valTxt=d=>(d.eqs||[]).map((q,i)=>{const v=(q.v||d['val'+(i+1)]||'').trim();if(!v)return '';return `\n\n* Validaciones ${q.e||('Equipo '+(i+1))}:\n${v}`}).join('');
-function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.tp==='Corte'?'':`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
+function tplCorte(d,head){return `${head||'ESCALACIÓN TORRE DE CONTROL'}\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}${d.tm?'\n* Ticket Master: *Si*':''}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.tp==='Corte'?'':`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`}\n* Cliente: ${d.cli}${d.tp==='N1'?`\n* ID: ${d.cid||''}\n* Nombre de contacto en sitio: ${d.cnom||''}\n* Número de contacto: ${d.ctel||''}\n* Dirección: ${d.cdir||''}\n* Coordenadas: ${d.ccoo||''}`:''}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}\n\n--------INFORMACIÓN TÉCNICA-------\n${d.eqs.map(q=>`* Equipo Acceso: ${q.e}\n* Hostname: ${q.i}\n* Puerto del Acceso: ${q.p}`).join('\n\n')}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}${valTxt(d)}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function dataOf(t){if(t.o){const o=t.o;return {ticket:t.id,tm:false,fc:o.fecha,fd:'',cli:o.cli,hor:o.hor,nodo:o.nodo,falla:o.falla,eqs:[{e:'',i:'',p:''}],diag:o.diag,n1:o.n1,tc:o.tc}}
  return t.d||{ticket:t.id,tm:false,fc:'',fd:'',cli:'UFINET',hor:'',nodo:t.site,falla:'',eqs:[{e:'',i:'',p:''}],diag:t.desc,n1:ME,tc:t.who}}
 function copyText(t,msg){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(msg))}
@@ -1128,6 +1137,7 @@ function corteForm(et,type){
  open(`<div class="mh"><h3>${et?'Editar plantilla':'Escalación Torre de Control'} · ${type}</h3><p class="sub2">Completa los datos y copia la plantilla lista para enviar.</p></div><div class="mb"><div class="tg"><div>
  <div class="sec">Datos cliente</div>
  <div class="fg2">${I('ticket','No. Ticket')}<div><label for="c-cli">Cliente</label><select id="c-cli">${cliOpts()}</select></div>${P('fc','Fecha de creación de ticket')}${type==='N1'?P('fd','Fecha de descarte eléctrico'):''}</div>
+ ${type==='N1'?`<div class="fg2">${I('cid','ID')}${I('cnom','Nombre de contacto en sitio')}${I('ctel','Número de contacto','tel')}${I('cdir','Dirección')}</div>${I('ccoo','Coordenadas')}`:''}
  ${S('hor','Horario de revisión',HORARIOS)}
  <div class="sec">Datos importantes</div>
  ${I('nodo','Nombre de Nodo')}
@@ -1145,11 +1155,11 @@ function corteForm(et,type){
  const v=id=>{const el=$('#c-'+id);if(!el)return '';return ((el.dataset.pk!==undefined?el.dataset.iso:el.value)||'').trim()};
  const dt=id=>{const x=v(id);if(!x)return '';const t=new Date(x),p=n=>String(n).padStart(2,'0');return `${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`};
  const eqs=()=>[...document.querySelectorAll('#egs .eg')].map(g=>{const q=c=>g.querySelector(c).value.trim();return `* Equipo Acceso: ${q('.g-e')}\n* IP Gestión del Acceso: ${q('.g-i')}\n* Puerto del Acceso: ${q('.g-p')}`}).join('\n\n');
- const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),tp:type,cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
+ const collect=()=>({ticket:v('ticket'),tm:$('#c-tm').checked,fc:v('fc'),fd:v('fd'),tp:type,cid:v('cid'),cnom:v('cnom'),ctel:v('ctel'),cdir:v('cdir'),ccoo:v('ccoo'),cli:v('cli'),hor:v('hor'),nodo:v('nodo'),falla:v('falla'),eqs:[...document.querySelectorAll('#egs .eg')].map((g,i)=>({e:g.querySelector('.g-e').value.trim(),i:g.querySelector('.g-i').value.trim(),p:g.querySelector('.g-p').value.trim(),v:(document.querySelectorAll('#vals .g-v')[i]||{value:''}).value.trim()})),diag:v('diag'),n1:v('n1'),tc:v('tc')});
  const gen=()=>tplCorte(collect());
  const lbl=()=>{const gs=document.querySelectorAll('#egs .eg');document.querySelectorAll('#vals .lv').forEach((l,i)=>{const g=gs[i],x=g?g.querySelector('.g-e').value.trim():'';l.textContent='Validaciones · '+(x||'Equipo '+(i+1))})};
  const syncVals=()=>{const gs=[...document.querySelectorAll('#egs .eg')],box=$('#vals'),old=[...box.querySelectorAll('.g-v')].map(x=>x.value);box.innerHTML=gs.map((g,i)=>`<label for="c-v${i}" class="lv"></label><textarea id="c-v${i}" class="g-v" placeholder="Pega aquí las validaciones" style="min-height:90px;font:12px ui-monospace,Menlo,Consolas,monospace"></textarea>`).join('');box.querySelectorAll('.g-v').forEach((t,i)=>t.value=old[i]||'');lbl()};
- const saveDr=()=>{const c=collect();if(c.ticket||c.nodo||c.diag||c.fc||c.fd||c.hor||c.falla||c.tm||(c.cli&&c.cli!=='UFINET')||c.eqs.some(q=>q.e||q.i||q.p||q.v))DR.set(dkey,c);else DR.del(dkey)};
+ const saveDr=()=>{const c=collect();if(c.ticket||c.nodo||c.diag||c.fc||c.fd||c.cid||c.cnom||c.ctel||c.cdir||c.ccoo||c.hor||c.falla||c.tm||(c.cli&&c.cli!=='UFINET')||c.eqs.some(q=>q.e||q.i||q.p||q.v))DR.set(dkey,c);else DR.del(dkey)};
  const upd=()=>{lbl();$('#tpl').textContent=gen();saveDr()};
  const copy=ok=>{const t=gen();const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};(navigator.clipboard?navigator.clipboard.writeText(t).catch(f):Promise.resolve(f())).then(()=>toast(ok))};
  const renum=()=>document.querySelectorAll('#egs .eg').forEach((g,i)=>g.querySelector('.gn').textContent=i+1);
@@ -1157,7 +1167,7 @@ function corteForm(et,type){
  $('#c-n1').value=ME;
  $('#c-cli').value='UFINET';let prev='UFINET';
  const prefill=()=>{
-  ['ticket','fc','fd','hor','nodo','falla','diag','val1','val2','n1','tc'].forEach(k=>{const el=$('#c-'+k);if(!el)return;if(el.tagName==='SELECT'&&ed[k]&&![...el.options].some(o=>o.value===ed[k]))el.add(new Option(ed[k],ed[k]));if(el.dataset.pk!==undefined){el.dataset.iso=ed[k]||'';el.value=fdt(ed[k])}else el.value=ed[k]||''});
+  ['ticket','fc','fd','cid','cnom','ctel','cdir','ccoo','hor','nodo','falla','diag','val1','val2','n1','tc'].forEach(k=>{const el=$('#c-'+k);if(!el)return;if(el.tagName==='SELECT'&&ed[k]&&![...el.options].some(o=>o.value===ed[k]))el.add(new Option(ed[k],ed[k]));if(el.dataset.pk!==undefined){el.dataset.iso=ed[k]||'';el.value=fdt(ed[k])}else el.value=ed[k]||''});
   const cs=$('#c-cli');if(ed.cli&&ed.cli!=='UFINET'){if(!CUSTOM.includes(ed.cli))CUSTOM.push(ed.cli);cs.innerHTML=cliOpts();cs.value=ed.cli}else cs.value='UFINET';
   prev=cs.value;$('#c-tm').checked=!!ed.tm;
   const q=ed.eqs&&ed.eqs.length?ed.eqs:[{e:'',i:'',p:''}],box=$('#egs');
@@ -1216,7 +1226,6 @@ const tkList=s=>{
  });
  return out;
 };
-const asocLines=w=>{const id=(w.id||'').trim(),k=id?T.filter(x=>x.parent===id&&!x.del):[];return k.length?[`* Tickets asociados: ${k.length}`,...k.map(x=>`   - ${x.id}  (${x.o?x.type:'Secundario'})`)]:[]};
 const tkLines=(w,c,l)=>{if(!w[c+'On'])return [];const t=tkList(w[c+'Tk']);return [`* ${l}: ${t.length}`,...t.map(x=>`   - ${x.raw}`)]};
 function tkPaint(c){const l=tkList(W[c+'Tk']),n=$('#cnt-'+c),h=$('#chips-'+c);if(n)n.textContent=l.length+(l.length===1?' ticket':' tickets');if(h)h.innerHTML=l.map(x=>`<div class="tkr"><span class="tid">${esc(x.id)}</span>${x.desc?`<span class="tdc">${esc(x.desc)}</span>`:''}</div>`).join('')}
 const evTimes=w=>{if(!w||!w.t0)return null;const now=w.endAt||Date.now(),tot=Math.max(0,now-w.t0),sus=Math.min(tot,(w.suspAcc||0)+(w.suspSince?Math.max(0,now-w.suspSince):0));return {tot,sus,prog:tot-sus,st:w.endAt?'Resuelto':w.suspSince?'Suspendido':'En progreso'}};
@@ -1231,11 +1240,22 @@ function tplLive(){
  if(window.getSelection&&String(window.getSelection()).length)return;
  const t=tplEvento(W);if(p.textContent!==t)p.textContent=t;
 }
+const stI=st=>({'En progreso':'🟢 En progreso','Suspendido':'🟡 Suspendido','Resuelto':'🔴 Finalizado'})[st]||'⚪ Sin iniciar';
+function resueltoMsg(w){
+ const tm=evTimesAt(w,w.endAt||Date.now())||{prog:0,sus:0,tot:0},bar='----------------------------------------';
+ const cd=w.cdOn?tkList(w.cdTk).length:0,fo=w.foOn?tkList(w.foTk).length:0;
+ return [`Ticket: ${w.id}`,`Estado: ${w.endAt?'🔴 Finalizado':stI((evTimes(w)||{}).st)}`,`Tramo: ${w.tramo}`,`Red afectada: ${w.red}`,`Fecha de afectación (GMT-5): ${fdt(w.acc)}`,`Fecha de resolución (GMT-5): ${w.endAt?fdt(w.endAt):''}`,bar,'TIEMPOS SLA (ACTUALIZADOS):',`Tiempo en progreso: ${fdur(tm.prog)}`,`Tiempo suspendido: ${fdur(tm.sus)}`,`Tiempo total transcurrido: ${fdur(tm.tot)}`,...(w.endAt?['⚠️ EVENTO RESUELTO ⚠️']:[]),bar,`Red Onnet: ${w.onnet}`,`Proveedor Offnet: ${w.prov}`,`País: ${w.pais}`,bar,'INFORMACIÓN ADICIONAL:',`• Tickets Caída Total: ${cd}`,`• Tickets Fibra Oscura: ${fo}`].join('\n');
+}
+function resueltoModal(w){
+ const txt=resueltoMsg(w);
+ open(`<h3>⚠️ Evento resuelto</h3><p class="sub2">${esc(w.id)} · mensaje listo para compartir.</p><pre class="tpl" id="rm-pre" style="position:static;max-height:52vh;overflow:auto"></pre><div class="row"><button class="btn ghost" data-close>Cerrar</button><button class="btn" id="rm-cp">Copiar mensaje</button></div>`);
+ $('#rm-pre').textContent=txt;$('#rm-cp').onclick=()=>copyText(txt,'Mensaje copiado');
+}
 const fhm=ms=>{const t=new Date(ms),p=n=>String(n).padStart(2,'0');return `${p(t.getHours())}:${p(t.getMinutes())} ${p(t.getDate())}/${p(t.getMonth()+1)}/${t.getFullYear()}`};
 function tplEvento(w){
- const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${evTimes(w)?evTimes(w).st:'Sin iniciar'}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
+ const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${stI(evTimes(w)?evTimes(w).st:'')}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
- L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),...asocLines(w),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
+ L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
  avSorted(w.avs).filter(a=>!a.who.startsWith('Inicio de tiempos')).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
@@ -1367,41 +1387,40 @@ function evtView(v){
  const TK=(c,l)=>`<label class="ck"><input type="checkbox" data-k="${c}On" ${W[c+'On']?'checked':''}>${l}</label><div id="box-${c}" style="${W[c+'On']?'':'display:none'}"><textarea id="e-${c}Tk" data-k="${c}Tk" placeholder="Un ticket por línea. Puedes pegar el ticket con su descripción. Ej. TIK-20188018-J5S0  CORTE DE TRAMO …" style="min-height:64px">${esc(W[c+'Tk'])}</textarea><div class="tkh"><b id="cnt-${c}"></b><div id="chips-${c}" class="tkcs"></div></div></div>`;
  const S=(k,l,o)=>`<div><label for="e-${k}">${l}</label><select id="e-${k}" data-k="${k}"><option value="">Seleccionar</option>${o.map(x=>`<option ${x===W[k]?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
  const WH=[['Validaciones Noc','#ec4899'],['Avance por TCE','#3b82f6'],['Avance proveedor','#8b5cf6'],['Avance O&M','#10b5a4']];
- v.innerHTML=`${LK?'<div class="lockb"><span>🔒 Este seguimiento está resuelto: la plantilla está bloqueada. Reabre el ticket para editarla.</span><button class="btn" id="ev-reo">Reabrir ticket</button></div>':''}<div class="card"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">Guardar Ticket</button><button class="btn ghost" id="ev-new">Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">Marcar como resuelto</button>${t?'<button class="btn ghost" id="ev-av">Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> <span class="tag" style="--c:${ST[t.st]}">${t.st}</span>`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
+ v.innerHTML=`${LK?'<div class="lockb"><span>🔒 Este seguimiento está resuelto: la plantilla está bloqueada. Reabre el ticket para editarla.</span><button class="btn" id="ev-reo">Reabrir ticket</button></div>':''}<div class="card abar"><div class="card-h" style="gap:10px"><div style="display:flex;gap:10px;flex-wrap:wrap;flex:1"><button class="btn" id="ev-save">💾 Guardar Ticket</button><button class="btn ghost" id="ev-new">➕ Nuevo Ticket</button><button class="btn ghost" id="ev-del" style="color:var(--bad)">🗑️ Eliminar Ticket</button><button class="btn ghost" id="ev-ok" style="color:var(--ok)">✅ Marcar como resuelto</button><button class="btn ghost" id="ev-rs">⚠️ Evento resuelto</button>${t?'<button class="btn ghost" id="ev-av">💬 Agregar avance ↓</button>':''}<button class="btn ghost" id="ev-sum">📄 Resumen del evento</button></div>${t?`<span class="tag" style="--c:${TYPES[t.type]||'#3b82f6'}">${esc(t.type)}</span> ${(()=>{const e=evTimes(W),c=e?(e.st==='Suspendido'?'#f59e0b':e.st==='Resuelto'?'#ef4444':'#22c55e'):ST[t.st];return `<span class="tag" style="--c:${c}">${e?(e.st==='Resuelto'?'Finalizado':e.st):t.st}</span>`})()}`:'<span class="tag" style="--c:#6b7893">Sin guardar</span>'}</div></div>
  <div class="tg" style="margin-top:18px"><div class="card" id="evw" style="padding:6px 20px 24px">
  <label for="ev-open">Abrir ticket existente</label><select id="ev-open"><option value="">— Ticket nuevo —</option>${LV().filter(x=>!x.parent).map(x=>`<option value="${esc(x.id)}" ${x.id===EV?'selected':''}>${esc(x.type)} · ${esc(x.id)} · ${esc(x.site)}</option>`).join('')}</select>
- <div class="sech">Datos del evento</div>
+ <div class="sech">📋 Datos del evento</div>
  <div class="fg2">${F('id','ID Ticket')}${D('acc','Fecha y hora de afectación GMT-5')}</div>${W.acc&&!W.t0?'<small style="color:var(--warn);font-weight:600">Toca la fecha y confirma para iniciar los tiempos.</small>':''}
- <div class="sech">Suspensión y reanudación de tiempo</div>
+ <div class="sech">⏸️ Suspensión y reanudación de tiempo</div>
  ${F('motivo','Motivo')}
  ${D('sfecha','Fecha y hora')}
- <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center"><button type="button" class="btn" id="e-susp" style="background:var(--warn);box-shadow:none">Registrar suspensión</button><button type="button" class="btn" id="e-res" style="background:var(--ok);box-shadow:none">Reanudar tiempos</button>${W.t0?`<span class="tag" style="--c:${W.endAt?'#6b7893':W.suspSince?'#f59e0b':'#22c55e'}">${W.endAt?'Resuelto':W.suspSince?'Tiempos suspendidos':'Tiempos corriendo'}</span>`:''}</div>
- <div class="sech">Tramo afectado</div>
+ <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center"><button type="button" class="btn" id="e-susp" style="background:var(--warn);box-shadow:none">⏸️ Registrar suspensión</button><button type="button" class="btn" id="e-res" style="background:var(--ok);box-shadow:none">▶️ Reanudar tiempos</button>${W.t0?`<span class="tag" style="--c:${W.endAt?'#6b7893':W.suspSince?'#f59e0b':'#22c55e'}">${W.endAt?'Resuelto':W.suspSince?'Tiempos suspendidos':'Tiempos corriendo'}</span>`:''}</div>
+ <div class="sech">📍 Tramo afectado</div>
  ${F('tramo','Tramo afectado')}
  ${W.eqs.map((q,i)=>`<div class="fg3" style="margin-top:6px"><div><label>Nodo<input data-ei="${i}" data-ef="n" value="${esc(q.n||'')}"></label></div><div><label>Hostname<input data-ei="${i}" data-ef="h" value="${esc(q.h)}"></label></div><div><label>Puerto<input data-ei="${i}" data-ef="p" value="${esc(q.p)}"></label></div>${i?`<button type="button" class="chip" data-rm="${i}" style="grid-column:1/-1;justify-self:end;margin-top:8px;color:var(--bad)">Quitar equipo ${i+1}</button>`:''}</div>`).join('')}
  <div style="margin-top:12px"><button type="button" class="btn ghost" id="e-add">+ Agregar equipo</button></div>
- ${(()=>{const k=W.id?T.filter(x=>x.parent===W.id.trim()&&!x.del):[];return k.length?`<div class="sech">Tickets asociados</div><div class="aso">${k.map(x=>`<button type="button" class="asr" data-kd="${esc(x.id)}"><span class="tag" style="--c:${x.o?TYPES[x.type]:'#8b5cf6'}">${x.o?esc(x.type):'Secundario'}</span><b>${esc(x.id)}</b><small>${esc(x.site)}</small></button>`).join('')}</div>`:''})()}
- <div class="sech">Red y proveedor</div>
+ <div class="sech">🌐 Red y proveedor</div>
  <div class="fg2">${S('red','Red afectada',REDES)}${S('onnet','Red Onnet',['Si','No'])}</div>
  <div class="fg2"><div><label for="e-prov">Proveedor Offline</label><select id="e-prov" data-k="prov">${['UFINET',...PROVS].map(x=>`<option value="${esc(x)}" ${x===W.prov?'selected':''}>${esc(x)}</option>`).join('')}<option value="__otro">Otros…</option></select></div>${F('pais','País de falla')}</div>
- <div class="sech">Impacto</div>
+ <div class="sech">💥 Impacto</div>
  <div class="fg2" style="grid-template-columns:2fr 1fr"><div><label for="e-impacto">Impacto</label><input id="e-impacto" data-k="impacto" value="${esc(W.impacto)}" placeholder="Describe el impacto"></div><div><label for="e-cap">Capacidad afectada</label><div class="cap"><input id="e-cap" data-k="cap" type="number" min="0" inputmode="numeric" value="${esc(W.cap)}" style="padding-right:36px"><span>G</span></div></div></div>
  ${TK('cd','Ticket caída total')}${TK('fo','Ticket fibra oscura')}
- <div class="sech">Diagnóstico</div>
+ <div class="sech">🩺 Diagnóstico</div>
  <label for="e-diag">Diagnóstico</label><textarea id="e-diag" data-k="diag">${esc(W.diag)}</textarea>
  <label for="e-acc2">Acciones adicionales</label><textarea id="e-acc2" data-k="acc2">${esc(W.acc2)}</textarea>
- <div class="sech">ETR</div>
+ <div class="sech">⏳ ETR</div>
  <label style="display:flex;align-items:center;gap:9px;cursor:pointer"><input type="checkbox" data-k="noetr" ${W.noetr?'checked':''} style="width:18px;height:18px;padding:0;accent-color:var(--acc)">Sin ETR (ocultar contador)</label>
- <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="e-etrs">Hora que inicia el ETR</button><button type="button" class="btn ghost" id="e-stop">Detener</button></div></div>${W.etrS?`<small style="color:var(--mut);font-weight:600;display:block;margin-top:8px">Inicio del ETR: ${fhm(W.etrS)}</small>`:''}<div id="etr-box"></div></div>
- <div class="sech" id="sec-av">Avances y comentarios</div>
+ <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="e-etrs">⏰ Hora que inicia el ETR</button><button type="button" class="btn ghost" id="e-stop">⏹️ Detener</button></div></div>${W.etrS?`<small style="color:var(--mut);font-weight:600;display:block;margin-top:8px">Inicio del ETR: ${fhm(W.etrS)}</small>`:''}<div id="etr-box"></div></div>
+ <div class="sech" id="sec-av">💬 Avances y comentarios</div>
  <div class="wchips" style="margin-top:12px">${WH.map(([n,c])=>`<button type="button" class="wchip ${W.who===n?'on':''}" data-who="${n}" style="--c:${c}">${n}</button>`).join('')}</div>
  ${D('avAt','Fecha y hora del avance')}
  <label for="e-avTxt">Comentario</label><textarea id="e-avTxt" data-k="avTxt">${esc(W.avTxt)}</textarea>
  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">${W.avEdit!=null?'<span class="tag" style="--c:#f59e0b">Editando avance</span>':''}<button type="button" class="btn" id="e-av">${W.avEdit!=null?'Guardar cambios':'Agregar avance'}</button>${W.avEdit!=null?'<button type="button" class="btn ghost" id="e-avc">Cancelar edición</button>':''}</div>
  <div class="avs">${avSorted(W.avs,1).filter(({a})=>!a.who.startsWith('Inicio de tiempos')).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:''}</div>`).join('')}</div>
- </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">Copiar plantilla</button><button class="btn ghost" id="e-paste">Pegar plantilla</button></div></div></div>`;
+ </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">📋 Copiar plantilla</button><button class="btn ghost" id="e-paste">📥 Pegar plantilla</button></div></div></div>`;
 
- if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id)&&!el.classList.contains('asr'))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
+ if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo','ev-rs']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id)&&!el.classList.contains('asr'))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
  const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');evTmPaint();
  const root=$('#evw');
  const onIn=e=>{
@@ -1469,7 +1488,6 @@ function evtView(v){
  $('#e-paste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()}catch(e){}if(t&&/ID Ticket:/.test(t)){pasteFill(t);return}pasteModal(t)};
  $('#ev-open').onchange=e=>{EV=e.target.value||null;W=null;render()};
  $('#ev-new').onclick=()=>{EV=null;W=null;render();toast('Formulario nuevo')};
- v.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>detail(b.dataset.kd));
  const ea=$('#ev-av');if(ea)ea.onclick=()=>{const x=$('#sec-av');if(x)x.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const t=$('#e-avTxt');if(t)t.focus()},500)};
  $('#ev-sum').onclick=()=>{
   if(!(W.id||'').trim()){const e=$('#e-id');e.style.borderColor='var(--bad)';e.focus();toast('Escribe el ID Ticket');return}
@@ -1478,14 +1496,17 @@ function evtView(v){
   $('#rs-pre').textContent=txt;$('#rs-cp').onclick=()=>copyText(txt,'Resumen copiado');
  };
  $('#ev-save').onclick=()=>{if(saveEv()){render();toast('Ticket '+EV+' guardado')}};
- $('#ev-ok').onclick=()=>{
+ const cerrar=after=>{
   if(!(W.id||'').trim()){const e=$('#e-id');e.style.borderColor='var(--bad)';e.focus();toast('Escribe el ID Ticket');return}
   cerrarModal({id:W.id.trim(),ev:W},(at,tm)=>{
    const was=W.etr;W.etr=null;
    if(!saveEv()){W.etr=was;return}
    const x=T.find(y=>y.id===EV),n=resolverTicket(x,at,tm);W=null;close();buildNav();render();toast(x.id+' resuelto'+(n?' junto con '+n+(n===1?' secundario':' secundarios'):'')+': ahora está en Resueltos');
+   if(after)after(x);
   });
  };
+ $('#ev-ok').onclick=()=>cerrar();
+ $('#ev-rs').onclick=()=>{if((W.id||'').trim()&&W.endAt){resueltoModal(W);return}cerrar(x=>resueltoModal(x.ev))};
  $('#ev-del').onclick=()=>{
   if(!t){toast('Selecciona un ticket para eliminar');return}
   open(`<h3>Eliminar ticket</h3><p class="sub2">¿Seguro que quieres eliminar ${esc(t.id)}? Podrás restaurarlo desde Eliminados.</p><div class="row"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="dl" style="background:var(--bad);box-shadow:none">Eliminar</button></div>`);

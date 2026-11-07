@@ -574,8 +574,8 @@ function resumenEvento(t){
  const p=evParts(t),e=p.ev;
  const stt=e&&e.t0?(e.endAt?'🔴 Evento resuelto':e.suspSince?'🟡 Suspendido':'🟢 En progreso'):(t.st==='Resuelto'?'🔴 Evento resuelto':'⚪ Sin iniciar');
  const asoc=[...(e&&e.cdOn?tkList(e.cdTk).map(x=>`${x.id}  (Caída total)`):[]),...(e&&e.foOn?tkList(e.foTk).map(x=>`${x.id}  (Fibra oscura)`):[])];
- const etr=e&&!e.noetr&&e.etr&&e.etr.start&&e.etr.end?`ETR: ${+e.etrH||0} h ${+e.etrM||0} min ( inicio ${fhm(e.etr.start)} hasta ${fdt(e.etr.end)} )`:null;
- return [`Ticket: ${t.id}`,`Estado: ${stt}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,...(etr?[etr]:[]),`Proveedor: ${(e&&e.prov)||''}`,`País: ${(e&&e.pais)||'ECUADOR'}`,`Tickets asociados: ${asoc.length||'Ninguno'}`,...asoc.map(x=>`   - ${x}`),`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n');
+ const etr=`ETR estimado: ${e&&!e.noetr&&e.etr&&e.etr.start&&e.etr.end?`${+e.etrH||0} h ${+e.etrM||0} min ( inicio ${fhm(e.etr.start)} hasta ${fdt(e.etr.end)} )`:'Sin ETR definido'}`;
+ return [`Ticket: ${t.id}`,`Estado: ${stt}`,`Fecha y hora: ${p.fecha}`,`Tramo afectado: ${p.tramo}`,`Tiempo total: ${p.tot}`,etr,`Proveedor: ${(e&&e.prov)||''}`,`País: ${(e&&e.pais)||'ECUADOR'}`,`Tickets asociados: ${asoc.length||'Ninguno'}`,...asoc.map(x=>`   - ${x}`),`Diagnóstico: ${p.diag}`,`Último avance: ${p.ult}`,'',`Cto: @${p.tc}`].join('\n');
 }
 const evBloque=t=>{const p=evParts(t);return (t.type==='Eléctrico'?[`Ticket: ${t.id}`,`Nodo: ${p.tramo}`,`Último Avance: ${p.ult}`]:[`Ticket: ${t.id}`,`Tramo afectado: ${p.tramo}`,`Tickets secundarios: ${p.kids.length?p.kids.join(', '):'Ninguno'}`,`Último Avance: ${p.ult}`]).join('\n')};
 const RES_ORDER=['Corte','Eléctrico','N1','Fibra Oscura','OTN','Proveedor Escalamiento'];
@@ -1323,7 +1323,7 @@ const fhm=ms=>{const t=new Date(ms),p=n=>String(n).padStart(2,'0');return `${p(t
 function tplEvento(w){
  const L=['SEGUIMIENTO TORRE DE CONTROL','---------DATOS GENERALES--------',`* ID Ticket: ${w.id}`,`* Fecha y hora de afectación (GMT-5): ${fdt(w.acc)}`,`* Estado del seguimiento: ${stI(evTimes(w)?evTimes(w).st:'')}`,`* Tiempo en progreso: ${fdur(evTimes(w)?evTimes(w).prog:0)}`,`* Tiempo suspendido: ${fdur(evTimes(w)?evTimes(w).sus:0)}`,`* Tiempo total transcurrido: ${fdur(evTimes(w)?evTimes(w).tot:0)}`,`* Tramo afectado: ${w.tramo}`,''];
  w.eqs.forEach(q=>L.push(`* Nodo: ${q.n||''}`,`* Hostname: ${q.h}`,`* Puerto: ${q.p}`,''));
- L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR: ${w.noetr?'Sin ETR':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
+ L.push(`* Red afectada: ${w.red}`,`* Red Onnet: ${w.onnet}`,`* Proveedor Offline: ${w.prov}`,`* País de falla: ${w.pais}`,'','--------IMPACTO--------',`* Impacto: ${w.impacto||''}`,`* Capacidad afectada: ${w.cap?w.cap+'G':''}`,...tkLines(w,'cd','Ticket caída total'),...tkLines(w,'fo','Ticket fibra oscura'),'','----------DIAGNÓSTICO-------------',`* Diagnóstico: ${w.diag}`,`* Acciones adicionales: ${w.acc2}`,`* ETR estimado: ${w.noetr?'Sin ETR definido':(w.etr?`${+w.etrH||0} h ${+w.etrM||0} min ( inicio ${fhm(w.etr.start)} hasta ${fdt(w.etr.end)} )`:'')}`,'','--------AVANCES Y COMENTARIOS--------');
  avSorted(w.avs).filter(a=>!a.who.startsWith('Inicio de tiempos')).forEach(a=>L.push(`[${fdt(a.at)}] ${a.who}${a.txt?': '+a.txt:''}`));
  return L.join('\n');
 }
@@ -1382,13 +1382,13 @@ function parseEvento(txt){
  w.onnet=/^s[ií]/i.test(g(/\* Red Onnet:[ \t]*(.*)/))?'Si':'No';
  w.prov=g(/\* Proveedor Offline:[ \t]*(.*)/)||'UFINET';w.pais=g(/\* País de falla:[ \t]*(.*)/)||'ECUADOR';
  w.impacto=g(/\* Impacto:[ \t]*(.*)/);w.cap=g(/\* Capacidad afectada:[ \t]*(\d*)/);
- w.diag=g(/\* Diagnóstico:[ \t]*([\s\S]*?)\n\* Acciones adicionales:/);w.acc2=g(/\* Acciones adicionales:[ \t]*([\s\S]*?)\n\* ETR:/);
+ w.diag=g(/\* Diagnóstico:[ \t]*([\s\S]*?)\n\* Acciones adicionales:/);w.acc2=g(/\* Acciones adicionales:[ \t]*([\s\S]*?)\n\* ETR(?: estimado)?:/);
  const eqs=[];txt.split('\n').forEach(l=>{let m;if(m=l.match(/^\*\s*Nodo:\s*(.*)$/))eqs.push({n:m[1].trim(),h:'',p:'',hs:false});else if(m=l.match(/^\*\s*Hostname:\s*(.*)$/)){const q=eqs[eqs.length-1];if(q&&!q.hs){q.h=m[1].trim();q.hs=true}else eqs.push({n:'',h:m[1].trim(),p:'',hs:true})}else if((m=l.match(/^\*\s*Puerto:\s*(.*)$/))&&eqs.length)eqs[eqs.length-1].p=m[1].trim()});
  if(eqs.length)w.eqs=eqs.map(({n,h,p})=>({n,h,p}));
  const lines=txt.split('\n');
  const tk=(c,l)=>{const i=lines.findIndex(x=>x.startsWith('* '+l+':'));if(i<0)return;w[c+'On']=true;const t=[];for(let j=i+1;j<lines.length;j++){const m=lines[j].match(/^\s+-\s+(.+)$/);if(!m)break;t.push(m[1].trim())}w[c+'Tk']=t.join('\n')};
  tk('cd','Ticket caída total');tk('fo','Ticket fibra oscura');
- const etr=g(/\* ETR:[ \t]*(.*)/);
+ const etr=g(/\* ETR(?: estimado)?:[ \t]*(.*)/);
  if(/sin etr/i.test(etr))w.noetr=true;
  else{const m=etr.match(/(\d+)\s*h\s*(\d+)\s*min/i);if(m){w.etrH=m[1];w.etrM=m[2];const end=Date.parse(iso(etr.split('hasta')[1]||''));if(end){let st=end-(+m[1]*60+ +m[2])*6e4;const mi=etr.match(/inicio\s+(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(mi){const sv=new Date(+mi[5],+mi[4]-1,+mi[3],+mi[1],+mi[2]).getTime();if(sv){st=sv;w.etrS=sv}}w.etr={end,start:st}}}}
  const i=txt.indexOf('AVANCES Y COMENTARIOS');
@@ -1477,7 +1477,7 @@ function evtView(v){
  <div class="sech">🩺 Diagnóstico</div>
  <label for="e-diag">Diagnóstico</label><textarea id="e-diag" data-k="diag">${esc(W.diag)}</textarea>
  <label for="e-acc2">Acciones adicionales</label><textarea id="e-acc2" data-k="acc2">${esc(W.acc2)}</textarea>
- <div class="sech">⏳ ETR</div>
+ <div class="sech">⏳ ETR estimado</div>
  <label style="display:flex;align-items:center;gap:9px;cursor:pointer"><input type="checkbox" data-k="noetr" ${W.noetr?'checked':''} style="width:18px;height:18px;padding:0;accent-color:var(--acc)">Sin ETR (ocultar contador)</label>
  <div id="etr-sec" style="${W.noetr?'display:none':''}"><div class="fg3" style="align-items:end">${F('etrH','Horas','number')}${F('etrM','Minutos','number')}<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="e-etrs">⏰ Hora que inicia el ETR</button><button type="button" class="btn ghost" id="e-stop">⏹️ Detener</button></div></div>${W.etrS?`<small style="color:var(--mut);font-weight:600;display:block;margin-top:8px">Inicio del ETR: ${fhm(W.etrS)}</small>`:''}<div id="etr-box"></div></div>
  <div class="sech" id="sec-av">💬 Avances y comentarios</div>

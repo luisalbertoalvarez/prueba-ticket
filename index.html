@@ -444,6 +444,7 @@ function render(){
 $('#view').addEventListener('click',e=>{
  const f=e.target.closest('[data-f]');if(f){filter=f.dataset.f;render();return}
  const th=e.target.closest('[data-th]');if(th){applyTheme(th.dataset.th);render();toast('Tema aplicado: '+(THEMES.find(x=>x.id===th.dataset.th)||{}).n);return}
+ const ts=e.target.closest('[data-thsw]');if(ts){const on=ts.getAttribute('aria-checked')!=='true';ts.setAttribute('aria-checked',on);const pn=$('#thp');if(pn)pn.classList.toggle('open',on);try{localStorage.setItem('netops-thm-open',on?'1':'0')}catch(x){}return}
  const al=e.target.closest('[data-al]');if(al){alAct(al.dataset.al);return}
  const tg=e.target.closest('[data-tg]');if(tg){toggleKids(tg.dataset.tg);return}
  const ex=e.target.closest('[data-ex]');if(ex){if(ex.dataset.ex==='1')T.forEach(x=>{if(x.parent)EXP.add(x.parent)});else EXP.clear();render();return}
@@ -1116,8 +1117,8 @@ function applyTheme(id){
  try{localStorage.setItem('netops-theme',t.id)}catch(e){}
 }
 function themesCard(){
- const cur=document.documentElement.dataset.theme||'light';
- return `<div class="card" style="margin-top:18px"><div class="card-h"><h2>Temas</h2></div><div class="thg">${THEMES.map(t=>`<button type="button" class="thm${cur===t.id?' on':''}" data-th="${t.id}"><span class="thp" style="background:${t.v.bg}"><i style="background:${t.v.side}"></i><b style="background:${t.v.acc}"></b><em style="background:${t.v.surface}"></em></span><span>${t.n}${t.dark?' 🌙':''}</span></button>`).join('')}</div></div>`;
+ const cur=document.documentElement.dataset.theme||'light',open=(()=>{try{return localStorage.getItem('netops-thm-open')!=='0'}catch(e){return true}})();
+ return `<div class="card" style="margin-top:18px"><div class="set"><div><b>Temas</b><small>Cambia los colores de toda la página</small></div><button class="sw" role="switch" aria-checked="${open}" data-thsw aria-label="Mostrar temas"></button></div><div class="alp${open?' open':''}" id="thp"><div><div class="alin"><div class="thg">${THEMES.map(t=>`<button type="button" class="thm${cur===t.id?' on':''}" data-th="${t.id}"><span class="thp" style="background:${t.v.bg}"><i style="background:${t.v.side}"></i><b style="background:${t.v.acc}"></b><em style="background:${t.v.surface}"></em></span><span>${t.n}${t.dark?' 🌙':''}</span></button>`).join('')}</div></div></div></div></div>`;
 }
 function tplSeg(d){return `TICKET SECUNDARIO TORRE DE CONTROL\n---------DATOS CLIENTE----------\n* No. Ticket: ${d.ticket}\n* Se asocia al ticket master: ${d.master}\n* Fecha de creación de ticket: ${fdt(d.fc)}${d.fd?`\n* Fecha de descarte eléctrico: ${fdt(d.fd)}`:''}\n* Cliente: ${d.cli}\n* Horario de revisión: ${d.hor}\n\n--------DATOS IMPORTANTES--------\n* Nombre de Nodo: ${d.nodo}\n* Tipo de falla: ${d.falla}${tecTxt(d)}\n\n----------DIAGNÓSTICO-------------\n* Diagnóstico N1: ${d.diag}\n\nIngeniero N1: ${d.n1}\nIngeniero TC: @${d.tc}`}
 function segForm(t,num,child){
@@ -1447,7 +1448,8 @@ function evFromTicket(t){
 function evtView(v){
  $('#title').textContent='Plantilla de Seguimiento';$('#subtitle').textContent='Llena el evento, controla el ETR y registra avances';
  let t=EV?T.find(x=>x.id===EV):null;if(t&&t.parent)t=null;if(!t)EV=null;
- if(!W||WFor!==EV){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV;W.who=''}
+ const _fr=!W||WFor!==EV,_ew=document.getElementById('evw'),_keep=(!_fr&&_ew)?_ew.scrollTop:0,_vk=(!_fr)?v.scrollTop:0;
+ if(_fr){W=t?(t.ev?clone(t.ev):evFromTicket(t)):newW();WFor=EV;W.who=''}
  if(!W.avAt)W.avAt=nowLocal();
  const LK=!!(t&&t.st==='Resuelto');
  const F=(k,l,ty)=>`<div><label for="e-${k}">${l}</label><input id="e-${k}" data-k="${k}" type="${ty||'text'}" value="${esc(W[k]||'')}"></div>`;
@@ -1488,6 +1490,7 @@ function evtView(v){
  <div class="avs">${avSorted(W.avs,1).filter(({a})=>!a.who.startsWith('Inicio de tiempos')).map(({a,i})=>`<div class="av" style="--c:${(WH.find(x=>x[0]===a.who)||[])[1]||(a.who.startsWith('Susp')?'#f59e0b':a.who.startsWith('Reanud')?'#22c55e':a.who.startsWith('Inicio')||a.who.startsWith('Afect')?'#3b82f6':'#6b7893')}"><small>${esc(a.who)} · ${fdt(a.at)}</small>${a.txt?'<br>'+esc(a.txt):''}${MANW.includes(a.who)?`<div class="avb"><button type="button" class="chip" data-ae="${i}">Editar</button><button type="button" class="chip" data-ad="${i}" style="color:var(--bad)">Eliminar</button></div>`:(a.who==='Suspensión de tiempos'||a.who==='Reanudación de tiempos')?`<div class="avb"><button type="button" class="chip" data-se="${i}">Corregir</button></div>`:''}</div>`).join('')}</div>
  </div><div style="position:sticky;top:0"><pre class="tpl" id="tpl" data-ev style="position:static;max-height:68vh;overflow:auto"></pre><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="e-copy">📋 Copiar plantilla</button><button class="btn ghost" id="e-paste">📥 Pegar plantilla</button></div></div></div>`;
 
+ {const ew=document.getElementById('evw');if(ew&&_keep)ew.scrollTop=_keep;if(_vk)v.scrollTop=_vk}
  if(LK){const okIds=new Set(['e-copy','ev-new','ev-sum','ev-open','ev-del','ev-reo','ev-rs']);v.querySelectorAll('input,select,textarea,button').forEach(el=>{if(!okIds.has(el.id)&&!el.classList.contains('asr'))el.disabled=true});const rb=$('#ev-reo');if(rb)rb.onclick=()=>{const x=T.find(y=>y.id===EV);if(!x)return;x.st='Abierto';delete x.closedAt;if(x.ev&&x.ev.endAt){x.ev.t0+=Date.now()-x.ev.endAt;x.ev.endAt=null}W=null;buildNav();render();toast(x.id+' reabierto')}}
  const upd=()=>{$('#tpl').textContent=tplEvento(W);saveWD()};upd();etrPaint();tkPaint('cd');tkPaint('fo');evTmPaint();
  const root=$('#evw');
